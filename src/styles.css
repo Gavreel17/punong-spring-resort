@@ -1,0 +1,202 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+      --color-muted: var(--muted);
+      --color-muted-foreground: var(--muted-foreground);
+      --color-accent: var(--accent);
+      --color-accent-foreground: var(--accent-foreground);
+      --color-destructive: var(--destructive);
+      --color-destructive-foreground: var(--destructive-foreground);
+      --color-border: var(--border);
+      --color-input: var(--input);
+      --color-ring: var(--ring);
+      --color-ocean: var(--ocean);
+      --color-sand: var(--sand);
+      --color-coral: var(--coral);
+      --color-palm: var(--palm);
+
+      --shadow-soft: 0 2px 12px -2px color-mix(in oklab, var(--primary) 15%, transparent);
+      --shadow-elegant: 0 20px 50px -20px color-mix(in oklab, var(--primary) 30%, transparent);
+      --shadow-gold: 0 10px 30px -10px rgba(212, 175, 55, 0.25);
+      --shadow-glass: 0 10px 35px -5px rgba(0, 0, 0, 0.05);
+  }
+
+  :root {
+    --radius: 0.75rem;
+
+    /* Tropical & Luxury Resort Palette */
+    --background: oklch(0.985 0.005 95);
+    /* warm luxury off-white */
+    --foreground: oklch(0.20 0.04 220);
+    /* deep navy slate */
+
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.20 0.04 220);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.20 0.04 220);
+
+    --primary: oklch(0.42 0.09 200);
+    /* deep ocean emerald */
+    --primary-foreground: oklch(0.99 0.005 95);
+
+    --secondary: oklch(0.95 0.025 180);
+    /* pale champagne aqua */
+    --secondary-foreground: oklch(0.3 0.08 220);
+
+    --muted: oklch(0.96 0.012 90);
+    /* soft sand muted */
+    --muted-foreground: oklch(0.5 0.03 220);
+
+    --accent: oklch(0.75 0.15 65);
+    /* champagne gold / amber */
+    --accent-foreground: oklch(0.18 0.03 220);
+
+    --destructive: oklch(0.58 0.22 27);
+    --destructive-foreground: oklch(0.99 0.005 95);
+
+    --border: oklch(0.92 0.015 200);
+    --input: oklch(0.92 0.015 200);
+    --ring: oklch(0.75 0.15 65);
+
+    /* Brand Luxury */
+    --ocean: oklch(0.42 0.09 200);
+    --sand: oklch(0.93 0.04 80);
+    --coral: oklch(0.72 0.16 50);
+    --palm: oklch(0.52 0.13 155);
+    --gold: #D4AF37;
+    --gold-light: #F4E0A5;
+
+    --gradient-hero: linear-gradient(135deg, oklch(0.4 0.1 200) 0%, oklch(0.55 0.13 180) 100%);
+    --gradient-sunset: linear-gradient(135deg, #D4AF37 0%, #F59E0B 100%);
+    --gradient-ocean: linear-gradient(180deg, oklch(0.55 0.12 200) 0%, oklch(0.4 0.1 210) 100%);
+    --gradient-gold: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+    --gradient-gold-subtle: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(197, 160, 89, 0.05) 100%);
+    --gradient-dark-emerald: linear-gradient(180deg, #091312 0%, #0D1F1D 100%);
+  }
+
+  .dark {
+    --background: oklch(0.15 0.03 220);
+    --foreground: oklch(0.97 0.01 95);
+    --card: oklch(0.19 0.04 220);
+    --card-foreground: oklch(0.97 0.01 95);
+    --popover: oklch(0.19 0.04 220);
+    --popover-foreground: oklch(0.97 0.01 95);
+    --primary: oklch(0.65 0.12 195);
+    --primary-foreground: oklch(0.18 0.03 220);
+    --secondary: oklch(0.25 0.04 220);
+    --secondary-foreground: oklch(0.97 0.01 95);
+    --muted: oklch(0.25 0.03 220);
+    --muted-foreground: oklch(0.7 0.02 220);
+    --accent: oklch(0.75 0.15 65);
+    --accent-foreground: oklch(0.18 0.03 220);
+    --destructive: oklch(0.6 0.2 27);
+    --destructive-foreground: oklch(0.97 0.01 95);
+    --border: oklch(1 0 0 / 12%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.75 0.15 65);
+  }
+
+  @layer base {
+    * {
+      border-color: var(--color-border);
+    }
+
+    body {
+      background-color: var(--color-background);
+      color: var(--color-foreground);
+      font-family: var(--font-sans);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-family: var(--font-display);
+      letter-spacing: -0.01em;
+    }
+  }
+
+  /* Custom Luxury Component Utilities */
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.04);
+  }
+
+  .glass-card-dark {
+    background: rgba(13, 27, 30, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.5);
+  }
+
+  .gold-text-gradient {
+    background: linear-gradient(135deg, #E5C158 0%, #D4AF37 50%, #997A15 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .gold-border-glow {
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+    border-color: rgba(212, 175, 55, 0.4);
+  }
+
+  /* Custom Scrollbar for Luxury Look */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 175, 55, 0.5);
+  }
+
+  @keyframes float-subtle {
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  .animate-float {
+    animation: float-subtle 4s ease-in-out infinite;
+  }
