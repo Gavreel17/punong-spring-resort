@@ -28,7 +28,9 @@ import {
   LayoutDashboard,
   BedDouble,
   Mail,
+  Trash2,
 } from "lucide-react";
+import { trashService } from "@/lib/recently-deleted";
 import { makeAdmin } from "@/lib/api/example.functions";
 import { cn } from "@/lib/utils";
 
@@ -84,6 +86,17 @@ function AdminLayout() {
     refetchInterval: 15000,
   });
 
+  // Recently deleted items count hook
+  const { data: deletedCount = 0 } = useQuery({
+    queryKey: ["admin-trash-all"],
+    enabled: !isLoginPage && !!user && role === "admin",
+    queryFn: async () => {
+      const items = await trashService.getAllDeleted();
+      return items.length;
+    },
+    refetchInterval: 15000,
+  });
+
   // Route protection hook
   useEffect(() => {
     if (isLoginPage || loading) return;
@@ -120,6 +133,7 @@ function AdminLayout() {
     { label: "Rooms & Cottages", to: "/admin/rooms", icon: BedDouble },
     { label: "Customers", to: "/admin/customers", icon: Users },
     { label: "Messages & Inquiries", to: "/admin/messages", icon: Mail, badge: unreadInquiriesCount },
+    { label: "Recently Deleted", to: "/admin/trash", icon: Trash2, badge: deletedCount },
     { label: "Reports", to: "/admin/reports", icon: FileText },
     { label: "Settings", to: "/admin/settings", icon: Settings2 },
   ];

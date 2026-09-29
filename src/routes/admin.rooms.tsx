@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,7 @@ function RoomsTab() {
   };
   const [form, setForm] = useState<any>(blank);
 
-  const { data: rooms = [] } = useQuery({
+  const { data: rawRooms = [] } = useQuery({
     queryKey: ["admin-rooms"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -71,6 +71,10 @@ function RoomsTab() {
       return data;
     },
   });
+
+  const rooms = useMemo(() => {
+    return rawRooms.filter((r: any) => r.status !== "deleted");
+  }, [rawRooms]);
 
   function openNew() {
     setEdit(null);
@@ -201,22 +205,24 @@ function RoomsTab() {
 
   async function remove(id: string) {
     const result = await MySwal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
+      title: "Move to Recently Deleted?",
+      text: "You can restore this accommodation later from Recently Deleted.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, move to trash",
     });
 
     if (!result.isConfirmed) return;
 
-    const { error } = await supabase.from("rooms").delete().eq("id", id);
+    const { error } = await supabase.from("rooms").update({ status: "deleted" }).eq("id", id);
     if (error) return MySwal.fire("Error!", error.message, "error");
 
-    MySwal.fire("Deleted!", "Room has been deleted.", "success");
+    MySwal.fire("Moved to Trash!", "Accommodation has been moved to Recently Deleted.", "success");
     qc.invalidateQueries({ queryKey: ["admin-rooms"] });
+    qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
+    qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
   }
 
   return (

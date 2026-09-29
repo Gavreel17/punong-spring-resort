@@ -55,7 +55,9 @@ function RoomsPage() {
 
   const filtered = rooms.filter(
     (r: any) =>
-      (type === "all" || r.type === type) && r.name.toLowerCase().includes(search.toLowerCase()),
+      r.status !== "deleted" &&
+      (type === "all" || r.type === type) &&
+      r.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const getRoomStatus = (room: any) => {

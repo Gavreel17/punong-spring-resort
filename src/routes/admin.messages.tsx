@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { trashService } from "@/lib/recently-deleted";
 import {
   Search,
   Mail,
@@ -352,19 +353,31 @@ function getInquiryLatestTime(item: Inquiry): number {
   // Delete message with confirmation
   async function handleDeleteInquiry(inquiry: Inquiry) {
     const result = await MySwal.fire({
-      title: "Are you sure?",
-      text: "Are you sure you want to delete this message? This action cannot be undone.",
+      title: "Move to Recently Deleted?",
+      text: "You can restore this message thread later from Recently Deleted.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#e11d48",
       cancelButtonColor: "#64748b",
-      confirmButtonText: "Yes, delete message",
+      confirmButtonText: "Yes, move to trash",
       cancelButtonText: "Cancel",
     });
 
     if (!result.isConfirmed) return;
 
     try {
+      // 1. Record snapshot in Recently Deleted
+      trashService.recordDeleted({
+        id: inquiry.id,
+        type: "inquiry",
+        title: `${inquiry.name} (${inquiry.email})`,
+        subtitle: `Status: ${inquiry.status.toUpperCase()}`,
+        description: inquiry.message.length > 120 ? inquiry.message.slice(0, 120) + "..." : inquiry.message,
+        dates: formatDateTime(inquiry.created_at),
+        data: inquiry,
+      });
+
+      // 2. Remove from active inquiries
       const { error } = await supabase
         .from("inquiries")
         .delete()
@@ -373,8 +386,8 @@ function getInquiryLatestTime(item: Inquiry): number {
       if (error) throw error;
 
       MySwal.fire({
-        title: "Deleted!",
-        text: "The inquiry thread has been removed.",
+        title: "Moved to Trash!",
+        text: "The inquiry has been moved to Recently Deleted.",
         icon: "success",
         confirmButtonColor: "#D4AF37",
       });
@@ -385,6 +398,7 @@ function getInquiryLatestTime(item: Inquiry): number {
 
       qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
       qc.invalidateQueries({ queryKey: ["admin-unread-inquiries"] });
+      qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
     } catch (err: any) {
       MySwal.fire("Error!", err.message || "Failed to delete inquiry.", "error");
     }

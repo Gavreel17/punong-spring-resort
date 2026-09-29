@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { trashService } from "@/lib/recently-deleted";
 import {
   Search,
   Mail,
@@ -187,24 +188,36 @@ export function CustomersTab() {
   // Delete customer profile
   async function deleteCustomer(customer: any) {
     const result = await MySwal.fire({
-      title: "Delete Customer Record?",
-      text: `Are you sure you want to delete ${customer.fullname}? If they have an account, it will be removed.`,
+      title: "Move to Recently Deleted?",
+      text: `Are you sure you want to delete ${customer.fullname}? You can restore this record later from Recently Deleted.`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#e11d48",
       cancelButtonColor: "#64748b",
-      confirmButtonText: "Yes, delete",
+      confirmButtonText: "Yes, move to trash",
     });
 
     if (!result.isConfirmed) return;
+
+    // Record in Recently Deleted
+    trashService.recordDeleted({
+      id: customer.profileId || customer.id || customer.email,
+      type: "customer",
+      title: customer.fullname || "Customer Record",
+      subtitle: customer.email || "No email",
+      description: `${customer.phone || "No phone"} • ${customer.address || "No address"} • ${customer.totalBookings || 0} booking(s)`,
+      amount: customer.totalSpent,
+      data: customer,
+    });
 
     if (customer.profileId) {
       const { error } = await supabase.from("profiles").delete().eq("id", customer.profileId);
       if (error) return MySwal.fire("Error!", error.message, "error");
     }
 
-    MySwal.fire("Deleted!", "Customer record has been removed.", "success");
+    MySwal.fire("Moved to Trash!", "Customer record moved to Recently Deleted.", "success");
     qc.invalidateQueries({ queryKey: ["admin-customers-unified"] });
+    qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
   }
 
   return (

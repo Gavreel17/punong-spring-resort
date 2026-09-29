@@ -264,12 +264,12 @@ function BookingsTab() {
   async function deleteBooking(id: string) {
     const result = await MySwal.fire({
       title: "Move to Recently Deleted?",
-      text: "You can restore this later from the Reports dashboard.",
+      text: "You can restore this booking later from Recently Deleted.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, move to trash",
     });
 
     if (!result.isConfirmed) return;
@@ -277,11 +277,12 @@ function BookingsTab() {
     const { error } = await supabase.from("bookings").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     if (error) return MySwal.fire("Error!", error.message, "error");
 
-    MySwal.fire("Deleted!", "Booking has been deleted.", "success");
+    MySwal.fire("Moved to Trash!", "Booking has been moved to Recently Deleted.", "success");
     qc.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
     qc.invalidateQueries({ queryKey: ["admin-stats"] });
     qc.invalidateQueries({ queryKey: ["admin-availability-calendar"] });
     qc.invalidateQueries({ queryKey: ["reports-bookings-all"] });
+    qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
   }
 
   async function viewReceipt(urlOrPath: string) {
