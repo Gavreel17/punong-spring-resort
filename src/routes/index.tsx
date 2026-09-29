@@ -52,14 +52,14 @@ function Index() {
 
       const { data: feedbackRows, error } = await supabase
         .from("feedbacks")
-        .select("*")
+        .select("*, booking:bookings(guest_name)")
         .eq("is_approved", true)
         .order("created_at", { ascending: false });
 
       if (error || !feedbackRows) return [];
       return feedbackRows.map((f: any) => ({
         ...f,
-        guest_name: f.guest_name || "Verified Guest",
+        guest_name: f.guest_name || f.booking?.guest_name || "Verified Guest",
       }));
     },
   });

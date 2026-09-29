@@ -265,9 +265,11 @@ function BookPage() {
       const extraDetails = [];
       extraDetails.push(`Age: ${form.age}`);
       extraDetails.push(`Address: ${form.address.trim()}`);
-      if (extraPersons > 0) extraDetails.push(`Extra Persons: ${extraPersons}`);
-      if (singleFoamBeds > 0) extraDetails.push(`${singleFoamBeds} Single Foam Bed(s) (₱${singleFoamBeds * 300})`);
-      if (doubleFoamBeds > 0) extraDetails.push(`${doubleFoamBeds} Double Foam Bed(s) (₱${doubleFoamBeds * 600})`);
+      if (room?.type === "room") {
+        if (extraPersons > 0) extraDetails.push(`Extra Persons: ${extraPersons}`);
+        if (singleFoamBeds > 0) extraDetails.push(`${singleFoamBeds} Single Foam Bed(s) (₱${singleFoamBeds * 300})`);
+        if (doubleFoamBeds > 0) extraDetails.push(`${doubleFoamBeds} Double Foam Bed(s) (₱${doubleFoamBeds * 600})`);
+      }
       
       const specialRequestsText = extraDetails.length > 0
         ? extraDetails.join(" | ")
@@ -540,27 +542,27 @@ function BookPage() {
               </div>
             </div>
 
-            {/* Extra Persons & Foam Beds Options */}
-            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Guest Breakdown & Extra Beds</h4>
-                <span className="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-semibold">
-                  Good for {regularGuestsIncluded} persons
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-white p-3 rounded-lg border border-slate-200">
-                  <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider">Regular Guests Included</span>
-                  <span className="font-bold text-slate-800 text-base">{isUnlimited ? "Unlimited" : `${regularGuestsIncluded} persons`}</span>
+            {/* Extra Persons & Foam Beds Options - only show for room, hide for cottage and function hall */}
+            {room?.type === "room" && (
+              <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Guest Breakdown & Extra Beds</h4>
+                  <span className="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-semibold">
+                    Good for {regularGuestsIncluded} persons
+                  </span>
                 </div>
-                <div className="bg-white p-3 rounded-lg border border-slate-200">
-                  <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider">Extra Persons</span>
-                  <span className="font-bold text-primary text-base">{isUnlimited ? "N/A" : `${extraPersons} person(s)`}</span>
-                </div>
-              </div>
 
-              {room?.type === "room" && (
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="bg-white p-3 rounded-lg border border-slate-200">
+                    <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider">Regular Guests Included</span>
+                    <span className="font-bold text-slate-800 text-base">{isUnlimited ? "Unlimited" : `${regularGuestsIncluded} persons`}</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg border border-slate-200">
+                    <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider">Extra Persons</span>
+                    <span className="font-bold text-primary text-base">{isUnlimited ? "N/A" : `${extraPersons} person(s)`}</span>
+                  </div>
+                </div>
+
                 <div className="space-y-3 pt-2">
                   <Label className="font-bold text-slate-800 text-sm block">Extra Bed Type:</Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -599,13 +601,13 @@ function BookPage() {
                     </div>
                   </div>
                 </div>
-              )}
 
-              <div className="flex justify-between items-center bg-white p-3.5 rounded-xl border border-slate-200 text-sm">
-                <span className="font-medium text-slate-700">Additional Fee</span>
-                <span className="font-bold text-slate-900 text-base">₱{additionalFee.toLocaleString()}</span>
+                <div className="flex justify-between items-center bg-white p-3.5 rounded-xl border border-slate-200 text-sm">
+                  <span className="font-medium text-slate-700">Additional Fee</span>
+                  <span className="font-bold text-slate-900 text-base">₱{additionalFee.toLocaleString()}</span>
+                </div>
               </div>
-            </div>
+            )}
 
             {conflictWarning && (
               <div className="rounded-md bg-destructive/15 p-4 text-destructive flex items-start gap-3">
@@ -682,7 +684,7 @@ function BookPage() {
                 </div>
               )}
               <div className="flex justify-between"><span>Nights</span><span>{nights > 0 ? nights : 0}</span></div>
-              {additionalFee > 0 && (
+              {room?.type === "room" && additionalFee > 0 && (
                 <div className="flex justify-between text-emerald-700 font-medium">
                   <span>Additional Fee</span>
                   <span>+₱{additionalFee.toLocaleString()}</span>

@@ -47,8 +47,10 @@ function Dashboard() {
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [cancelData, setCancelData] = useState<{ id: string, payment: any } | null>(null);
+  const [cancelData, setCancelData] = useState<{ id: string; payment: any; booking?: any } | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [otherReasonText, setOtherReasonText] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   const [feedbackData, setFeedbackData] = useState<{ id: string } | null>(null);
   const [feedbackRating, setFeedbackRating] = useState<number>(5);
   const [feedbackComment, setFeedbackComment] = useState("");
@@ -104,13 +106,24 @@ function Dashboard() {
     const targetBooking = bookings.find((b: any) => b.id === feedbackData.id);
     const guestName = targetBooking?.guest_name || user.email?.split("@")[0] || "Guest";
 
-    const { error } = await supabase.from("feedbacks").insert({
+    const baseFeedback: any = {
       booking_id: feedbackData.id,
       user_id: user.id,
-      guest_name: guestName,
       rating: feedbackRating,
       comment: feedbackComment,
+    };
+
+    // First attempt to insert with guest_name; if the remote schema cache does not have
+    // the guest_name column (e.g. pending migration), automatically fall back to base fields.
+    let { error } = await supabase.from("feedbacks").insert({
+      ...baseFeedback,
+      guest_name: guestName,
     });
+
+    if (error && (error.message?.includes("guest_name") || error.code === "PGRST204" || error.code === "42703" || error.details?.includes("guest_name"))) {
+      const fallback = await supabase.from("feedbacks").insert(baseFeedback);
+      error = fallback.error;
+    }
 
     setSubmittingFeedback(false);
     if (error) return toast.error(error.message);
@@ -164,6 +177,7 @@ function Dashboard() {
   // Compute summary stats
   const activeCount = bookings.filter((b: any) => b.status === "approved" || b.status === "pending").length;
   const completedCount = bookings.filter((b: any) => b.status === "completed").length;
+  const cancelledCount = bookings.filter((b: any) => b.status === "cancelled" || b.status === "rejected" || b.status === "no-show").length;
   const totalSpent = bookings
     .filter((b: any) => b.status === "approved" || b.status === "completed")
     .reduce((sum: number, b: any) => sum + Number(b.total_amount || 0), 0);
@@ -171,36 +185,66 @@ function Dashboard() {
   const guestName = user?.email?.split("@")[0] || "Valued Guest";
 
   async function handleCancel() {
-    if (!cancelData || !cancelReason) return;
+    if (!cancelData) return;
+    const finalReason = cancelReason === "Other" && otherReasonText.trim() 
+      ? `Other: ${otherReasonText.trim()}` 
+      : cancelReason;
+    if (!finalReason) {
+      return toast.error("Please select or enter a cancellation reason.");
+    }
     
-    const { error: bErr } = await supabase.from("bookings").update({ status: "cancelled" }).eq("id", cancelData.id);
-    if (bErr) return toast.error(bErr.message);
+    setCancelling(true);
+    try {
+      const { error: bErr } = await supabase.from("bookings").update({ status: "cancelled" }).eq("id", cancelData.id);
+      if (bErr) {
+        setCancelling(false);
+        return toast.error(bErr.message);
+      }
 
-    const payment = cancelData.payment;
-    if (payment) {
+      const payment = cancelData.payment;
+      if (payment?.id) {
         let parsedNotes: any = {};
         try { parsedNotes = JSON.parse(payment.notes); } catch(e){}
 
-        parsedNotes.cancellation_reason = cancelReason;
+        parsedNotes.cancellation_reason = finalReason;
         parsedNotes.cancellation_date = new Date().toISOString();
 
         let newPaymentStatus = payment.status;
         if (parsedNotes.method === "resort") {
-            newPaymentStatus = "unpaid";
+          newPaymentStatus = "unpaid";
         } else if (parsedNotes.method === "gcash") {
-            newPaymentStatus = "refund_pending";
+          newPaymentStatus = "refund_pending";
         }
 
         await supabase.from("payments").update({
-            status: newPaymentStatus,
-            notes: JSON.stringify(parsedNotes)
+          status: newPaymentStatus,
+          notes: JSON.stringify(parsedNotes)
         }).eq("id", payment.id);
-    }
+      } else if (user) {
+        const notesPayload = JSON.stringify({
+          method: "resort",
+          cancellation_reason: finalReason,
+          cancellation_date: new Date().toISOString()
+        });
+        await supabase.from("payments").insert({
+          booking_id: cancelData.id,
+          user_id: user.id,
+          amount: 0,
+          status: "unpaid",
+          notes: notesPayload
+        });
+      }
 
-    toast.success("Booking cancelled successfully.");
-    setCancelData(null);
-    setCancelReason("");
-    refetch();
+      toast.success("Booking cancelled successfully.");
+      setCancelData(null);
+      setCancelReason("");
+      setOtherReasonText("");
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to cancel booking.");
+    } finally {
+      setCancelling(false);
+    }
   }
 
   return (
@@ -233,6 +277,19 @@ function Dashboard() {
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span><strong>{completedCount}</strong> Completed Visit{completedCount === 1 ? '' : 's'}</span>
                 </div>
+                {cancelledCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("bookings");
+                      setStatusFilter("cancelled");
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 transition-all backdrop-blur-md border border-rose-500/30 cursor-pointer text-rose-200"
+                  >
+                    <XCircle className="w-4 h-4 text-rose-400" />
+                    <span><strong>{cancelledCount}</strong> Cancelled Booked</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setActiveTab("messages")}
@@ -336,11 +393,12 @@ function Dashboard() {
             <button
               onClick={() => setStatusFilter("cancelled")}
               className={cn(
-                "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer",
+                "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
                 statusFilter === "cancelled" ? "bg-white text-rose-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
               )}
             >
-              Cancelled
+              <XCircle className="w-3.5 h-3.5 text-rose-500" />
+              Cancelled ({cancelledCount})
             </button>
           </div>
         </div>
@@ -413,13 +471,17 @@ function Dashboard() {
                         {/* Booking Status Badge */}
                         <div>
                           <Badge className={cn(
-                            "px-3 py-1 rounded-full font-bold text-xs capitalize shadow-sm",
+                            "px-3 py-1 rounded-full font-bold text-xs capitalize shadow-sm flex items-center gap-1",
                             b.status === "approved" ? "bg-emerald-100 text-emerald-800 border border-emerald-300" :
                             b.status === "completed" ? "bg-blue-100 text-blue-800 border border-blue-300" :
                             b.status === "pending" ? "bg-amber-100 text-amber-800 border border-amber-300 animate-pulse" :
-                            "bg-rose-100 text-rose-800 border border-rose-200"
+                            "bg-rose-100 text-rose-800 border border-rose-300"
                           )}>
-                            Booking: {b.status === "approved" ? "Confirmed" : b.status === "pending" ? "Reserved" : b.status === "rejected" ? "Cancelled" : b.status}
+                            {b.status === "approved" && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mr-0.5" />}
+                            {b.status === "completed" && <Check className="w-3.5 h-3.5 text-blue-600 mr-0.5" />}
+                            {b.status === "pending" && <Clock className="w-3.5 h-3.5 text-amber-600 mr-0.5" />}
+                            {(b.status === "cancelled" || b.status === "rejected" || b.status === "no-show") && <XCircle className="w-3.5 h-3.5 text-rose-600 mr-0.5" />}
+                            Booking: {b.status === "approved" ? "Confirmed" : b.status === "pending" ? "Reserved" : b.status === "rejected" || b.status === "cancelled" ? "Cancelled Booked" : b.status === "no-show" ? "No Show" : b.status}
                           </Badge>
                         </div>
                       </div>
@@ -433,6 +495,37 @@ function Dashboard() {
                           <span>Contact: <strong>{b.guest_email}</strong> • <strong>{b.guest_phone}</strong></span>
                         </div>
                       </div>
+
+                      {/* Cancelled Booking Record Banner */}
+                      {(b.status === "cancelled" || b.status === "rejected") && (
+                        <div className="mt-3 p-3.5 rounded-xl bg-rose-50/90 border-l-4 border-rose-500 border-y border-r border-rose-200 text-xs text-rose-900 space-y-1.5">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="font-bold flex items-center gap-1.5 text-rose-800 text-[11px] uppercase tracking-wider">
+                              <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                              Cancelled Booking Record
+                            </div>
+                            {notes.cancellation_date && (
+                              <span className="text-[11px] text-rose-700 font-medium">
+                                Cancelled: {new Date(notes.cancellation_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-slate-700">
+                            Reason: <strong className="text-rose-950 font-semibold">{notes.cancellation_reason || "Requested by guest"}</strong>
+                          </div>
+                          {isGcash && (
+                            <div className="text-[11px] text-amber-900 bg-amber-50/90 p-2.5 rounded-lg border border-amber-200/90 font-medium flex items-center gap-2 mt-1">
+                              <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              <span>GCash refund request logged. Resort administration will review and process your refund.</span>
+                            </div>
+                          )}
+                          {isResort && (
+                            <div className="text-[11px] text-slate-600 bg-white/80 p-2 rounded-lg border border-rose-100 font-medium">
+                              Pay at resort reservation cancelled. No charge was incurred.
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Footer Row: Total Amount & Payment & Actions */}
@@ -482,9 +575,14 @@ function Dashboard() {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold h-9 px-3.5 rounded-xl text-xs cursor-pointer"
-                              onClick={() => setCancelData({ id: b.id, payment: b.payments?.[0] })}
+                              className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                              onClick={() => {
+                                setCancelData({ id: b.id, payment: b.payments?.[0], booking: b });
+                                setCancelReason("");
+                                setOtherReasonText("");
+                              }}
                             >
+                              <XCircle className="w-3.5 h-3.5 text-rose-500" />
                               Cancel Booking
                             </Button>
                           )}
@@ -507,32 +605,84 @@ function Dashboard() {
       <Dialog open={!!cancelData} onOpenChange={(o) => !o && setCancelData(null)}>
         <DialogContent className="rounded-2xl max-w-md p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold font-display text-rose-700">Cancel Reservation</DialogTitle>
+            <DialogTitle className="text-lg font-bold font-display text-rose-700 flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-rose-600" />
+              Cancel Booking Reservation
+            </DialogTitle>
           </DialogHeader>
+
+          {cancelData?.booking && (
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+              <div className="font-bold text-slate-800 text-sm">{cancelData.booking.room?.name || "Accomodation"}</div>
+              <div className="flex flex-wrap items-center gap-3 text-slate-600">
+                <span>Check-in: <strong>{cancelData.booking.check_in}</strong></span>
+                <span>•</span>
+                <span>Check-out: <strong>{cancelData.booking.check_out}</strong></span>
+                <span>•</span>
+                <span>Total: <strong className="text-[#B38728]">₱{Number(cancelData.booking.total_amount).toLocaleString()}</strong></span>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-600">Select Cancellation Reason</Label>
+              <Label className="text-xs font-semibold uppercase text-slate-600">Select Cancellation Reason *</Label>
               <Select value={cancelReason} onValueChange={setCancelReason}>
                 <SelectTrigger className="rounded-xl border-slate-200 h-10">
-                  <SelectValue placeholder="Select a reason" />
+                  <SelectValue placeholder="Select a reason for cancellation" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Change of Plans">Change of Plans</SelectItem>
-                  <SelectItem value="Emergency">Emergency</SelectItem>
-                  <SelectItem value="Wrong Booking Details">Wrong Booking Details</SelectItem>
+                  <SelectItem value="Emergency / Illness">Emergency / Illness</SelectItem>
+                  <SelectItem value="Schedule Conflict">Schedule Conflict</SelectItem>
+                  <SelectItem value="Booked Wrong Date or Details">Booked Wrong Date or Details</SelectItem>
                   <SelectItem value="Financial Reasons">Financial Reasons</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  <SelectItem value="Found Alternative Accommodation">Found Alternative Accommodation</SelectItem>
+                  <SelectItem value="Other">Other Reason</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {cancelReason === "Other" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-600">Please specify reason *</Label>
+                <Input
+                  placeholder="Tell us why you need to cancel..."
+                  value={otherReasonText}
+                  onChange={(e) => setOtherReasonText(e.target.value)}
+                  className="rounded-xl border-slate-200 text-xs h-10"
+                />
+              </div>
+            )}
+
             <div className="bg-rose-50 border border-rose-200 p-3.5 rounded-xl text-xs text-rose-800 leading-relaxed font-medium">
-              Are you sure you want to cancel this booking? Cancellations are subject to resort terms. 
-              {cancelData?.payment?.notes?.includes("gcash") && " For GCash payments, refund requests are reviewed by resort admin."}
+              Are you sure you want to cancel this booking? Once confirmed, this reservation will be released and marked as <strong>Cancelled Booked</strong>.
+              {cancelData?.payment?.notes?.includes("gcash") && " For GCash payments, refund requests are recorded and reviewed by resort administration."}
             </div>
           </div>
+
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" className="rounded-xl h-10 text-xs font-semibold" onClick={() => setCancelData(null)}>Keep Booking</Button>
-            <Button variant="destructive" className="rounded-xl h-10 text-xs font-bold" onClick={handleCancel} disabled={!cancelReason}>Confirm Cancellation</Button>
+            <Button variant="outline" className="rounded-xl h-10 text-xs font-semibold" onClick={() => setCancelData(null)} disabled={cancelling}>
+              Keep Booking
+            </Button>
+            <Button 
+              variant="destructive" 
+              className="rounded-xl h-10 text-xs font-bold bg-rose-600 hover:bg-rose-700 flex items-center gap-1.5" 
+              onClick={handleCancel} 
+              disabled={!cancelReason || (cancelReason === "Other" && !otherReasonText.trim()) || cancelling}
+            >
+              {cancelling ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                <>
+                  <XCircle className="w-3.5 h-3.5" />
+                  Confirm Cancellation
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

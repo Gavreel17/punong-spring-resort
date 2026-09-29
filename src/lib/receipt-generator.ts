@@ -130,7 +130,7 @@ export async function fetchLatestReceiptData(
     resort_name: "Punong Spring Resort",
     contact_number: "+63 917 123 4567",
     contact_email: "punongspringresort@gmail.com",
-    address: "Brgy. Guba, Cebu City, Philippines",
+    address: "Brgy. Buburay, Dimataling, Zamboanga Del Sur, Philippines",
     business_hours: "8:00 AM - 6:00 PM (Daily)",
   };
 
@@ -313,7 +313,7 @@ export async function generateAndDownloadReceiptPdf(
     doc.setTextColor(148, 163, 184); // #94A3B8
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
-    doc.text(`${settings.address || "Brgy. Guba, Cebu City, Philippines"}  |  ${settings.contact_number || "+63 917 123 4567"}`, margin + 6, 36);
+    doc.text(`${settings.address || "Brgy. Buburay, Dimataling, Zamboanga Del Sur, Philippines"}  |  ${settings.contact_number || "+63 917 123 4567"}`, margin + 6, 36);
     doc.text(`Email: ${settings.contact_email || "punongspringresort@gmail.com"}  |  Hours: ${settings.business_hours || "8:00 AM - 6:00 PM"}`, margin + 6, 40);
 
     // Header Right: Official Receipt Badge

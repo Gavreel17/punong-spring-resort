@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
   resort_name TEXT NOT NULL DEFAULT 'Punong Spring Resort',
   contact_number TEXT NOT NULL DEFAULT '+63 917 123 4567',
   contact_email TEXT NOT NULL DEFAULT 'punongspringresort@gmail.com',
-  address TEXT NOT NULL DEFAULT 'Brgy. Guba, Cebu City, Philippines',
+  address TEXT NOT NULL DEFAULT 'Brgy. Buburay, Dimataling, Zamboanga Del Sur, Philippines',
   business_hours TEXT NOT NULL DEFAULT '8:00 AM - 6:00 PM (Daily)',
   default_booking_status TEXT NOT NULL DEFAULT 'pending',
   default_payment_status TEXT NOT NULL DEFAULT 'pending',
@@ -48,7 +48,7 @@ CREATE POLICY "Allow admins to insert system settings"
 
 -- Default row insert
 INSERT INTO public.system_settings (id, resort_name, contact_number, contact_email, address, business_hours)
-VALUES ('default', 'Punong Spring Resort', '+63 917 123 4567', 'punongspringresort@gmail.com', 'Brgy. Guba, Cebu City, Philippines', '8:00 AM - 6:00 PM (Daily)')
+VALUES ('default', 'Punong Spring Resort', '+63 917 123 4567', 'punongspringresort@gmail.com', 'Brgy. Buburay, Dimataling, Zamboanga Del Sur, Philippines', '8:00 AM - 6:00 PM (Daily)')
 ON CONFLICT (id) DO NOTHING;
 
 -- RPC function to get system settings safely
@@ -112,7 +112,7 @@ BEGIN
     COALESCE(p_settings->>'resort_name', 'Punong Spring Resort'),
     COALESCE(p_settings->>'contact_number', '+63 917 123 4567'),
     COALESCE(p_settings->>'contact_email', 'punongspringresort@gmail.com'),
-    COALESCE(p_settings->>'address', 'Brgy. Guba, Cebu City, Philippines'),
+    COALESCE(p_settings->>'address', 'Brgy. Buburay, Dimataling, Zamboanga Del Sur, Philippines'),
     COALESCE(p_settings->>'business_hours', '8:00 AM - 6:00 PM (Daily)'),
     COALESCE(p_settings->>'default_booking_status', 'pending'),
     COALESCE(p_settings->>'default_payment_status', 'pending'),

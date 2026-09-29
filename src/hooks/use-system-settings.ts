@@ -23,7 +23,7 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   resort_name: "Punong Spring Resort",
   contact_number: "+639120627744",
   contact_email: "punongspringresort@gmail.com",
-  address: "Brgy. Guba, Cebu City, Philippines",
+  address: "Brgy. Buburay, Dimataling, Zamboanga Del Sur, Philippines",
   business_hours: "8:00 AM - 6:00 PM (Daily)",
   default_booking_status: "pending",
   default_payment_status: "pending",
