@@ -284,19 +284,22 @@ function Dashboard() {
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span><strong>{completedCount}</strong> Completed Visit{completedCount === 1 ? '' : 's'}</span>
                 </div>
-                {cancelledCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab("bookings");
-                      setStatusFilter("cancelled");
-                    }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 transition-all backdrop-blur-md border border-rose-500/30 cursor-pointer text-rose-200"
-                  >
-                    <XCircle className="w-4 h-4 text-rose-400" />
-                    <span><strong>{cancelledCount}</strong> Cancelled Booked</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("bookings");
+                    setStatusFilter("cancelled");
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all backdrop-blur-md border cursor-pointer",
+                    statusFilter === "cancelled"
+                      ? "bg-rose-500 text-white border-rose-400"
+                      : "bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border-rose-500/30"
+                  )}
+                >
+                  <XCircle className="w-4 h-4 text-rose-400" />
+                  <span><strong>{cancelledCount}</strong> Cancelled Stay{cancelledCount === 1 ? '' : 's'}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("messages")}
@@ -316,6 +319,23 @@ function Dashboard() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <Button
+                type="button"
+                onClick={() => {
+                  const cancellable = bookings.find((b: any) => b.status !== "cancelled" && b.status !== "rejected");
+                  if (cancellable) {
+                    setCancelData({ id: cancellable.id, payment: cancellable.payments?.[0], booking: cancellable });
+                    setCancelReason("");
+                    setOtherReasonText("");
+                  } else {
+                    toast.info("You don't have any active reservations to cancel.");
+                  }
+                }}
+                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-100 hover:text-white font-bold border border-rose-400/40 backdrop-blur-md shadow-md h-12 px-5 rounded-2xl cursor-pointer flex items-center gap-2 transition-all"
+              >
+                <XCircle className="w-4 h-4 text-rose-400" /> Cancel Booking
+              </Button>
+
               <Button
                 type="button"
                 onClick={() => {
@@ -341,13 +361,16 @@ function Dashboard() {
         </div>
 
         {/* Primary Dashboard Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/80 pb-1">
           <button
             type="button"
-            onClick={() => setActiveTab("bookings")}
+            onClick={() => {
+              setActiveTab("bookings");
+              setStatusFilter("all");
+            }}
             className={cn(
               "flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
-              activeTab === "bookings"
+              activeTab === "bookings" && statusFilter !== "cancelled"
                 ? "bg-slate-900 text-white shadow-sm"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
             )}
@@ -355,6 +378,24 @@ function Dashboard() {
             <Calendar className="w-4 h-4 text-[#D4AF37]" />
             My Reservations
             <span className="ml-1 text-[11px] opacity-80">({bookings.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("bookings");
+              setStatusFilter("cancelled");
+            }}
+            className={cn(
+              "flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
+              activeTab === "bookings" && statusFilter === "cancelled"
+                ? "bg-rose-900 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+            )}
+          >
+            <XCircle className="w-4 h-4 text-rose-500" />
+            Cancelled Bookings
+            <span className="ml-1 text-[11px] opacity-80">({cancelledCount})</span>
           </button>
 
           <button
@@ -603,18 +644,18 @@ function Dashboard() {
                             </div>
                           )}
 
-                          {(b.status !== "cancelled" && b.status !== "rejected" && b.status !== "completed") && (
+                          {(b.status !== "cancelled" && b.status !== "rejected") && (
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                              className="border-rose-300 bg-rose-50/70 hover:bg-rose-100 text-rose-700 hover:text-rose-800 font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
                               onClick={() => {
                                 setCancelData({ id: b.id, payment: b.payments?.[0], booking: b });
                                 setCancelReason("");
                                 setOtherReasonText("");
                               }}
                             >
-                              <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                              <XCircle className="w-3.5 h-3.5 text-rose-600" />
                               Cancel Booking
                             </Button>
                           )}
@@ -642,6 +683,35 @@ function Dashboard() {
               Cancel Booking Reservation
             </DialogTitle>
           </DialogHeader>
+
+          {/* Reservation Selector if multiple cancellable bookings exist */}
+          {bookings.filter((b: any) => b.status !== "cancelled" && b.status !== "rejected").length > 1 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase text-slate-600">Select Reservation to Cancel</Label>
+              <Select
+                value={cancelData?.id}
+                onValueChange={(val) => {
+                  const selected = bookings.find((b: any) => b.id === val);
+                  if (selected) {
+                    setCancelData({ id: selected.id, payment: selected.payments?.[0], booking: selected });
+                  }
+                }}
+              >
+                <SelectTrigger className="rounded-xl border-slate-200 h-10 text-xs">
+                  <SelectValue placeholder="Choose a booking to cancel" />
+                </SelectTrigger>
+                <SelectContent>
+                  {bookings
+                    .filter((b: any) => b.status !== "cancelled" && b.status !== "rejected")
+                    .map((cb: any) => (
+                      <SelectItem key={cb.id} value={cb.id} className="text-xs">
+                        {cb.room?.name || "Accommodation"} ({cb.check_in} to {cb.check_out})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {cancelData?.booking && (
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
