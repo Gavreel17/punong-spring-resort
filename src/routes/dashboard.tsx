@@ -218,6 +218,8 @@ function Dashboard() {
 
         parsedNotes.cancellation_reason = finalReason;
         parsedNotes.cancellation_date = new Date().toISOString();
+        parsedNotes.cancelled_by = "Customer";
+        parsedNotes.cancelled_by_name = cancelData.booking?.guest_name || user?.user_metadata?.fullname || user?.email || "Customer";
 
         let newPaymentStatus = payment.status;
         if (parsedNotes.method === "resort") {
@@ -234,7 +236,9 @@ function Dashboard() {
         const notesPayload = JSON.stringify({
           method: "resort",
           cancellation_reason: finalReason,
-          cancellation_date: new Date().toISOString()
+          cancellation_date: new Date().toISOString(),
+          cancelled_by: "Customer",
+          cancelled_by_name: cancelData.booking?.guest_name || user?.user_metadata?.fullname || user?.email || "Customer"
         });
         await supabase.from("payments").insert({
           booking_id: cancelData.id,
