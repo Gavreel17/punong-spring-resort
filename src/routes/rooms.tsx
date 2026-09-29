@@ -14,12 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ResortCalendar } from "@/components/ResortCalendar";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Search, CalendarIcon, Info } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { Users, Search } from "lucide-react";
 
 export const Route = createFileRoute("/rooms")({
   head: () => ({
@@ -37,21 +33,20 @@ export const Route = createFileRoute("/rooms")({
 function RoomsPage() {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>();
 
   const { data, isLoading } = useQuery({
     queryKey: ["rooms-and-bookings"],
     queryFn: async () => {
-      const [roomsRes, bookingsRes] = await Promise.all([
-        supabase.from("rooms").select("*").order("price"),
-        supabase.from("bookings").select("*"),
-      ]);
-      return { rooms: roomsRes.data || [], bookings: bookingsRes.data || [] };
+      const { data: roomsData, error } = await supabase
+        .from("rooms")
+        .select("*")
+        .order("price");
+      if (error) throw error;
+      return { rooms: roomsData || [] };
     },
   });
 
   const rooms = data?.rooms || [];
-  const bookings = data?.bookings || [];
 
   const filtered = rooms.filter(
     (r: any) =>
@@ -61,45 +56,9 @@ function RoomsPage() {
   );
 
   const getRoomStatus = (room: any) => {
-    if (!dateRange?.from || !dateRange?.to)
-      return { status: "default", color: "green", text: room.is_available ? "Available" : "Full" };
-
-    // Convert to UTC dates for string comparison
-    const offset = dateRange.from.getTimezoneOffset() * 60000;
-    const startStr = new Date(dateRange.from.getTime() - offset).toISOString().split("T")[0];
-    const endStr = new Date(dateRange.to.getTime() - offset).toISOString().split("T")[0];
-
-    if (startStr >= endStr) return { status: "invalid", color: "gray", text: "Invalid Dates" };
-
-    // Check maintenance
-    if (room.maintenance_start && room.maintenance_end) {
-      if (startStr < room.maintenance_end && endStr > room.maintenance_start) {
-        return { status: "maintenance", color: "gray", text: "Under Maintenance" };
-      }
+    if (room.status === "maintenance" || !room.is_available) {
+      return { status: "maintenance", color: "gray", text: "Under Maintenance" };
     }
-
-    // Check bookings
-    const overlapping = bookings.filter(
-      (b: any) =>
-        b.room_id === room.id &&
-        b.status !== "rejected" &&
-        b.status !== "cancelled" &&
-        b.status !== "completed",
-    );
-    let hasPending = false;
-
-    for (const b of overlapping) {
-      if (startStr < b.check_out && endStr > b.check_in) {
-        if (b.status === "approved") {
-          return { status: "booked", color: "red", text: "Not Available" };
-        }
-        if (b.status === "pending") {
-          hasPending = true;
-        }
-      }
-    }
-
-    if (hasPending) return { status: "pending", color: "yellow", text: "Reserved" };
     return { status: "available", color: "green", text: "Available" };
   };
 
@@ -130,50 +89,7 @@ function RoomsPage() {
 
       <section className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="mb-6 sm:mb-8 rounded-xl border bg-card p-4 sm:p-6 shadow-sm">
-          <h2 className="mb-4 text-base sm:text-lg font-semibold flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-accent" /> Global Availability Search
-          </h2>
-
-          <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-4">
-            <div className="lg:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-muted-foreground">
-                Select Dates
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal h-10 truncate",
-                      !dateRange && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                    {dateRange?.from ? (
-                      dateRange.to ? (
-                        <span className="truncate">
-                          {format(dateRange.from, "LLL dd, y")} -{" "}
-                          {format(dateRange.to, "LLL dd, y")}
-                        </span>
-                      ) : (
-                        <span>{format(dateRange.from, "LLL dd, y")}</span>
-                      )
-                    ) : (
-                      <span className="truncate">Pick your check-in & check-out dates</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[calc(100vw-2rem)] sm:w-auto p-0 max-w-sm overflow-x-auto" align="start">
-                  <ResortCalendar
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    numberOfMonths={1}
-                    className="border-0 shadow-none"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-muted-foreground">
                 Room Name
@@ -181,7 +97,7 @@ function RoomsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search..."
+                  placeholder="Search by accommodation name..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10 h-10"
@@ -204,24 +120,6 @@ function RoomsPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3 text-xs sm:text-sm">
-            <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
-              <Info className="h-4 w-4" /> Legend:
-            </span>
-            <span className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-green-500"></div> Available
-            </span>
-            <span className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-yellow-400"></div> Limited
-            </span>
-            <span className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-red-500"></div> Not Available
-            </span>
-            <span className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-slate-500"></div> Maintenance
-            </span>
           </div>
         </div>
 
@@ -277,33 +175,12 @@ function RoomsPage() {
                       </div>
                       <Button
                         asChild
-                        disabled={
-                          status.status === "booked" ||
-                          status.status === "maintenance" ||
-                          status.status === "invalid"
-                        }
+                        disabled={status.status === "maintenance"}
                         className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90 h-10 font-semibold shadow-sm justify-center"
                       >
                         <Link
                           to="/book/$roomId"
                           params={{ roomId: r.id }}
-                          search={{
-                            check_in: dateRange?.from
-                              ? new Date(
-                                  dateRange.from.getTime() -
-                                    dateRange.from.getTimezoneOffset() * 60000,
-                                )
-                                  .toISOString()
-                                  .split("T")[0]
-                              : undefined,
-                            check_out: dateRange?.to
-                              ? new Date(
-                                  dateRange.to.getTime() - dateRange.to.getTimezoneOffset() * 60000,
-                                )
-                                  .toISOString()
-                                  .split("T")[0]
-                              : undefined,
-                          }}
                         >
                           Book Now
                         </Link>
