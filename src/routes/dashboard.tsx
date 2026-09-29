@@ -321,45 +321,11 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <Button
-                type="button"
-                onClick={() => {
-                  const cancellable = bookings.find((b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "completed");
-                  if (cancellable) {
-                    setCancelData({ id: cancellable.id, payment: cancellable.payments?.[0], booking: cancellable });
-                    setCancelReason("");
-                    setOtherReasonText("");
-                  } else {
-                    toast.info("You don't have any active reservations eligible to cancel.");
-                  }
-                }}
-                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-100 hover:text-white font-bold border border-rose-400/40 backdrop-blur-md shadow-md h-12 px-5 rounded-2xl cursor-pointer flex items-center gap-2 transition-all"
-              >
-                <XCircle className="w-4 h-4 text-rose-400" /> Cancel Booking
-              </Button>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  const eligible = bookings.find((b: any) => (!b.feedbacks || b.feedbacks.length === 0) && b.status !== "cancelled" && b.status !== "rejected") || bookings[0];
-                  if (eligible) {
-                    setFeedbackData({ id: eligible.id, booking: eligible });
-                  } else {
-                    toast.info("Please make a reservation first to leave feedback!");
-                  }
-                }}
-                className="bg-white/10 hover:bg-white/20 text-white font-bold border border-white/20 backdrop-blur-md shadow-md h-12 px-5 rounded-2xl cursor-pointer flex items-center gap-2"
-              >
-                <Star className="w-4 h-4 fill-[#D4AF37] text-[#D4AF37]" /> Leave Feedback
-              </Button>
-
-              <Button asChild className="bg-gradient-to-r from-[#B38728] via-[#D4AF37] to-[#AA771C] text-slate-950 hover:brightness-105 font-bold shadow-lg h-12 px-6 rounded-2xl shrink-0 cursor-pointer">
-                <Link to="/rooms">
-                  <Plus className="w-4 h-4 mr-2 stroke-[3]" /> Book New Experience
-                </Link>
-              </Button>
-            </div>
+            <Button asChild className="bg-gradient-to-r from-[#B38728] via-[#D4AF37] to-[#AA771C] text-slate-950 hover:brightness-105 font-bold shadow-lg h-12 px-6 rounded-2xl shrink-0 cursor-pointer">
+              <Link to="/rooms">
+                <Plus className="w-4 h-4 mr-2 stroke-[3]" /> Book New Experience
+              </Link>
+            </Button>
           </div>
         </div>
 
