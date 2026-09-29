@@ -193,6 +193,9 @@ function Dashboard() {
 
   async function handleCancel() {
     if (!cancelData) return;
+    if (cancelData.booking?.status === "completed") {
+      return toast.error("Completed reservations cannot be cancelled.");
+    }
     const finalReason = cancelReason === "Other" && otherReasonText.trim() 
       ? `Other: ${otherReasonText.trim()}` 
       : cancelReason;
@@ -322,13 +325,13 @@ function Dashboard() {
               <Button
                 type="button"
                 onClick={() => {
-                  const cancellable = bookings.find((b: any) => b.status !== "cancelled" && b.status !== "rejected");
+                  const cancellable = bookings.find((b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "completed");
                   if (cancellable) {
                     setCancelData({ id: cancellable.id, payment: cancellable.payments?.[0], booking: cancellable });
                     setCancelReason("");
                     setOtherReasonText("");
                   } else {
-                    toast.info("You don't have any active reservations to cancel.");
+                    toast.info("You don't have any active reservations eligible to cancel.");
                   }
                 }}
                 className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-100 hover:text-white font-bold border border-rose-400/40 backdrop-blur-md shadow-md h-12 px-5 rounded-2xl cursor-pointer flex items-center gap-2 transition-all"
@@ -644,7 +647,7 @@ function Dashboard() {
                             </div>
                           )}
 
-                          {(b.status !== "cancelled" && b.status !== "rejected") && (
+                          {(b.status !== "cancelled" && b.status !== "rejected" && b.status !== "completed") && (
                             <Button 
                               variant="outline" 
                               size="sm" 
@@ -685,7 +688,7 @@ function Dashboard() {
           </DialogHeader>
 
           {/* Reservation Selector if multiple cancellable bookings exist */}
-          {bookings.filter((b: any) => b.status !== "cancelled" && b.status !== "rejected").length > 1 && (
+          {bookings.filter((b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "completed").length > 1 && (
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase text-slate-600">Select Reservation to Cancel</Label>
               <Select
@@ -702,7 +705,7 @@ function Dashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   {bookings
-                    .filter((b: any) => b.status !== "cancelled" && b.status !== "rejected")
+                    .filter((b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "completed")
                     .map((cb: any) => (
                       <SelectItem key={cb.id} value={cb.id} className="text-xs">
                         {cb.room?.name || "Accommodation"} ({cb.check_in} to {cb.check_out})
