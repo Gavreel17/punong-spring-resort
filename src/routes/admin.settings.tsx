@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,6 +124,8 @@ function AdminSettingsPage() {
   const [syncingData, setSyncingData] = useState(false);
   const [exportingData, setExportingData] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const restoreFileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize admin profile fields from session
   useEffect(() => {
@@ -516,7 +518,7 @@ function AdminSettingsPage() {
 
     setBackingUp(true);
     try {
-      const [bookings, rooms, payments, inquiries, messages, sysSettings] =
+      const [bookings, rooms, payments, inquiries, messages, sysSettings, feedbacks] =
         await Promise.all([
           supabase.from("bookings").select("*"),
           supabase.from("rooms").select("*"),
@@ -524,6 +526,7 @@ function AdminSettingsPage() {
           supabase.from("inquiries").select("*"),
           supabase.from("inquiry_messages").select("*"),
           supabase.from("system_settings").select("*"),
+          supabase.from("feedbacks").select("*"),
         ]);
 
       const backupData = {
@@ -540,6 +543,7 @@ function AdminSettingsPage() {
           inquiries: inquiries.data || [],
           inquiry_messages: messages.data || [],
           system_settings: sysSettings.data || [],
+          feedbacks: feedbacks.data || [],
         },
       };
 
@@ -559,6 +563,222 @@ function AdminSettingsPage() {
       toast.error("Failed to generate database backup.");
     } finally {
       setBackingUp(false);
+    }
+  }
+
+  // 9. Data & System: Restore Database Snapshot from Backup File
+  async function handleRestoreFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so re-selecting the same file fires onChange again
+    e.target.value = "";
+
+    let fileContent = "";
+    try {
+      fileContent = await file.text();
+    } catch (readErr) {
+      toast.error("Could not read the selected backup file.");
+      return;
+    }
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(fileContent);
+    } catch (parseErr) {
+      toast.error("Invalid JSON file. Please supply a valid database snapshot file.");
+      return;
+    }
+
+    // Support both format with .database_snapshot and flat object
+    const snapshot = parsed?.database_snapshot || parsed?.data || parsed;
+    if (!snapshot || typeof snapshot !== "object") {
+      toast.error("Unrecognized backup format. No snapshot tables found.");
+      return;
+    }
+
+    const rooms: any[] = Array.isArray(snapshot.rooms) ? snapshot.rooms : [];
+    const bookings: any[] = Array.isArray(snapshot.bookings) ? snapshot.bookings : [];
+    const payments: any[] = Array.isArray(snapshot.payments) ? snapshot.payments : [];
+    const inquiries: any[] = Array.isArray(snapshot.inquiries) ? snapshot.inquiries : [];
+    const inquiryMessages: any[] = Array.isArray(snapshot.inquiry_messages || snapshot.messages)
+      ? snapshot.inquiry_messages || snapshot.messages
+      : [];
+    const systemSettings: any[] = Array.isArray(snapshot.system_settings)
+      ? snapshot.system_settings
+      : snapshot.system_settings && typeof snapshot.system_settings === "object"
+      ? [snapshot.system_settings]
+      : [];
+    const feedbacks: any[] = Array.isArray(snapshot.feedbacks) ? snapshot.feedbacks : [];
+
+    const totalCount =
+      rooms.length +
+      bookings.length +
+      payments.length +
+      inquiries.length +
+      inquiryMessages.length +
+      systemSettings.length +
+      feedbacks.length;
+
+    if (totalCount === 0) {
+      toast.error("No recognized database table records found in this backup file.");
+      return;
+    }
+
+    const backupMeta = parsed?.meta || {};
+    const backupDate = backupMeta.backup_timestamp
+      ? new Date(backupMeta.backup_timestamp).toLocaleString()
+      : "Not recorded";
+    const backupSystem = backupMeta.system || "Database Snapshot Archive";
+    const backupAuthor = backupMeta.created_by || "Admin";
+
+    const confirmResult = await MySwal.fire({
+      title: "Restore Database Snapshot?",
+      html: `
+        <div style="text-align: left; font-size: 13px; line-height: 1.5; color: #334155;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">${backupSystem}</div>
+            <div><b>Filename:</b> ${file.name}</div>
+            <div><b>Created At:</b> ${backupDate}</div>
+            <div><b>Created By:</b> ${backupAuthor}</div>
+          </div>
+
+          <div style="font-weight: 700; margin-bottom: 6px; color: #0f172a;">Records detected to restore / merge:</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; font-size: 12px;">
+            <div style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between;">
+              <span>Rooms & Units:</span> <strong style="color: #0f172a;">${rooms.length}</strong>
+            </div>
+            <div style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between;">
+              <span>Guest Bookings:</span> <strong style="color: #0f172a;">${bookings.length}</strong>
+            </div>
+            <div style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between;">
+              <span>Payments:</span> <strong style="color: #0f172a;">${payments.length}</strong>
+            </div>
+            <div style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between;">
+              <span>Inquiries:</span> <strong style="color: #0f172a;">${inquiries.length}</strong>
+            </div>
+            <div style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between;">
+              <span>Messages:</span> <strong style="color: #0f172a;">${inquiryMessages.length}</strong>
+            </div>
+            <div style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between;">
+              <span>System Settings:</span> <strong style="color: #0f172a;">${systemSettings.length}</strong>
+            </div>
+            ${
+              feedbacks.length > 0
+                ? `<div style="background: #f1f5f9; padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between;">
+                    <span>Feedbacks:</span> <strong style="color: #0f172a;">${feedbacks.length}</strong>
+                  </div>`
+                : ""
+            }
+          </div>
+
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px; color: #92400e; font-size: 11px;">
+            ⚠️ <b>Upsert Mode:</b> Existing records matching IDs will be updated with the backup snapshot. Non-conflicting live data will be retained.
+          </div>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#B38728",
+      cancelButtonColor: "#94a3b8",
+      confirmButtonText: `Proceed & Restore (${totalCount} Records)`,
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    setRestoring(true);
+    const toastId = toast.loading("Restoring database tables... Please wait.");
+
+    try {
+      const upsertBatch = async (table: string, records: any[]) => {
+        if (!records || records.length === 0) return;
+        const chunkSize = 50;
+        for (let i = 0; i < records.length; i += chunkSize) {
+          const chunk = records.slice(i, i + chunkSize);
+          const { error } = await (supabase as any)
+            .from(table)
+            .upsert(chunk, { onConflict: "id" });
+          if (error) {
+            console.error(`Error restoring ${table}:`, error);
+            throw new Error(`Failed to restore ${table}: ${error.message}`);
+          }
+        }
+      };
+
+      // 1. System Settings
+      if (systemSettings.length > 0) {
+        await upsertBatch("system_settings", systemSettings);
+        const first = systemSettings[0];
+        if (first) {
+          localStorage.setItem(SYSTEM_SETTINGS_STORAGE_KEY, JSON.stringify(first));
+          setSettings((prev) => ({ ...prev, ...first }));
+        }
+      }
+
+      // 2. Rooms
+      if (rooms.length > 0) {
+        await upsertBatch("rooms", rooms);
+      }
+
+      // 3. Inquiries
+      if (inquiries.length > 0) {
+        await upsertBatch("inquiries", inquiries);
+      }
+
+      // 4. Inquiry messages (foreign key to inquiries)
+      if (inquiryMessages.length > 0) {
+        await upsertBatch("inquiry_messages", inquiryMessages);
+      }
+
+      // 5. Bookings (foreign key to rooms)
+      if (bookings.length > 0) {
+        await upsertBatch("bookings", bookings);
+      }
+
+      // 6. Payments (foreign key to bookings)
+      if (payments.length > 0) {
+        await upsertBatch("payments", payments);
+      }
+
+      // 7. Feedbacks (if present)
+      if (feedbacks.length > 0) {
+        await upsertBatch("feedbacks", feedbacks);
+      }
+
+      // Refresh query caches
+      await Promise.allSettled([
+        qc.invalidateQueries({ queryKey: ["system-settings"] }),
+        qc.invalidateQueries({ queryKey: ["rooms"] }),
+        qc.invalidateQueries({ queryKey: ["bookings"] }),
+        qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] }),
+        qc.invalidateQueries({ queryKey: ["inquiries"] }),
+        qc.invalidateQueries({ queryKey: ["payments"] }),
+        qc.invalidateQueries({ queryKey: ["admin-stats"] }),
+        qc.invalidateQueries({ queryKey: ["trash-items"] }),
+      ]);
+
+      toast.dismiss(toastId);
+      toast.success("Database snapshot restored successfully!");
+
+      MySwal.fire({
+        title: "Database Restored Successfully!",
+        html: `<p class="text-sm text-slate-600">Restored <b>${totalCount}</b> records across all tables from <b>${file.name}</b>.</p>`,
+        icon: "success",
+        confirmButtonColor: "#0D1C24",
+      });
+    } catch (err: any) {
+      console.error("Database restore error:", err);
+      toast.dismiss(toastId);
+      toast.error(err.message || "Failed to restore database snapshot.");
+      MySwal.fire({
+        title: "Restore Failed",
+        text: err.message || "An unexpected error occurred while restoring data.",
+        icon: "error",
+        confirmButtonColor: "#0D1C24",
+      });
+    } finally {
+      setRestoring(false);
     }
   }
 
@@ -1509,7 +1729,7 @@ function AdminSettingsPage() {
                   Full Database Snapshot Backup
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Generate a complete, timestamped JSON archive of all tables: rooms, bookings, payments, inquiries, inquiry messages, and system settings.
+                  Generate a complete, timestamped JSON archive of all tables: rooms, bookings, payments, inquiries, inquiry messages, feedbacks, and system settings.
                 </p>
               </div>
 
@@ -1526,6 +1746,45 @@ function AdminSettingsPage() {
                 )}
                 Backup Database Archive
               </Button>
+            </Card>
+
+            {/* Action 5: Restore Database Snapshot */}
+            <Card className="p-6 bg-white border-amber-200/60 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between relative overflow-hidden">
+              <div className="space-y-2">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#B38728] border border-[#D4AF37]/30 flex items-center justify-center">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold font-display text-slate-900">
+                  Restore Database from Backup
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Upload a previously saved <span className="font-semibold text-slate-700">punong-database-backup-*.json</span> snapshot archive to restore or synchronize rooms, reservations, payments, and settings.
+                </p>
+              </div>
+
+              <div>
+                <input
+                  type="file"
+                  ref={restoreFileInputRef}
+                  accept=".json,application/json"
+                  onChange={handleRestoreFileSelected}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  onClick={() => restoreFileInputRef.current?.click()}
+                  disabled={restoring}
+                  variant="outline"
+                  className="w-full border-amber-300 bg-amber-50/60 hover:bg-amber-100/70 text-slate-900 font-bold h-10 rounded-xl shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {restoring ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-[#B38728]" />
+                  ) : (
+                    <Upload className="w-4 h-4 text-[#B38728]" />
+                  )}
+                  {restoring ? "Restoring Database..." : "Select & Restore Backup File"}
+                </Button>
+              </div>
             </Card>
           </div>
         </div>
