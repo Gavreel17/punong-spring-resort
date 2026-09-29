@@ -205,24 +205,27 @@ function RoomsTab() {
 
   async function remove(id: string) {
     const result = await MySwal.fire({
-      title: "Move to Recently Deleted?",
-      text: "You can restore this accommodation later from Recently Deleted.",
+      title: "Delete Accommodation?",
+      text: "Are you sure you want to delete this room/cottage? This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       cancelButtonColor: "#64748b",
-      confirmButtonText: "Yes, move to trash",
+      confirmButtonText: "Yes, delete",
     });
 
     if (!result.isConfirmed) return;
 
-    const { error } = await supabase.from("rooms").update({ status: "deleted" }).eq("id", id);
-    if (error) return MySwal.fire("Error!", error.message, "error");
+    // Delete or mark deleted
+    const { error } = await supabase.from("rooms").delete().eq("id", id);
+    if (error) {
+      const { error: softErr } = await supabase.from("rooms").update({ status: "deleted", is_available: false }).eq("id", id);
+      if (softErr) return MySwal.fire("Error!", softErr.message, "error");
+    }
 
-    MySwal.fire("Moved to Trash!", "Accommodation has been moved to Recently Deleted.", "success");
+    MySwal.fire("Deleted!", "Accommodation has been deleted.", "success");
     qc.invalidateQueries({ queryKey: ["admin-rooms"] });
     qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
-    qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
   }
 
   return (

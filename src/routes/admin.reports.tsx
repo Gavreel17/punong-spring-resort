@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { trashService, TrashItem } from "@/lib/recently-deleted";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,30 +89,6 @@ function ReportsDashboard() {
       return rawBookings.filter((b: any) => !b.deleted_at);
     }
   }, [rawBookings, startDate, endDate]);
-
-  const { data: allTrashItems = [] } = useQuery({
-    queryKey: ["admin-trash-all"],
-    queryFn: async () => {
-      return await trashService.getAllDeleted();
-    },
-  });
-
-  const restoreTrashItem = async (item: TrashItem) => {
-    const res = await trashService.restore(item);
-    if (!res.success) {
-      toast.error(res.message || "Failed to restore record.");
-    } else {
-      toast.success(`${item.title} restored!`);
-      qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
-      qc.invalidateQueries({ queryKey: ["reports-bookings-all"] });
-      qc.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
-      qc.invalidateQueries({ queryKey: ["admin-rooms"] });
-      qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
-      qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
-      qc.invalidateQueries({ queryKey: ["admin-customers-unified"] });
-      qc.invalidateQueries({ queryKey: ["admin-stats"] });
-    }
-  };
 
   const stats = useMemo(() => {
     let confirmed = 0;
@@ -508,9 +483,6 @@ function ReportsDashboard() {
               <TabsTrigger value="customers" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <Users className="w-4 h-4 mr-2" /> Customer Reports
               </TabsTrigger>
-              <TabsTrigger value="deleted" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-red-600 data-[state=active]:text-red-700">
-                <History className="w-4 h-4 mr-2" /> Recently Deleted
-              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -690,85 +662,6 @@ function ReportsDashboard() {
                         <TableCell className="font-bold text-primary">₱{c.totalSpent.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-
-            {/* RECENTLY DELETED TABLE */}
-            <TabsContent value="deleted" className="m-0 focus-visible:ring-0 print:hidden">
-              <div className="p-4 flex items-center justify-between bg-white border-b">
-                <div>
-                  <h3 className="font-semibold text-lg text-rose-700">Recently Deleted Records ({allTrashItems.length})</h3>
-                  <p className="text-xs text-slate-500">Deleted bookings, accommodations, customer profiles, and inquiries.</p>
-                </div>
-                <Link to="/admin/trash">
-                  <Button size="sm" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5 text-rose-500" /> Open Full Trash Manager
-                  </Button>
-                </Link>
-              </div>
-              <div className="overflow-x-auto">
-                <Table className="min-w-[1000px]">
-                  <TableHeader className="bg-slate-50">
-                    <TableRow>
-                      <TableHead className="font-bold text-slate-700">Type</TableHead>
-                      <TableHead className="font-bold text-slate-700">Record Info</TableHead>
-                      <TableHead className="font-bold text-slate-700">Details / Dates</TableHead>
-                      <TableHead className="font-bold text-slate-700">Amount / Rate</TableHead>
-                      <TableHead className="font-bold text-slate-700">Deleted At</TableHead>
-                      <TableHead className="font-bold text-slate-700 text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allTrashItems.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No recently deleted records.</TableCell>
-                      </TableRow>
-                    ) : (
-                      allTrashItems.map((item) => (
-                        <TableRow key={`${item.type}-${item.id}`}>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize font-bold text-[10px]">
-                              {item.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium text-slate-900">{item.title}</div>
-                            {item.subtitle && <div className="text-xs text-slate-500">{item.subtitle}</div>}
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">{item.dates || "—"}</div>
-                            {item.description && <div className="text-xs text-slate-500 line-clamp-1">{item.description}</div>}
-                          </TableCell>
-                          <TableCell>
-                            {item.amount !== undefined && item.amount > 0 ? (
-                              <span className="font-medium text-slate-700">₱{item.amount.toLocaleString()}</span>
-                            ) : (
-                              <span className="text-slate-400">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              {item.deleted_at ? format(parseISO(item.deleted_at), "MMM d, yyyy") : ""}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              {item.deleted_at ? format(parseISO(item.deleted_at), "h:mm a") : ""}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-                              onClick={() => restoreTrashItem(item)}
-                            >
-                              <RefreshCcw className="w-4 h-4 mr-2" /> Restore
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
                   </TableBody>
                 </Table>
               </div>

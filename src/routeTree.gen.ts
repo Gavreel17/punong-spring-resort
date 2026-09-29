@@ -19,7 +19,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ReceiptBookingIdRouteImport } from './routes/receipt.$bookingId'
 import { Route as BookRoomIdRouteImport } from './routes/book.$roomId'
-import { Route as AdminTrashRouteImport } from './routes/admin.trash'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminRoomsRouteImport } from './routes/admin.rooms'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -80,11 +79,6 @@ const BookRoomIdRoute = BookRoomIdRouteImport.update({
   id: '/book/$roomId',
   path: '/book/$roomId',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AdminTrashRoute = AdminTrashRouteImport.update({
-  id: '/trash',
-  path: '/trash',
-  getParentRoute: () => AdminRoute,
 } as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
@@ -155,7 +149,6 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/trash': typeof AdminTrashRoute
   '/book/$roomId': typeof BookRoomIdRoute
   '/receipt/$bookingId': typeof ReceiptBookingIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -177,7 +170,6 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/trash': typeof AdminTrashRoute
   '/book/$roomId': typeof BookRoomIdRoute
   '/receipt/$bookingId': typeof ReceiptBookingIdRoute
   '/admin': typeof AdminIndexRoute
@@ -201,7 +193,6 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/trash': typeof AdminTrashRoute
   '/book/$roomId': typeof BookRoomIdRoute
   '/receipt/$bookingId': typeof ReceiptBookingIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -226,7 +217,6 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/rooms'
     | '/admin/settings'
-    | '/admin/trash'
     | '/book/$roomId'
     | '/receipt/$bookingId'
     | '/admin/'
@@ -248,7 +238,6 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/rooms'
     | '/admin/settings'
-    | '/admin/trash'
     | '/book/$roomId'
     | '/receipt/$bookingId'
     | '/admin'
@@ -271,7 +260,6 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/rooms'
     | '/admin/settings'
-    | '/admin/trash'
     | '/book/$roomId'
     | '/receipt/$bookingId'
     | '/admin/'
@@ -361,13 +349,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookRoomIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/trash': {
-      id: '/admin/trash'
-      path: '/trash'
-      fullPath: '/admin/trash'
-      preLoaderRoute: typeof AdminTrashRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -452,7 +433,6 @@ interface AdminRouteChildren {
   AdminReportsRoute: typeof AdminReportsRoute
   AdminRoomsRoute: typeof AdminRoomsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
-  AdminTrashRoute: typeof AdminTrashRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -467,7 +447,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReportsRoute: AdminReportsRoute,
   AdminRoomsRoute: AdminRoomsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
-  AdminTrashRoute: AdminTrashRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
