@@ -613,12 +613,16 @@ function Dashboard() {
                             </div>
                           )}
 
-                          {(b.status !== "cancelled" && b.status !== "rejected" && b.status !== "completed") && (
+                          {(b.status !== "cancelled" && b.status !== "rejected") && (
                             <Button 
                               variant="outline" 
                               size="sm" 
                               className="border-rose-300 bg-rose-50/70 hover:bg-rose-100 text-rose-700 hover:text-rose-800 font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
                               onClick={() => {
+                                if (b.status === "completed") {
+                                  toast.error("Completed bookings cannot be cancelled.");
+                                  return;
+                                }
                                 setCancelData({ id: b.id, payment: b.payments?.[0], booking: b });
                                 setCancelReason("");
                                 setOtherReasonText("");

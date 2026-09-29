@@ -27,8 +27,8 @@ export async function processAutoBookingStatuses(bookings: any[]) {
         updatedAny = true;
       }
     }
-    // 2. Automatic Mark Complete: Check-out schedule is done (check_out <= today) and booking is approved/paid
-    else if ((b.status === "approved" || isPaid) && b.check_out <= today) {
+    // 2. Automatic Mark Complete: Check-out schedule is done (check_out < today) and booking is approved/paid
+    else if ((b.status === "approved" || isPaid) && b.check_out < today) {
       const { error } = await supabase.from("bookings").update({ status: "completed" }).eq("id", b.id);
       if (!error) {
         b.status = "completed";
