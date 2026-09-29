@@ -327,12 +327,10 @@ function BookPage() {
           .then((res: { error: Error | null }) => {
             if (res?.error) {
               console.warn("Email notification failed:", res.error.message);
-              toast.warning("Booking saved, but email notification could not be sent.");
             }
           })
           .catch((err: Error) => {
             console.warn("Email system error:", err.message);
-            toast.warning("Booking saved, but email notification could not be sent.");
           });
       }
 
