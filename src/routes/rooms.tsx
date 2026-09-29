@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Search } from "lucide-react";
+import { Users, Search, Info } from "lucide-react";
 
 export const Route = createFileRoute("/rooms")({
   head: () => ({
@@ -120,6 +120,24 @@ function RoomsPage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-3 text-xs sm:text-sm">
+            <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+              <Info className="h-4 w-4" /> Legend:
+            </span>
+            <span className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-green-500"></div> Available
+            </span>
+            <span className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-yellow-400"></div> Limited
+            </span>
+            <span className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-red-500"></div> Not Available
+            </span>
+            <span className="flex items-center gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-slate-500"></div> Maintenance
+            </span>
           </div>
         </div>
 
