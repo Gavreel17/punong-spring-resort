@@ -531,6 +531,21 @@ function Dashboard() {
                           <span>Name: <strong className="text-slate-900">{b.guest_name}</strong></span>
                           <span>Ref ID: <strong className="font-mono bg-slate-200/80 px-1.5 py-0.5 rounded text-[10px] text-slate-800">{formatBookingReference(b)}</strong></span>
                           <span>Contact: <strong>{b.guest_email}</strong> • <strong>{b.guest_phone}</strong></span>
+                          {b.room?.type === "cottage" && (
+                            <span className="flex items-center gap-1.5">
+                              Stay Type:{" "}
+                              <strong className={cn(
+                                "px-2 py-0.5 rounded font-semibold text-[11px]",
+                                (b.stay_type === "overnight" || Number(b.overnight_fee) > 0 || b.special_requests?.toLowerCase().includes("overnight"))
+                                  ? "bg-amber-100 text-amber-900 border border-amber-300"
+                                  : "bg-slate-200/70 text-slate-800"
+                              )}>
+                                {(b.stay_type === "overnight" || Number(b.overnight_fee) > 0 || b.special_requests?.toLowerCase().includes("overnight"))
+                                  ? "Overnight Stay (+₱1,000 Fee)"
+                                  : "Day Use (₱0 Fee)"}
+                              </strong>
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -573,6 +588,11 @@ function Dashboard() {
                         <span className="text-2xl font-extrabold text-[#B38728] font-display">
                           ₱{Number(b.total_amount).toLocaleString()}
                         </span>
+                        {b.room?.type === "cottage" && (b.stay_type === "overnight" || Number(b.overnight_fee) > 0 || b.special_requests?.toLowerCase().includes("overnight")) && (
+                          <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded block mt-0.5 font-medium">
+                            Includes ₱1,000 Overnight Cottage Fee
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex flex-col sm:items-end gap-3">

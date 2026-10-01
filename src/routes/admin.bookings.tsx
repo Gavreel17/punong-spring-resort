@@ -52,14 +52,14 @@ function BookingsTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*, room:rooms(name), profile:profiles!bookings_user_id_fkey(fullname,email), payments(id, amount, status, notes, receipt_url)")
+        .select("*, room:rooms(name, type, price), profile:profiles!bookings_user_id_fkey(fullname,email), payments(id, amount, status, notes, receipt_url)")
         .order("created_at", { ascending: false });
 
       if (error) {
         console.warn("Primary bookings query error, trying fallback query:", error);
         const { data: fallbackData, error: fallbackError } = await supabase
           .from("bookings")
-          .select("*, room:rooms(name), payments(id, amount, status, notes, receipt_url)")
+          .select("*, room:rooms(name, type, price), payments(id, amount, status, notes, receipt_url)")
           .order("created_at", { ascending: false });
 
         if (fallbackError) {
@@ -384,6 +384,19 @@ function BookingsTab() {
               const isResort = notes.method === "resort";
               const initial = b.guest_name ? b.guest_name[0].toUpperCase() : "G";
 
+              const isCottage = b.room?.type === "cottage";
+              const rawStayType = b.stay_type || 
+                (b.special_requests?.toLowerCase().includes("overnight stay") || b.special_requests?.toLowerCase().includes("overnight cottage fee") 
+                  ? "overnight" 
+                  : b.special_requests?.toLowerCase().includes("day use") 
+                  ? "day_use" 
+                  : null);
+              const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number(b.overnight_fee) > 0);
+              const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number(b.overnight_fee) || 1000) : 0) : 0;
+              const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
+              const totalAmount = Number(b.total_amount) || 0;
+              const accommodationSubtotal = isCottage ? Math.max(0, totalAmount - cottageOvernightFee) : totalAmount;
+
               return (
                 <TableRow key={b.id} className="hover:bg-slate-50/80 transition-colors border-b border-slate-100">
                   <TableCell className="py-4">
@@ -406,7 +419,7 @@ function BookingsTab() {
                       {b.room?.name || "Room"}
                       {b.room?.type && (
                         <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                          {b.room.type}
+                          {b.room.type === "villa" ? "Function Hall" : b.room.type}
                         </span>
                       )}
                     </div>
@@ -415,13 +428,43 @@ function BookingsTab() {
                       <span className="text-slate-300">→</span> 
                       <span className="font-medium text-slate-700">{b.check_out}</span>
                     </div>
+                    {/* ONLY for Cottage: show Stay Type badge */}
+                    {isCottage && (
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className="text-[11px] text-slate-500">Stay Type:</span>
+                        <span className={cn(
+                          "text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider",
+                          isOvernightCottage 
+                            ? "bg-amber-100 text-amber-900 border border-amber-300"
+                            : "bg-slate-100 text-slate-700 border border-slate-200"
+                        )}>
+                          {stayTypeLabel}
+                        </span>
+                      </div>
+                    )}
                   </TableCell>
 
                   <TableCell className="py-4">
                     <div className="font-display font-extrabold text-[#B38728] text-base">
-                      ₱{Number(b.total_amount).toLocaleString()}
+                      ₱{totalAmount.toLocaleString()}
                     </div>
-                    <div className="text-[10px] text-slate-400 uppercase font-semibold">Total Stay</div>
+                    {/* ONLY for Cottage: show breakdown of Subtotal and Overnight Cottage Fee */}
+                    {isCottage ? (
+                      <div className="text-[11px] text-slate-500 mt-1 space-y-0.5 border-t border-slate-100 pt-1">
+                        <div className="flex justify-between gap-2">
+                          <span>Subtotal:</span>
+                          <span className="font-medium text-slate-700">₱{accommodationSubtotal.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between gap-2">
+                          <span>Overnight Fee:</span>
+                          <span className={isOvernightCottage ? "font-bold text-[#B38728]" : "text-slate-600"}>
+                            ₱{cottageOvernightFee.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-slate-400 uppercase font-semibold">Total Stay</div>
+                    )}
                   </TableCell>
 
                   <TableCell className="py-4">

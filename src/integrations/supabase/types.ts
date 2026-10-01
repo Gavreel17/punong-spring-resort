@@ -22,6 +22,8 @@ export type Database = {
           booking_status: string | null;
           reservation_color: string | null;
           deleted_at?: string | null;
+          stay_type?: string | null;
+          overnight_fee?: number | null;
         };
         Insert: {
           check_in: string;
@@ -41,6 +43,8 @@ export type Database = {
           booking_status?: string | null;
           reservation_color?: string | null;
           deleted_at?: string | null;
+          stay_type?: string | null;
+          overnight_fee?: number | null;
         };
         Update: {
           check_in?: string;
@@ -60,6 +64,8 @@ export type Database = {
           booking_status?: string | null;
           reservation_color?: string | null;
           deleted_at?: string | null;
+          stay_type?: string | null;
+          overnight_fee?: number | null;
         };
         Relationships: [
           {

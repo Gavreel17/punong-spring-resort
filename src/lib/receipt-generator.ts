@@ -15,6 +15,8 @@ export interface BookingData {
   total_amount: number | string;
   status: string;
   special_requests?: string | null;
+  stay_type?: string | null;
+  overnight_fee?: number | null;
   created_at?: string;
   room?: {
     id?: string;
@@ -254,7 +256,18 @@ export async function generateAndDownloadReceiptPdf(
     // 3. Extract calculations and metadata
     const nights = calculateNights(booking.check_in, booking.check_out);
     const totalAmount = Number(booking.total_amount) || 0;
-    const roomPrice = Number(booking.room?.price) || (nights > 0 ? totalAmount / nights : totalAmount);
+    const isCottage = booking.room?.type === "cottage";
+    const rawStayType = booking.stay_type ||
+      (booking.special_requests?.toLowerCase().includes("overnight stay") || booking.special_requests?.toLowerCase().includes("overnight cottage fee")
+        ? "overnight"
+        : booking.special_requests?.toLowerCase().includes("day use")
+        ? "day_use"
+        : null);
+    const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number(booking.overnight_fee) > 0);
+    const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number(booking.overnight_fee) || 1000) : 0) : 0;
+    const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
+    const roomPrice = Number(booking.room?.price) || (nights > 0 ? (totalAmount - cottageOvernightFee) / nights : totalAmount);
+    const accommodationSubtotal = roomPrice * nights;
 
     const payment = booking.payments?.[0];
     let notes: any = {};
@@ -400,14 +413,23 @@ export async function generateAndDownloadReceiptPdf(
     doc.text("Stay Duration:", rightCardX + 5, cardY + 26);
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "bold");
-    doc.text(`${nights} Night${nights > 1 ? "s" : ""}`, rightCardX + cardWidth - 5, cardY + 26, { align: "right" });
+    doc.text(isCottage ? `${nights} Day${nights > 1 ? "s" : ""}` : `${nights} Night${nights > 1 ? "s" : ""}`, rightCardX + cardWidth - 5, cardY + 26, { align: "right" });
 
-    doc.setTextColor(71, 85, 105);
-    doc.setFont("helvetica", "normal");
-    doc.text("Total Guests:", rightCardX + 5, cardY + 32);
-    doc.setTextColor(15, 23, 42);
-    doc.setFont("helvetica", "bold");
-    doc.text(`${booking.guests} Guest${booking.guests > 1 ? "s" : ""}`, rightCardX + cardWidth - 5, cardY + 32, { align: "right" });
+    if (isCottage) {
+      doc.setTextColor(71, 85, 105);
+      doc.setFont("helvetica", "normal");
+      doc.text("Stay Type:", rightCardX + 5, cardY + 32);
+      doc.setTextColor(179, 135, 40); // Gold
+      doc.setFont("helvetica", "bold");
+      doc.text(stayTypeLabel, rightCardX + cardWidth - 5, cardY + 32, { align: "right" });
+    } else {
+      doc.setTextColor(71, 85, 105);
+      doc.setFont("helvetica", "normal");
+      doc.text("Total Guests:", rightCardX + 5, cardY + 32);
+      doc.setTextColor(15, 23, 42);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${booking.guests} Guest${booking.guests > 1 ? "s" : ""}`, rightCardX + cardWidth - 5, cardY + 32, { align: "right" });
+    }
 
     // ==========================================
     // SECTION 3: CHARGES TABLE
@@ -421,11 +443,11 @@ export async function generateAndDownloadReceiptPdf(
     doc.setFontSize(7.5);
     doc.text("ITEM / ACCOMMODATION", margin + 6, tableY + 5.5);
     doc.text("TYPE", margin + 85, tableY + 5.5);
-    doc.text("RATE / NIGHT", margin + 122, tableY + 5.5, { align: "center" });
-    doc.text("NIGHTS", margin + 148, tableY + 5.5, { align: "center" });
+    doc.text(isCottage ? "RATE / DAY" : "RATE / NIGHT", margin + 122, tableY + 5.5, { align: "center" });
+    doc.text(isCottage ? "DAYS" : "NIGHTS", margin + 148, tableY + 5.5, { align: "center" });
     doc.text("AMOUNT (PHP)", pageWidth - margin - 6, tableY + 5.5, { align: "right" });
 
-    // Table Content Row
+    // Table Content Row 1: Accommodation
     const rowY = tableY + 16;
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "bold");
@@ -446,11 +468,31 @@ export async function generateAndDownloadReceiptPdf(
     doc.setFont("helvetica", "bold");
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(9.5);
-    doc.text(`PHP ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, rowY, { align: "right" });
+    const itemAmount = isCottage ? accommodationSubtotal : totalAmount;
+    doc.text(`PHP ${itemAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, rowY, { align: "right" });
+
+    let finalRowY = rowY;
+    if (isOvernightCottage) {
+      finalRowY = rowY + 7;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(8.5);
+      doc.text("Overnight Cottage Fee", margin + 6, finalRowY);
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text("ONE-TIME FEE", margin + 85, finalRowY);
+      doc.setTextColor(51, 65, 85);
+      doc.text("PHP 1,000.00", margin + 122, finalRowY, { align: "center" });
+      doc.text("1", margin + 148, finalRowY, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(8.5);
+      doc.text("PHP 1,000.00", pageWidth - margin - 6, finalRowY, { align: "right" });
+    }
 
     // Table divider line
     doc.setDrawColor(226, 232, 240);
-    doc.line(margin, rowY + 6, pageWidth - margin, rowY + 6);
+    doc.line(margin, finalRowY + 6, pageWidth - margin, finalRowY + 6);
 
     // ==========================================
     // SECTION 4: PAYMENT & FINANCIAL SUMMARY
@@ -490,32 +532,61 @@ export async function generateAndDownloadReceiptPdf(
 
     // Right summary: Financial breakdown
     const splitX = pageWidth - margin - 72;
-    doc.setTextColor(100, 116, 139);
-    doc.setFontSize(7.5);
-    doc.text("Subtotal:", splitX, summaryY + 9);
-    doc.setTextColor(15, 23, 42);
-    doc.text(`PHP ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 9, { align: "right" });
-
-    doc.setTextColor(100, 116, 139);
-    doc.text("Taxes & Resort Fees:", splitX, summaryY + 15);
-    doc.setTextColor(15, 23, 42);
-    doc.text("PHP 0.00 (Included)", pageWidth - margin - 6, summaryY + 15, { align: "right" });
-
-    doc.setDrawColor(203, 213, 225);
-    doc.line(splitX, summaryY + 18, pageWidth - margin - 6, summaryY + 18);
-
-    doc.setTextColor(15, 23, 42);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10.5);
-    doc.text("Total Stay Price:", splitX, summaryY + 25);
-    doc.setTextColor(179, 135, 40); // Gold
-    doc.text(`PHP ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 25, { align: "right" });
-
     const balanceDue = isPaid ? 0 : totalAmount;
-    doc.setFontSize(8.5);
-    doc.setTextColor(isPaid ? 21 : 180, isPaid ? 128 : 83, isPaid ? 61 : 9);
-    doc.text("Balance Due:", splitX, summaryY + 31);
-    doc.text(`PHP ${balanceDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 31, { align: "right" });
+
+    if (isCottage) {
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(7);
+      doc.text("Accommodation Subtotal:", splitX, summaryY + 7);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`PHP ${accommodationSubtotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 7, { align: "right" });
+
+      doc.setTextColor(100, 116, 139);
+      doc.text("Overnight Cottage Fee:", splitX, summaryY + 12);
+      doc.setTextColor(isOvernightCottage ? 179 : 15, isOvernightCottage ? 135 : 23, isOvernightCottage ? 40 : 42);
+      doc.text(`PHP ${cottageOvernightFee.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 12, { align: "right" });
+
+      doc.setDrawColor(203, 213, 225);
+      doc.line(splitX, summaryY + 16, pageWidth - margin - 6, summaryY + 16);
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Total Stay Price:", splitX, summaryY + 23);
+      doc.setTextColor(179, 135, 40); // Gold
+      doc.text(`PHP ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 23, { align: "right" });
+
+      doc.setFontSize(8.5);
+      doc.setTextColor(isPaid ? 21 : 180, isPaid ? 128 : 83, isPaid ? 61 : 9);
+      doc.text("Balance Due:", splitX, summaryY + 29);
+      doc.text(`PHP ${balanceDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 29, { align: "right" });
+    } else {
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(7.5);
+      doc.text("Subtotal:", splitX, summaryY + 9);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`PHP ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 9, { align: "right" });
+
+      doc.setTextColor(100, 116, 139);
+      doc.text("Taxes & Resort Fees:", splitX, summaryY + 15);
+      doc.setTextColor(15, 23, 42);
+      doc.text("PHP 0.00 (Included)", pageWidth - margin - 6, summaryY + 15, { align: "right" });
+
+      doc.setDrawColor(203, 213, 225);
+      doc.line(splitX, summaryY + 18, pageWidth - margin - 6, summaryY + 18);
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.text("Total Stay Price:", splitX, summaryY + 25);
+      doc.setTextColor(179, 135, 40); // Gold
+      doc.text(`PHP ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 25, { align: "right" });
+
+      doc.setFontSize(8.5);
+      doc.setTextColor(isPaid ? 21 : 180, isPaid ? 128 : 83, isPaid ? 61 : 9);
+      doc.text("Balance Due:", splitX, summaryY + 31);
+      doc.text(`PHP ${balanceDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin - 6, summaryY + 31, { align: "right" });
+    }
 
     // ==========================================
     // SECTION 5: VERIFICATION SEAL & SECURITY HASH

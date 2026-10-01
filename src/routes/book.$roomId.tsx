@@ -21,6 +21,7 @@ import { AlertCircle, Banknote, ArrowLeft, Check, Loader2 } from "lucide-react";
 import { DayButton } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -58,7 +59,7 @@ function BookPage() {
     guests: 1,
   });
 
-
+  const [stayType, setStayType] = useState<"day_use" | "overnight">("day_use");
 
   const [submitting, setSubmitting] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
@@ -230,7 +231,9 @@ function BookPage() {
   const numGuests = Number(form.guests) || 1;
   const extraPersons = isUnlimited ? 0 : Math.max(0, numGuests - regularGuestsIncluded);
 
-  const additionalFee = room?.type === "room" ? (singleFoamBeds * 300) + (doubleFoamBeds * 600) : 0;
+  const isCottage = room?.type === "cottage";
+  const cottageOvernightFee = isCottage && stayType === "overnight" ? 1000 : 0;
+  const additionalFee = room?.type === "room" ? (singleFoamBeds * 300) + (doubleFoamBeds * 600) : (isCottage ? cottageOvernightFee : 0);
 
   const nights =
     form.check_in && form.check_out
@@ -304,29 +307,49 @@ function BookPage() {
         if (extraPersons > 0) extraDetails.push(`Extra Persons: ${extraPersons}`);
         if (singleFoamBeds > 0) extraDetails.push(`${singleFoamBeds} Single Foam Bed(s) (₱${singleFoamBeds * 300})`);
         if (doubleFoamBeds > 0) extraDetails.push(`${doubleFoamBeds} Double Foam Bed(s) (₱${doubleFoamBeds * 600})`);
+      } else if (isCottage) {
+        extraDetails.push(`Stay Type: ${stayType === "overnight" ? "Overnight Stay" : "Day Use"}`);
+        extraDetails.push(`Overnight Cottage Fee: ₱${cottageOvernightFee.toLocaleString()}`);
       }
       
       const specialRequestsText = extraDetails.length > 0
         ? extraDetails.join(" | ")
         : null;
 
-      const { data: newBooking, error } = await supabase
+      const bookingInsertData: any = {
+        user_id: user.id,
+        room_id: room.id,
+        guest_name: form.fullname,
+        guest_email: form.email,
+        guest_phone: form.phone,
+        check_in: form.check_in,
+        check_out: form.check_out,
+        guests: form.guests,
+        total_amount: totalAmount,
+        special_requests: specialRequestsText,
+        status: "approved",
+        stay_type: isCottage ? stayType : null,
+        overnight_fee: isCottage ? cottageOvernightFee : 0,
+      };
+
+      let { data: newBooking, error } = await supabase
         .from("bookings")
-        .insert({
-          user_id: user.id,
-          room_id: room.id,
-          guest_name: form.fullname,
-          guest_email: form.email,
-          guest_phone: form.phone,
-          check_in: form.check_in,
-          check_out: form.check_out,
-          guests: form.guests,
-          total_amount: totalAmount,
-          special_requests: specialRequestsText,
-          status: "approved",
-        })
+        .insert(bookingInsertData)
         .select()
         .single();
+
+      if (error && (error.message?.includes("stay_type") || error.message?.includes("overnight_fee") || error.details?.includes("stay_type"))) {
+        console.warn("Retrying booking insert without stay_type/overnight_fee columns:", error);
+        delete bookingInsertData.stay_type;
+        delete bookingInsertData.overnight_fee;
+        const retryResult = await supabase
+          .from("bookings")
+          .insert(bookingInsertData)
+          .select()
+          .single();
+        newBooking = retryResult.data;
+        error = retryResult.error;
+      }
 
       if (error) {
         MySwal.fire("Error!", error.message, "error");
@@ -628,6 +651,83 @@ function BookPage() {
 
           <h2 className="text-xl font-semibold mb-4 border-t pt-6">2. Guest Details</h2>
           <form id="booking-form" onSubmit={handleInitiateBooking} className="grid gap-6">
+            {/* Stay Type: STRICTLY ONLY for Cottage category */}
+            {isCottage && (
+              <div className="bg-slate-50/90 p-4 sm:p-5 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200 pb-2.5">
+                  <div>
+                    <Label className="font-bold text-slate-900 text-sm uppercase tracking-wider block">
+                      Stay Type <span className="text-red-500">*</span>
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Choose between daytime use or overnight cottage accommodation
+                    </p>
+                  </div>
+                  {stayType === "overnight" ? (
+                    <span className="text-xs bg-[#D4AF37]/15 text-[#8C6B1B] border border-[#D4AF37]/40 px-2.5 py-1 rounded-full font-bold inline-flex items-center gap-1 self-start sm:self-auto">
+                      +₱1,000 Overnight Cottage Fee
+                    </span>
+                  ) : (
+                    <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold inline-flex items-center gap-1 self-start sm:self-auto">
+                      ₱0 Additional Fee
+                    </span>
+                  )}
+                </div>
+
+                <RadioGroup
+                  value={stayType}
+                  onValueChange={(val: "day_use" | "overnight") => setStayType(val)}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1"
+                >
+                  <label
+                    htmlFor="stay-type-day-use"
+                    className={cn(
+                      "flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all",
+                      stayType === "day_use"
+                        ? "bg-white border-primary shadow-xs ring-1 ring-primary/20"
+                        : "bg-white border-slate-200 hover:border-slate-300"
+                    )}
+                  >
+                    <RadioGroupItem value="day_use" id="stay-type-day-use" className="mt-0.5" />
+                    <div className="space-y-0.5">
+                      <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                        Day Use
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                          Regular Rate
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Daytime cottage use only (₱0 overnight fee)
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="stay-type-overnight"
+                    className={cn(
+                      "flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all",
+                      stayType === "overnight"
+                        ? "bg-amber-50/70 border-[#D4AF37] shadow-xs ring-1 ring-[#D4AF37]/40"
+                        : "bg-white border-slate-200 hover:border-slate-300"
+                    )}
+                  >
+                    <RadioGroupItem value="overnight" id="stay-type-overnight" className="mt-0.5" />
+                    <div className="space-y-0.5">
+                      <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                        Overnight Stay
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#D4AF37]/20 text-[#8C6B1B] px-2 py-0.5 rounded">
+                          +₱1,000 fee
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Includes overnight access. ₱1,000 charged once per cottage booking.
+                      </p>
+                    </div>
+                  </label>
+                </RadioGroup>
+              </div>
+            )}
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label>Full Name <span className="text-red-500">*</span></Label>
@@ -810,9 +910,9 @@ function BookPage() {
             <p className="text-sm text-muted-foreground capitalize">{room.type} · up to {room.capacity} guests</p>
             <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between">
-                <span>Rate</span>
+                <span>{isCottage ? "Cottage Rate" : "Rate"}</span>
                 <span>
-                  ₱{Number(room.price).toLocaleString()} {room?.type === "cottage" ? "/ day" : "/ night"}
+                  ₱{Number(room.price).toLocaleString()} {isCottage ? "/ day" : "/ night"}
                 </span>
               </div>
               {form.check_in && (
@@ -828,17 +928,41 @@ function BookPage() {
                 </div>
               )}
               <div className="flex justify-between">
-                <span>{room?.type === "cottage" ? "Days" : "Nights"}</span>
+                <span>{isCottage ? "Days" : "Nights"}</span>
                 <span>{nights > 0 ? nights : 0}</span>
               </div>
+
+              {/* ONLY for Cottage category: Subtotal, Stay Type, and Overnight Cottage Fee */}
+              {isCottage && (
+                <>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Accommodation Subtotal</span>
+                    <span>₱{baseTotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Stay Type</span>
+                    <span className="font-medium capitalize">{stayType === "overnight" ? "Overnight Stay" : "Day Use"}</span>
+                  </div>
+                  <div className="flex justify-between font-medium">
+                    <span>Overnight Cottage Fee</span>
+                    <span className={stayType === "overnight" ? "text-primary font-bold" : "text-slate-500"}>
+                      ₱{cottageOvernightFee.toLocaleString()}
+                    </span>
+                  </div>
+                </>
+              )}
+
+              {/* ONLY for Room category: Foam Bed Additional Fee */}
               {room?.type === "room" && additionalFee > 0 && (
                 <div className="flex justify-between text-emerald-700 font-medium">
                   <span>Additional Fee</span>
                   <span>+₱{additionalFee.toLocaleString()}</span>
                 </div>
               )}
+
               <div className="flex justify-between text-base font-bold pt-2 border-t border-border">
-                <span>Total Amount</span><span className="text-primary">₱{totalAmount > 0 ? totalAmount.toLocaleString() : 0}</span>
+                <span>Total Amount</span>
+                <span className="text-primary">₱{totalAmount > 0 ? totalAmount.toLocaleString() : 0}</span>
               </div>
             </div>
           </Card>
@@ -922,6 +1046,30 @@ function BookPage() {
                   {form.email} • {form.phone}
                 </span>
               </div>
+
+              {/* ONLY for Cottage reservations: Stay Type and Overnight Fee Breakdown */}
+              {isCottage && (
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
+                    <span className="text-slate-500">Stay Type:</span>
+                    <strong className="text-slate-900 text-left sm:text-right">
+                      {stayType === "overnight" ? "Overnight Stay" : "Day Use"}
+                    </strong>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
+                    <span className="text-slate-500">Accommodation Subtotal:</span>
+                    <strong className="text-slate-900 text-left sm:text-right">
+                      ₱{baseTotal.toLocaleString()}
+                    </strong>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
+                    <span className="text-slate-500">Overnight Cottage Fee:</span>
+                    <strong className={cn("text-left sm:text-right", stayType === "overnight" ? "text-[#B38728] font-bold" : "text-slate-900")}>
+                      ₱{cottageOvernightFee.toLocaleString()}
+                    </strong>
+                  </div>
+                </>
+              )}
 
               <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                 <span className="font-semibold text-slate-700">Total Price:</span>

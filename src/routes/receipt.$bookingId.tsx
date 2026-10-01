@@ -80,6 +80,19 @@ function ReceiptPage() {
     try { notes = JSON.parse(payment.notes); } catch (e) {}
   }
 
+  const isCottage = booking.room?.type === "cottage";
+  const rawStayType = (booking as any).stay_type || 
+    (booking.special_requests?.toLowerCase().includes("overnight stay") || booking.special_requests?.toLowerCase().includes("overnight cottage fee") 
+      ? "overnight" 
+      : booking.special_requests?.toLowerCase().includes("day use") 
+      ? "day_use" 
+      : null);
+  const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number((booking as any).overnight_fee) > 0);
+  const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number((booking as any).overnight_fee) || 1000) : 0) : 0;
+  const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
+  const totalAmount = Number(booking.total_amount) || 0;
+  const accommodationSubtotal = isCottage ? Math.max(0, totalAmount - cottageOvernightFee) : totalAmount;
+
   return (
     <div className="min-h-screen bg-slate-50 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-2xl mx-auto">
@@ -175,6 +188,13 @@ function ReceiptPage() {
                       Check-out: {new Date(booking.check_out).toLocaleDateString()}
                       <br />
                       Guests: {booking.guests}
+                      {isCottage && (
+                        <>
+                          <br />
+                          <span className="font-medium text-slate-700">Stay Type: </span>
+                          <span className="font-semibold text-slate-900">{stayTypeLabel}</span>
+                        </>
+                      )}
                       {booking.special_requests && (
                         <>
                           <br />
@@ -186,18 +206,46 @@ function ReceiptPage() {
                     </p>
                   </td>
                   <td className="py-4 text-right font-medium text-slate-800 align-top text-sm sm:text-base">
-                    ₱{Number(booking.total_amount).toLocaleString()}
+                    ₱{accommodationSubtotal.toLocaleString()}
                   </td>
                 </tr>
+
+                {isCottage && (
+                  <tr className="border-b border-slate-100 bg-slate-50/50">
+                    <td className="py-3 pr-2">
+                      <p className="font-medium text-slate-800 text-xs sm:text-sm">Overnight Cottage Fee</p>
+                      <p className="text-[11px] text-slate-500">
+                        {isOvernightCottage ? "Overnight stay cottage charge" : "Day use cottage (₱0 fee)"}
+                      </p>
+                    </td>
+                    <td className="py-3 text-right font-medium text-slate-800 align-top text-xs sm:text-sm">
+                      ₱{cottageOvernightFee.toLocaleString()}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
 
           <div className="flex justify-end mb-6 sm:mb-8">
-            <div className="w-full sm:w-64">
-              <div className="flex justify-between items-center py-2 border-b border-slate-200 font-bold text-base sm:text-lg">
-                <span>Total</span>
-                <span className="text-primary">₱{Number(booking.total_amount).toLocaleString()}</span>
+            <div className="w-full sm:w-72 space-y-1.5">
+              {isCottage && (
+                <>
+                  <div className="flex justify-between items-center text-xs sm:text-sm text-slate-600">
+                    <span>Accommodation Subtotal</span>
+                    <span>₱{accommodationSubtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs sm:text-sm text-slate-600">
+                    <span>Overnight Cottage Fee</span>
+                    <span className={isOvernightCottage ? "font-semibold text-primary" : ""}>
+                      ₱{cottageOvernightFee.toLocaleString()}
+                    </span>
+                  </div>
+                </>
+              )}
+              <div className="flex justify-between items-center py-2 border-t border-slate-200 font-bold text-base sm:text-lg">
+                <span>Total Amount</span>
+                <span className="text-primary">₱{totalAmount.toLocaleString()}</span>
               </div>
             </div>
           </div>
