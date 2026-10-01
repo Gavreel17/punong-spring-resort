@@ -195,58 +195,34 @@ function formatDate(dateStr: string): string {
 }
 
 /**
- * Universal cross-platform Blob downloader & mobile file saver
- * Works seamlessly on Android Chrome, iOS Safari, mobile WebViews, tablets, and desktop
+ * Returns required Word document filename: Punong-Resort-Receipt-[BookingReference].doc
+ * Example: Punong-Resort-Receipt-PRS-2026-BB6AB14D.doc
  */
-export async function triggerDirectBlobDownload(blob: Blob, filename: string): Promise<boolean> {
+export function getReceiptWordFilename(booking: { id: string; created_at?: string; check_in?: string }): string {
+  const ref = formatBookingReference(booking);
+  return `Punong-Resort-Receipt-${ref}.doc`;
+}
+
+/**
+ * Universal cross-platform Blob downloader & mobile file saver
+ * Works seamlessly on Android Chrome, iOS Safari, mobile WebViews, tablets, and desktop.
+ * Ensures the actual file is directly downloaded and placed in the device's Downloads directory.
+ */
+export async function triggerDirectBlobDownload(
+  blob: Blob,
+  filename: string,
+  mimeType: string = "application/octet-stream"
+): Promise<boolean> {
   try {
-    const fileBlob = blob instanceof Blob ? blob : new Blob([blob], { type: "application/pdf" });
+    const fileBlob = blob instanceof Blob ? blob : new Blob([blob], { type: mimeType });
     const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isIOS = typeof navigator !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // 1. Mobile Web Share API (Official standard for saving files on modern phones)
-    // On Android & iOS, sharing a file opens the native system sheet where the user can
-    // directly tap "Save to Files" (iOS) or "Save to device / Downloads / Drive" (Android).
-    if (isMobile && typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
-      try {
-        const file = new File([fileBlob], filename, { type: "application/pdf" });
-        if ((navigator as any).canShare({ files: [file] })) {
-          await (navigator as any).share({
-            files: [file],
-            title: filename,
-            text: "Punong Spring Resort Official Booking Receipt",
-          });
-          return true;
-        }
-      } catch (shareErr: any) {
-        if (shareErr?.name === "AbortError") {
-          return true; // User intentionally dismissed share sheet
-        }
-        console.warn("Native share failed or not allowed, trying direct download fallback:", shareErr);
-      }
-    }
-
-    // 2. Legacy IE/Edge support
-    if (typeof (window.navigator as any)?.msSaveOrOpenBlob === "function") {
-      (window.navigator as any).msSaveOrOpenBlob(fileBlob, filename);
-      return true;
-    }
-
-    // 3. Blob URL creation
+    // 1. Create a persistent blob URL
     const blobUrl = window.URL.createObjectURL(fileBlob);
 
-    // 4. iOS Safari: does not support <a download> on blob URLs.
-    // Opening the blob URL in a new tab allows iOS Safari to display the PDF directly,
-    // where the user can view it and tap "Share -> Save to Files".
-    if (isIOS) {
-      const opened = window.open(blobUrl, "_blank");
-      if (!opened) {
-        window.location.href = blobUrl;
-      }
-      return true;
-    }
-
-    // 5. Android & Desktop: anchor download
+    // 2. Direct anchor download
+    // This directly puts the file into the phone's "Downloads" folder on Android/iOS/Desktop.
     const anchor = document.createElement("a");
     anchor.style.position = "fixed";
     anchor.style.left = "-99999px";
@@ -268,16 +244,457 @@ export async function triggerDirectBlobDownload(blob: Blob, filename: string): P
       } catch (e) {}
     }, 2000);
 
-    // Keep blob URL alive for 2 minutes so Android download manager has plenty of time to finish
+    // Keep blob URL alive for at least 3 minutes so Android Download Manager service can finish saving the file
     setTimeout(() => {
       try {
         window.URL.revokeObjectURL(blobUrl);
       } catch (e) {}
-    }, 120000);
+    }, 180000);
+
+    // 3. For mobile devices, also prompt native sharing/opening in apps (WPS Office, Word, etc.)
+    // We launch this without blocking so the file is guaranteed to be saved in Downloads already!
+    if (isMobile && typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
+      try {
+        const shareFile = new File([fileBlob], filename, { type: mimeType });
+        if ((navigator as any).canShare({ files: [shareFile] })) {
+          // Provide non-blocking app picker (allows opening directly in WPS Office / Word)
+          (navigator as any).share({
+            files: [shareFile],
+            title: filename,
+            text: "Punong Spring Resort Official Booking Receipt - Open in WPS Office or Word",
+          }).catch(() => {
+            // Dismissal is normal; the file is already downloaded to the device
+          });
+        }
+      } catch (shareErr) {
+        console.warn("Share sheet optional prompt not shown:", shareErr);
+      }
+    } else if (isIOS) {
+      // iOS Safari fallback in case anchor was ignored
+      setTimeout(() => {
+        try {
+          const opened = window.open(blobUrl, "_blank");
+          if (!opened) {
+            window.location.href = blobUrl;
+          }
+        } catch (e) {}
+      }, 300);
+    }
 
     return true;
   } catch (err) {
     console.error("Direct blob download error:", err);
+    return false;
+  }
+}
+
+/**
+ * Builds standard, clean HTML markup formatted specifically for Microsoft Word and WPS Office (.doc).
+ * Includes resort header, booking reference, customer info, Cottage Stay Type, Overnight Fee, payment verification, and seal.
+ */
+export function generateReceiptWordHtml(booking: BookingData, settings: ResortSettings): string {
+  const ref = formatBookingReference(booking);
+  const isCottage = booking.room?.type === "cottage";
+  const rawStayType = booking.stay_type || 
+    (booking.special_requests?.toLowerCase().includes("overnight stay") || booking.special_requests?.toLowerCase().includes("overnight cottage fee") 
+      ? "overnight" 
+      : booking.special_requests?.toLowerCase().includes("day use") 
+      ? "day_use" 
+      : null);
+  const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number(booking.overnight_fee) > 0);
+  const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number(booking.overnight_fee) || 1000) : 0) : 0;
+  const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
+  const totalAmount = Number(booking.total_amount) || 0;
+  const accommodationSubtotal = isCottage ? Math.max(0, totalAmount - cottageOvernightFee) : totalAmount;
+  const nights = calculateNights(booking.check_in, booking.check_out);
+  const checkInFormatted = formatDate(booking.check_in);
+  const checkOutFormatted = formatDate(booking.check_out);
+  const issueDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  
+  const payment = booking.payments?.[0];
+  let notes: any = {};
+  if (payment?.notes) {
+    try { notes = JSON.parse(payment.notes); } catch (e) {}
+  }
+  const isPaid = booking.status === "approved" || payment?.status === "paid" || (payment && payment.amount && payment.amount >= totalAmount);
+  const isPending = !isPaid && (booking.status === "pending" || payment?.status === "pending");
+  const paymentMethodText = notes?.method ? (notes.method === "gcash" ? "GCash Online" : notes.method) : "Cash / Front Desk";
+  const gcashRef = notes?.referenceNumber || "";
+  const balanceDue = isPaid ? 0 : totalAmount;
+  const roomPrice = Number(booking.room?.price) || accommodationSubtotal;
+  const roomName = booking.room?.name || "Resort Accommodation";
+  const roomType = booking.room?.type === "villa" ? "Function Hall" : (booking.room?.type === "cottage" ? "Cottage" : "Room");
+  const hashStr = (booking.id || "").replace(/-/g, "").toUpperCase().slice(0, 16);
+
+  return `<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset='utf-8'>
+  <title>Punong Spring Resort - Official Receipt ${ref}</title>
+  <!--[if gte mso 9]>
+  <xml>
+    <w:WordDocument>
+      <w:View>Print</w:View>
+      <w:Zoom>100</w:Zoom>
+      <w:DoNotOptimizeForBrowser/>
+    </w:WordDocument>
+  </xml>
+  <![endif]-->
+  <style>
+    @page Section1 {
+      size: 8.5in 11.0in;
+      margin: 0.6in 0.6in 0.6in 0.6in;
+      mso-header-margin: 0.5in;
+      mso-footer-margin: 0.5in;
+    }
+    div.Section1 { page: Section1; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.4;
+      color: #1e293b;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .header-table {
+      border-bottom: 3px solid #D4AF37;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+    }
+    .resort-name {
+      font-size: 22pt;
+      font-weight: bold;
+      color: #0F5132;
+      margin: 0;
+    }
+    .resort-meta {
+      font-size: 9pt;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    .receipt-title {
+      font-size: 18pt;
+      font-weight: bold;
+      color: #0f172a;
+      text-align: right;
+      margin: 0;
+    }
+    .receipt-ref {
+      font-size: 11pt;
+      font-weight: bold;
+      color: #B38728;
+      text-align: right;
+      margin-top: 4px;
+    }
+    .section-header {
+      background-color: #f1f5f9;
+      border-left: 4px solid #D4AF37;
+      padding: 6px 10px;
+      font-size: 10pt;
+      font-weight: bold;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 14px;
+      margin-bottom: 8px;
+    }
+    .info-table td {
+      padding: 4px 8px;
+      font-size: 9.5pt;
+      vertical-align: top;
+    }
+    .label {
+      color: #64748b;
+      font-weight: normal;
+      width: 32%;
+    }
+    .value {
+      color: #0f172a;
+      font-weight: bold;
+    }
+    .items-table {
+      margin-top: 10px;
+      margin-bottom: 14px;
+      border: 1px solid #cbd5e1;
+    }
+    .items-table th {
+      background-color: #0F5132;
+      color: #ffffff;
+      font-size: 9.5pt;
+      font-weight: bold;
+      padding: 8px 10px;
+      text-transform: uppercase;
+    }
+    .items-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 9.5pt;
+    }
+    .summary-table {
+      margin-top: 12px;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+    .summary-table td {
+      padding: 6px 12px;
+      font-size: 9.5pt;
+    }
+    .total-row {
+      border-top: 2px solid #cbd5e1;
+      font-size: 12pt;
+      font-weight: bold;
+      color: #0f172a;
+    }
+    .total-amount {
+      color: #B38728;
+      font-size: 13pt;
+      font-weight: bold;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 8.5pt;
+      text-align: center;
+    }
+    .badge-paid {
+      background-color: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+    .badge-pending {
+      background-color: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+    .badge-overnight {
+      background-color: #fef3c7;
+      color: #92400e;
+      border: 1px solid #f59e0b;
+      padding: 2px 8px;
+      font-size: 8pt;
+    }
+    .badge-dayuse {
+      background-color: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #10b981;
+      padding: 2px 8px;
+      font-size: 8pt;
+    }
+    .seal-box {
+      margin-top: 18px;
+      border: 1px solid #e2e8f0;
+      background-color: #fdfdfd;
+      padding: 10px 14px;
+    }
+    .policy-box {
+      margin-top: 16px;
+      background-color: #f1f5f9;
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 8pt;
+      color: #475569;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="Section1">
+  <!-- Header -->
+  <table class="header-table">
+    <tr>
+      <td style="width: 60%; vertical-align: top;">
+        <div class="resort-name">${settings.resort_name}</div>
+        <div class="resort-meta">
+          ${settings.address}<br>
+          Contact: ${settings.contact_number} | Email: ${settings.contact_email}<br>
+          Business Hours: ${settings.business_hours}
+        </div>
+      </td>
+      <td style="width: 40%; vertical-align: top; text-align: right;">
+        <div class="receipt-title">OFFICIAL RECEIPT</div>
+        <div class="receipt-ref">#${ref}</div>
+        <div style="font-size: 9pt; color: #64748b; margin-top: 4px;">Issued: ${issueDate}</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Guest Details & Reservation Schedule -->
+  <table style="width: 100%; margin-bottom: 12px;">
+    <tr>
+      <td style="width: 50%; vertical-align: top; padding-right: 10px;">
+        <div class="section-header">Guest Information</div>
+        <table class="info-table" style="width: 100%;">
+          <tr><td class="label">Primary Guest:</td><td class="value">${booking.guest_name}</td></tr>
+          <tr><td class="label">Contact Phone:</td><td class="value">${booking.guest_phone || "Not provided"}</td></tr>
+          <tr><td class="label">Email Address:</td><td class="value">${booking.guest_email || "Not provided"}</td></tr>
+          <tr><td class="label">Total Guests:</td><td class="value">${booking.guests} guest${booking.guests > 1 ? "s" : ""}</td></tr>
+        </table>
+      </td>
+      <td style="width: 50%; vertical-align: top; padding-left: 10px;">
+        <div class="section-header">Reservation Schedule</div>
+        <table class="info-table" style="width: 100%;">
+          <tr><td class="label">Check-in:</td><td class="value">${checkInFormatted} (2:00 PM)</td></tr>
+          <tr><td class="label">Check-out:</td><td class="value">${checkOutFormatted} (12:00 PM)</td></tr>
+          <tr><td class="label">Duration:</td><td class="value">${nights} ${isCottage ? "day" : "night"}${nights > 1 ? "s" : ""}</td></tr>
+          ${isCottage ? `<tr><td class="label">Stay Type:</td><td class="value"><span class="${isOvernightCottage ? "badge-overnight" : "badge-dayuse"}">${stayTypeLabel}</span></td></tr>` : ""}
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Accommodation & Charges Table -->
+  <div class="section-header">Accommodation & Charges</div>
+  <table class="items-table" style="width: 100%;">
+    <thead>
+      <tr>
+        <th style="width: 45%; text-align: left;">Item Description</th>
+        <th style="width: 15%; text-align: center;">Category</th>
+        <th style="width: 15%; text-align: right;">Unit Rate</th>
+        <th style="width: 10%; text-align: center;">Qty</th>
+        <th style="width: 15%; text-align: right;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <strong>${roomName}</strong>
+          ${isCottage ? `<br><small style="color: #64748b;">Stay Type: ${stayTypeLabel}</small>` : ""}
+        </td>
+        <td style="text-align: center;">${roomType.toUpperCase()}</td>
+        <td style="text-align: right;">PHP ${roomPrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="text-align: center;">${nights}</td>
+        <td style="text-align: right;"><strong>PHP ${accommodationSubtotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
+      </tr>
+      ${isOvernightCottage ? `
+      <tr>
+        <td>
+          <strong>Overnight Cottage Fee</strong><br>
+          <small style="color: #64748b;">Special overnight accommodation fee for cottages</small>
+        </td>
+        <td style="text-align: center;">ONE-TIME FEE</td>
+        <td style="text-align: right;">PHP 1,000.00</td>
+        <td style="text-align: center;">1</td>
+        <td style="text-align: right; color: #b45309;"><strong>PHP 1,000.00</strong></td>
+      </tr>` : ""}
+    </tbody>
+  </table>
+
+  <!-- Payment Status and Financial Breakdown -->
+  <table class="summary-table" style="width: 100%;">
+    <tr>
+      <td style="width: 50%; vertical-align: top;">
+        <div style="font-size: 8.5pt; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">Payment Verification</div>
+        <div style="margin-bottom: 8px;">
+          <span class="badge ${isPaid ? "badge-paid" : "badge-pending"}">
+            ${isPaid ? "PAID IN FULL" : isPending ? "RESERVED (PAY AT RESORT)" : "UNPAID"}
+          </span>
+        </div>
+        <div style="font-size: 9pt; color: #475569; line-height: 1.6;">
+          <strong>Payment Method:</strong> ${paymentMethodText}<br>
+          ${gcashRef ? `<strong>GCash Reference:</strong> ${gcashRef}<br>` : ""}
+          <strong>Booking Status:</strong> ${booking.status === "approved" ? "Confirmed" : booking.status.toUpperCase()}
+        </div>
+      </td>
+      <td style="width: 50%; vertical-align: top;">
+        <table style="width: 100%;">
+          ${isCottage ? `
+          <tr>
+            <td style="color: #64748b;">Accommodation Subtotal:</td>
+            <td style="text-align: right; font-weight: bold;">PHP ${accommodationSubtotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          </tr>
+          <tr>
+            <td style="color: #64748b;">Overnight Cottage Fee:</td>
+            <td style="text-align: right; font-weight: bold; color: ${isOvernightCottage ? "#b45309" : "#0f172a"};">PHP ${cottageOvernightFee.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          </tr>` : `
+          <tr>
+            <td style="color: #64748b;">Accommodation Subtotal:</td>
+            <td style="text-align: right; font-weight: bold;">PHP ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          </tr>
+          <tr>
+            <td style="color: #64748b;">Taxes & Resort Fees:</td>
+            <td style="text-align: right;">PHP 0.00 (Included)</td>
+          </tr>`}
+          <tr class="total-row">
+            <td style="padding-top: 8px;">Total Stay Price:</td>
+            <td style="text-align: right; padding-top: 8px;" class="total-amount">PHP ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          </tr>
+          <tr>
+            <td style="color: #64748b;">Balance Due:</td>
+            <td style="text-align: right; font-weight: bold; color: ${isPaid ? "#15803d" : "#b45309"};">PHP ${balanceDue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Official Authentication Seal -->
+  <table class="seal-box" style="width: 100%;">
+    <tr>
+      <td style="width: 40px; vertical-align: middle; text-align: center; font-size: 20pt; color: #D4AF37;">
+        &#10003;
+      </td>
+      <td style="vertical-align: middle;">
+        <div style="font-size: 9pt; font-weight: bold; color: #0f172a;">VERIFIED OFFICIAL GUEST RECEIPT</div>
+        <div style="font-size: 8pt; color: #64748b;">Authenticated through Punong Spring Resort Central Database & Reservation Management System</div>
+      </td>
+      <td style="vertical-align: middle; text-align: right; font-size: 8pt; color: #94a3b8; font-family: monospace;">
+        SECURITY HASH:<br>${hashStr || "PRS2026OFFICIAL"}
+      </td>
+    </tr>
+  </table>
+
+  <!-- Policies & Footer -->
+  <div class="policy-box">
+    <strong>Thank you for choosing Punong Spring Resort!</strong><br>
+    Standard Check-In Time: 2:00 PM &nbsp;|&nbsp; Standard Check-Out Time: 12:00 PM<br>
+    Please present a valid government-issued ID upon arrival at the front desk along with this receipt.
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+/**
+ * Generates an official Word / WPS Office document (.doc) receipt and triggers download to the device.
+ * Natively opens in WPS Office and Microsoft Word on Android, iOS, and PC.
+ */
+export async function generateAndDownloadReceiptWord(
+  bookingId: string,
+  initialBooking?: Partial<BookingData>
+): Promise<boolean> {
+  const toastId = toast.loading("Generating your Word / WPS receipt...");
+
+  try {
+    const { booking, settings } = await fetchLatestReceiptData(bookingId, initialBooking);
+    const filename = getReceiptWordFilename(booking);
+    const wordHtml = generateReceiptWordHtml(booking, settings);
+
+    // UTF-8 BOM (\ufeff) guarantees currency symbols (₱) and formatting render accurately in Word & WPS
+    const blob = new Blob(["\ufeff", wordHtml], {
+      type: "application/msword;charset=utf-8",
+    });
+
+    const downloaded = await triggerDirectBlobDownload(blob, filename, "application/msword");
+
+    if (downloaded) {
+      toast.success("Receipt downloaded! You can now open it in WPS Office or Word.", { id: toastId, duration: 5000 });
+      return true;
+    } else {
+      toast.error("Download failed. Please check your browser permissions.", { id: toastId });
+      return false;
+    }
+  } catch (err: any) {
+    console.error("Receipt Word Generation Error:", err);
+    toast.error("Failed to generate Word / WPS receipt. Please try again.", { id: toastId });
     return false;
   }
 }
@@ -688,7 +1105,7 @@ export async function generateAndDownloadReceiptPdf(
 
     // 5. Generate output blob and trigger direct download
     const pdfBlob = doc.output("blob");
-    const downloaded = await triggerDirectBlobDownload(pdfBlob, filename);
+    const downloaded = await triggerDirectBlobDownload(pdfBlob, filename, "application/pdf");
 
     if (!downloaded) {
       // Fallback to jsPDF save
