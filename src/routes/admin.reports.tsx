@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { trashService, TrashItem } from "@/lib/recently-deleted";
+import { processAutoBookingStatuses } from "@/lib/booking-utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,9 @@ function ReportsDashboard() {
         .select("*, room:rooms(name, type, price), payments(amount, status, notes)")
         .order("created_at", { ascending: false });
       if (error) throw error;
+      if (data && data.length > 0) {
+        await processAutoBookingStatuses(data);
+      }
       return data;
     },
   });

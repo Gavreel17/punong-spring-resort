@@ -22,6 +22,7 @@ import {
   Star,
   Activity,
 } from "lucide-react";
+import { processAutoBookingStatuses } from "@/lib/booking-utils";
 
 export const Route = createFileRoute("/admin/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Admin | Punong Spring Resort" }] }),
@@ -54,10 +55,13 @@ function AdminDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("id,status,total_amount,check_in,check_out,created_at,guest_name,room_id,room:rooms(name,type)")
+        .select("id,status,total_amount,check_in,check_out,created_at,guest_name,room_id,room:rooms(name,type),payments(status,amount)")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
+      if (data && data.length > 0) {
+        await processAutoBookingStatuses(data);
+      }
       return data ?? [];
     },
     refetchInterval: 60000,

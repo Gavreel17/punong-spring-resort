@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/use-auth";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { useAutoBookingStatus } from "@/hooks/use-auto-booking-status";
 
 function NotFoundComponent() {
   return (
@@ -114,11 +115,17 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AutoStatusWatcher() {
+  useAutoBookingStatus();
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <AutoStatusWatcher />
         <Outlet />
         <Toaster richColors position="top-right" />
       </AuthProvider>
