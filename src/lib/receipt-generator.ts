@@ -79,6 +79,24 @@ export async function fetchLatestReceiptData(
   bookingId: string,
   fallbackBooking?: Partial<BookingData>
 ): Promise<{ booking: BookingData; settings: ResortSettings }> {
+  // Resort settings defaults
+  const settings: ResortSettings = {
+    resort_name: "Punong Spring Resort",
+    contact_number: "+63 912 062 7744",
+    contact_email: "punongspringresort@gmail.com",
+    address: "Brgy. Buburay, Dimataling, Zamboanga Del Sur, Philippines",
+    business_hours: "8:00 AM - 6:00 PM (Daily)",
+  };
+
+  // If complete booking data is already provided in memory, use it directly!
+  // This avoids redundant network latency and prevents the mobile browser's user gesture from expiring.
+  if (fallbackBooking && fallbackBooking.id && fallbackBooking.guest_name && fallbackBooking.room) {
+    return {
+      booking: fallbackBooking as BookingData,
+      settings,
+    };
+  }
+
   let booking: BookingData | null = null;
 
   try {
@@ -118,7 +136,6 @@ export async function fetchLatestReceiptData(
     console.warn("DB fetch encountered an issue, will use fallback data:", err);
   }
 
-  // If database query did not return a booking, use the fallback passed from the UI
   if (!booking) {
     if (fallbackBooking && fallbackBooking.id) {
       booking = fallbackBooking as BookingData;
@@ -126,15 +143,6 @@ export async function fetchLatestReceiptData(
       throw new Error("Unable to locate reservation details.");
     }
   }
-
-  // 4. Fetch resort settings (or use official resort defaults)
-  let settings: ResortSettings = {
-    resort_name: "Punong Spring Resort",
-    contact_number: "+63 917 123 4567",
-    contact_email: "punongspringresort@gmail.com",
-    address: "Brgy. Buburay, Dimataling, Zamboanga Del Sur, Philippines",
-    business_hours: "8:00 AM - 6:00 PM (Daily)",
-  };
 
   try {
     const { data: sData } = await supabase
@@ -144,13 +152,11 @@ export async function fetchLatestReceiptData(
       .maybeSingle();
 
     if (sData) {
-      settings = {
-        resort_name: sData.resort_name || settings.resort_name,
-        contact_number: sData.contact_number || settings.contact_number,
-        contact_email: sData.contact_email || settings.contact_email,
-        address: sData.address || settings.address,
-        business_hours: sData.business_hours || settings.business_hours,
-      };
+      settings.resort_name = sData.resort_name || settings.resort_name;
+      settings.contact_number = sData.contact_number || settings.contact_number;
+      settings.contact_email = sData.contact_email || settings.contact_email;
+      settings.address = sData.address || settings.address;
+      settings.business_hours = sData.business_hours || settings.business_hours;
     }
   } catch (e) {
     // Keep defaults
@@ -189,21 +195,58 @@ function formatDate(dateStr: string): string {
 }
 
 /**
- * Universal cross-platform Blob downloader
- * Works seamlessly on Android, iOS Safari, tablets, and desktop
- * Completely avoids window.print() and print preview dialogs
+ * Universal cross-platform Blob downloader & mobile file saver
+ * Works seamlessly on Android Chrome, iOS Safari, mobile WebViews, tablets, and desktop
  */
-export function triggerDirectBlobDownload(blob: Blob, filename: string): boolean {
+export async function triggerDirectBlobDownload(blob: Blob, filename: string): Promise<boolean> {
   try {
     const fileBlob = blob instanceof Blob ? blob : new Blob([blob], { type: "application/pdf" });
+    const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isIOS = typeof navigator !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // Legacy IE/Edge support
+    // 1. Mobile Web Share API (Official standard for saving files on modern phones)
+    // On Android & iOS, sharing a file opens the native system sheet where the user can
+    // directly tap "Save to Files" (iOS) or "Save to device / Downloads / Drive" (Android).
+    if (isMobile && typeof navigator !== "undefined" && typeof (navigator as any).canShare === "function") {
+      try {
+        const file = new File([fileBlob], filename, { type: "application/pdf" });
+        if ((navigator as any).canShare({ files: [file] })) {
+          await (navigator as any).share({
+            files: [file],
+            title: filename,
+            text: "Punong Spring Resort Official Booking Receipt",
+          });
+          return true;
+        }
+      } catch (shareErr: any) {
+        if (shareErr?.name === "AbortError") {
+          return true; // User intentionally dismissed share sheet
+        }
+        console.warn("Native share failed or not allowed, trying direct download fallback:", shareErr);
+      }
+    }
+
+    // 2. Legacy IE/Edge support
     if (typeof (window.navigator as any)?.msSaveOrOpenBlob === "function") {
       (window.navigator as any).msSaveOrOpenBlob(fileBlob, filename);
       return true;
     }
 
+    // 3. Blob URL creation
     const blobUrl = window.URL.createObjectURL(fileBlob);
+
+    // 4. iOS Safari: does not support <a download> on blob URLs.
+    // Opening the blob URL in a new tab allows iOS Safari to display the PDF directly,
+    // where the user can view it and tap "Share -> Save to Files".
+    if (isIOS) {
+      const opened = window.open(blobUrl, "_blank");
+      if (!opened) {
+        window.location.href = blobUrl;
+      }
+      return true;
+    }
+
+    // 5. Android & Desktop: anchor download
     const anchor = document.createElement("a");
     anchor.style.position = "fixed";
     anchor.style.left = "-99999px";
@@ -211,6 +254,7 @@ export function triggerDirectBlobDownload(blob: Blob, filename: string): boolean
     anchor.style.opacity = "0";
     anchor.href = blobUrl;
     anchor.setAttribute("download", filename);
+    anchor.setAttribute("target", "_blank");
     anchor.rel = "noopener noreferrer";
 
     document.body.appendChild(anchor);
@@ -221,11 +265,15 @@ export function triggerDirectBlobDownload(blob: Blob, filename: string): boolean
         if (anchor.parentNode) {
           anchor.parentNode.removeChild(anchor);
         }
+      } catch (e) {}
+    }, 2000);
+
+    // Keep blob URL alive for 2 minutes so Android download manager has plenty of time to finish
+    setTimeout(() => {
+      try {
         window.URL.revokeObjectURL(blobUrl);
-      } catch (e) {
-        // ignore
-      }
-    }, 2500);
+      } catch (e) {}
+    }, 120000);
 
     return true;
   } catch (err) {
@@ -640,14 +688,19 @@ export async function generateAndDownloadReceiptPdf(
 
     // 5. Generate output blob and trigger direct download
     const pdfBlob = doc.output("blob");
-    const downloaded = triggerDirectBlobDownload(pdfBlob, filename);
+    const downloaded = await triggerDirectBlobDownload(pdfBlob, filename);
 
     if (!downloaded) {
       // Fallback to jsPDF save
       doc.save(filename);
     }
 
-    toast.success("Receipt downloaded successfully!", { id: toastId });
+    const isMobileDevice = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobileDevice) {
+      toast.success("Receipt ready! Check your Downloads or Files app.", { id: toastId, duration: 4000 });
+    } else {
+      toast.success("Receipt downloaded successfully!", { id: toastId });
+    }
     return true;
   } catch (err: any) {
     console.error("Receipt PDF Generation Error:", err);

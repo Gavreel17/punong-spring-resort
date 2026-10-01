@@ -618,6 +618,17 @@ function Dashboard() {
                             )}
                           </Button>
 
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+                          >
+                            <Link to="/receipt/$bookingId" params={{ bookingId: b.id }}>
+                              <Eye className="w-3.5 h-3.5 text-slate-600" /> View Receipt
+                            </Link>
+                          </Button>
+
                           {/* Leave Feedback / Feedback Status */}
                           {(!b.feedbacks || b.feedbacks.length === 0) && (b.status !== "cancelled" && b.status !== "rejected") && (
                             <Button
