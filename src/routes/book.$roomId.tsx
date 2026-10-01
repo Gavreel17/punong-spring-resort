@@ -879,6 +879,77 @@ function BookPage() {
               </div>
             )}
 
+            {/* Mobile Booking Summary (Shown above Confirm Reservation when customer opens on cellphone) */}
+            <div className="block md:hidden border-t border-slate-200 pt-6 mt-4">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">
+                Booking Summary
+              </h3>
+              <Card className="h-fit p-5 border-slate-200 shadow-sm bg-white">
+                {room.image_url && (
+                  <img src={room.image_url} alt={room.name} className="mb-4 aspect-[4/3] w-full rounded-lg object-cover" />
+                )}
+                <h3 className="font-semibold text-slate-900">{room.name}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground capitalize">{room.type === "villa" ? "Function Hall" : room.type} · up to {room.capacity} guests</p>
+                <div className="mt-4 space-y-2 border-t border-border pt-4 text-xs sm:text-sm">
+                  <div className="flex justify-between">
+                    <span>{isCottage ? "Cottage Rate" : "Rate"}</span>
+                    <span>
+                      ₱{Number(room.price).toLocaleString()} {isCottage ? "/ day" : "/ night"}
+                    </span>
+                  </div>
+                  {form.check_in && (
+                    <div className="flex justify-between">
+                      <span>Check-in</span>
+                      <span className="font-medium">{format(new Date(form.check_in + "T00:00:00"), "MMM d, yyyy")}</span>
+                    </div>
+                  )}
+                  {form.check_out && (
+                    <div className="flex justify-between">
+                      <span>Check-out</span>
+                      <span className="font-medium">{format(new Date(form.check_out + "T00:00:00"), "MMM d, yyyy")}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span>{isCottage ? "Days" : "Nights"}</span>
+                    <span>{nights > 0 ? nights : 0}</span>
+                  </div>
+
+                  {/* ONLY for Cottage category: Subtotal, Stay Type, and Overnight Cottage Fee */}
+                  {isCottage && (
+                    <>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Accommodation Subtotal</span>
+                        <span>₱{baseTotal.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Stay Type</span>
+                        <span className="font-medium capitalize">{stayType === "overnight" ? "Overnight Stay" : "Day Use"}</span>
+                      </div>
+                      <div className="flex justify-between font-medium">
+                        <span>Overnight Cottage Fee</span>
+                        <span className={stayType === "overnight" ? "text-primary font-bold" : "text-slate-500"}>
+                          ₱{cottageOvernightFee.toLocaleString()}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ONLY for Room category: Foam Bed Additional Fee */}
+                  {room?.type === "room" && additionalFee > 0 && (
+                    <div className="flex justify-between text-emerald-700 font-medium">
+                      <span>Additional Fee</span>
+                      <span>+₱{additionalFee.toLocaleString()}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-base font-bold pt-2 border-t border-border">
+                    <span>Total Amount</span>
+                    <span className="text-primary font-display text-lg">₱{totalAmount > 0 ? totalAmount.toLocaleString() : 0}</span>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
             <Button
               type="submit"
               disabled={
@@ -894,20 +965,21 @@ function BookPage() {
                 !form.guests
               }
               size="lg"
-              className="bg-accent text-accent-foreground hover:bg-accent/90 w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed font-bold cursor-pointer"
             >
               {submitting ? "Submitting…" : conflictWarning ? "Selected Dates Unavailable" : "Confirm Reservation"}
             </Button>
           </form>
         </Card>
 
-        <div className="flex flex-col gap-6">
+        {/* Desktop Sidebar Summary (Hidden on cellphone, visible on md screens and above) */}
+        <div className="hidden md:flex flex-col gap-6">
           <Card className="h-fit p-6 sticky top-24">
             {room.image_url && (
               <img src={room.image_url} alt={room.name} className="mb-4 aspect-[4/3] w-full rounded-lg object-cover" />
             )}
             <h3 className="font-semibold">{room.name}</h3>
-            <p className="text-sm text-muted-foreground capitalize">{room.type} · up to {room.capacity} guests</p>
+            <p className="text-sm text-muted-foreground capitalize">{room.type === "villa" ? "Function Hall" : room.type} · up to {room.capacity} guests</p>
             <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between">
                 <span>{isCottage ? "Cottage Rate" : "Rate"}</span>
