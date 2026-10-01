@@ -700,6 +700,17 @@ export async function generateAndDownloadReceiptWord(
 }
 
 /**
+ * Main receipt downloader: generates and downloads the official receipt.
+ * Directly saves the receipt into device's Downloads directory and opens in WPS Office / Word.
+ */
+export async function generateAndDownloadReceipt(
+  bookingId: string,
+  initialBooking?: Partial<BookingData>
+): Promise<boolean> {
+  return generateAndDownloadReceiptWord(bookingId, initialBooking);
+}
+
+/**
  * Generates an official, high-resolution PDF receipt using jsPDF.
  * Uses clean vector rendering that will never clip or fail due to DOM/canvas limits.
  * Automatically downloads the PDF directly to customer device.

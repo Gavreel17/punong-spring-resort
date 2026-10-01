@@ -28,13 +28,12 @@ import { toast } from "sonner";
 import { 
   Upload, Eye, AlertCircle, RefreshCw, Star, Download, Sparkles, Plus, 
   Calendar, Users, CreditCard, Banknote, CheckCircle2, XCircle, Clock, 
-  MessageSquareQuote, ShieldCheck, Check, Loader2, FileText
+  MessageSquareQuote, ShieldCheck, Check, Loader2
 } from "lucide-react";
 import { processAutoBookingStatuses } from "@/lib/booking-utils";
 import { cn } from "@/lib/utils";
 import { CustomerInquiriesSection } from "@/components/CustomerInquiriesSection";
 import { 
-  generateAndDownloadReceiptPdf, 
   generateAndDownloadReceiptWord,
   formatBookingReference 
 } from "@/lib/receipt-generator";
@@ -60,27 +59,15 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState<"bookings" | "messages">("bookings");
 
   const [downloadingReceiptId, setDownloadingReceiptId] = useState<string | null>(null);
-  const [downloadingWordId, setDownloadingWordId] = useState<string | null>(null);
 
-  const handleDownloadPdf = async (booking: any) => {
+  const handleDownloadReceipt = async (booking: any) => {
     setDownloadingReceiptId(booking.id);
-    try {
-      await generateAndDownloadReceiptPdf(booking.id, booking);
-    } catch (err) {
-      console.error("Failed to download PDF receipt:", err);
-    } finally {
-      setDownloadingReceiptId(null);
-    }
-  };
-
-  const handleDownloadWord = async (booking: any) => {
-    setDownloadingWordId(booking.id);
     try {
       await generateAndDownloadReceiptWord(booking.id, booking);
     } catch (err) {
-      console.error("Failed to download Word / WPS receipt:", err);
+      console.error("Failed to download receipt:", err);
     } finally {
-      setDownloadingWordId(null);
+      setDownloadingReceiptId(null);
     }
   };
 
@@ -613,42 +600,20 @@ function Dashboard() {
 
                         {/* Actions Row */}
                         <div className="flex flex-wrap items-center gap-2">
-                          {/* Word / WPS Document Download */}
                           <Button 
                             variant="default" 
                             size="sm" 
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-9 px-3 rounded-xl text-xs shadow-xs cursor-pointer disabled:opacity-75 flex items-center gap-1.5"
-                            disabled={downloadingWordId === b.id}
-                            onClick={() => handleDownloadWord(b)}
-                            title="Download Word / WPS document (Natively opens in WPS Office or Word on phones)"
-                          >
-                            {downloadingWordId === b.id ? (
-                              <>
-                                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> Saving Word...
-                              </>
-                            ) : (
-                              <>
-                                <FileText className="w-3.5 h-3.5 mr-0.5 text-amber-300" /> Word / WPS (.doc)
-                              </>
-                            )}
-                          </Button>
-
-                          {/* PDF Download */}
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="border-slate-300 hover:bg-slate-100 text-slate-800 font-semibold h-9 px-3 rounded-xl text-xs shadow-xs cursor-pointer disabled:opacity-75 flex items-center gap-1.5"
+                            className="bg-slate-900 hover:bg-slate-800 text-white font-bold h-9 px-4 rounded-xl text-xs shadow-sm cursor-pointer disabled:opacity-75 flex items-center"
                             disabled={downloadingReceiptId === b.id}
-                            onClick={() => handleDownloadPdf(b)}
-                            title="Download PDF document"
+                            onClick={() => handleDownloadReceipt(b)}
                           >
                             {downloadingReceiptId === b.id ? (
                               <>
-                                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin text-[#D4AF37]" /> Generating PDF...
+                                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#D4AF37]" /> Downloading...
                               </>
                             ) : (
                               <>
-                                <Download className="w-3.5 h-3.5 mr-0.5 text-[#D4AF37]" /> PDF (.pdf)
+                                <Download className="w-3.5 h-3.5 mr-1 text-[#D4AF37]" /> Download Receipt
                               </>
                             )}
                           </Button>

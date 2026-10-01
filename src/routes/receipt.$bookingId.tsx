@@ -2,11 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Download, ArrowLeft, Loader2, FileText } from "lucide-react";
+import { Download, ArrowLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { 
-  generateAndDownloadReceiptPdf, 
   generateAndDownloadReceiptWord,
   formatBookingReference 
 } from "@/lib/receipt-generator";
@@ -20,8 +19,7 @@ function ReceiptPage() {
   const { bookingId } = Route.useParams();
   const navigate = useNavigate();
   const { role } = useAuth();
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [downloadingWord, setDownloadingWord] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const handleBackToDashboard = () => {
     if (window.history.length > 2) {
@@ -64,27 +62,15 @@ function ReceiptPage() {
     return <div className="p-8 text-center text-red-500">Booking not found.</div>;
   }
 
-  const handleDownloadPdf = async () => {
-    setDownloadingPdf(true);
-    try {
-      await generateAndDownloadReceiptPdf(booking.id, booking);
-    } catch (err) {
-      console.error("Download receipt failed:", err);
-      toast.error("Failed to generate receipt PDF. Please try again.");
-    } finally {
-      setDownloadingPdf(false);
-    }
-  };
-
-  const handleDownloadWord = async () => {
-    setDownloadingWord(true);
+  const handleDownload = async () => {
+    setDownloading(true);
     try {
       await generateAndDownloadReceiptWord(booking.id, booking);
     } catch (err) {
-      console.error("Download Word receipt failed:", err);
-      toast.error("Failed to generate Word / WPS receipt. Please try again.");
+      console.error("Download receipt failed:", err);
+      toast.error("Failed to download receipt. Please try again.");
     } finally {
-      setDownloadingWord(false);
+      setDownloading(false);
     }
   };
 
@@ -117,44 +103,21 @@ function ReceiptPage() {
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
           </Button>
 
-          <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
-            {/* Download for Word / WPS Office */}
-            <Button 
-              disabled={downloadingWord}
-              onClick={handleDownloadWord} 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold w-full sm:w-auto justify-center h-10 px-4 cursor-pointer shadow-sm text-xs sm:text-sm"
-              title="Download Word / WPS document (Natively opens in WPS Office or Word on phones)"
-            >
-              {downloadingWord ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> GENERATING WORD / WPS...
-                </>
-              ) : (
-                <>
-                  <FileText className="w-4 h-4 mr-2 text-amber-300" /> DOWNLOAD FOR WORD / WPS (.doc)
-                </>
-              )}
-            </Button>
-
-            {/* Download PDF */}
-            <Button 
-              variant="outline"
-              disabled={downloadingPdf}
-              onClick={handleDownloadPdf} 
-              className="border-slate-300 hover:bg-slate-100 text-slate-800 font-semibold w-full sm:w-auto justify-center h-10 px-4 cursor-pointer shadow-xs text-xs sm:text-sm"
-              title="Download PDF document"
-            >
-              {downloadingPdf ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin text-[#D4AF37]" /> GENERATING PDF...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4 mr-2 text-[#D4AF37]" /> DOWNLOAD PDF (.pdf)
-                </>
-              )}
-            </Button>
-          </div>
+          <Button 
+            disabled={downloading}
+            onClick={handleDownload} 
+            className="bg-primary text-primary-foreground font-semibold w-full sm:w-auto justify-center h-10 px-5 cursor-pointer shadow-sm flex items-center"
+          >
+            {downloading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> DOWNLOADING RECEIPT...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" /> DOWNLOAD RECEIPT
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Printable Area */}
