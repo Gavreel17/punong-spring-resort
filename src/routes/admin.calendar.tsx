@@ -257,7 +257,12 @@ export function AvailabilityCalendarTab() {
     );
 
     for (const b of dailyBookings) {
-      if (dateStr >= b.check_in && dateStr < b.check_out) {
+      const isBooked =
+        b.check_in === b.check_out
+          ? dateStr === b.check_in
+          : dateStr >= b.check_in && dateStr < b.check_out;
+
+      if (isBooked) {
         const isCheckInDay = dateStr === b.check_in;
         const guestFirst = b.guest_name ? b.guest_name.split(" ")[0] : "Guest";
 
@@ -287,8 +292,9 @@ export function AvailabilityCalendarTab() {
       (b: any) =>
         b.room_id === room.id &&
         b.status === "completed" &&
-        dateStr >= b.check_in &&
-        dateStr < b.check_out
+        (b.check_in === b.check_out
+          ? dateStr === b.check_in
+          : dateStr >= b.check_in && dateStr < b.check_out)
     );
     if (completedBooking) {
       return {
@@ -474,6 +480,10 @@ export function AvailabilityCalendarTab() {
     const conflict = bookings.find((b: any) => {
       if (b.room_id !== bookingForm.room_id) return false;
       if (b.status === "rejected" || b.status === "cancelled") return false;
+      if (b.deleted_at) return false;
+      if (b.check_in === b.check_out || bookingForm.check_in === bookingForm.check_out) {
+        return bookingForm.check_in <= b.check_out && bookingForm.check_out >= b.check_in;
+      }
       return bookingForm.check_in < b.check_out && bookingForm.check_out > b.check_in;
     });
 
@@ -1092,7 +1102,7 @@ export function AvailabilityCalendarTab() {
                           <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                             <span>{r.type === "villa" ? "Function Hall" : r.type || "ROOM"}</span>
                             <span>•</span>
-                            <span>₱{Number(r.price).toLocaleString()}/night</span>
+                            <span>₱{Number(r.price).toLocaleString()}{r.type === "cottage" ? "/day" : "/night"}</span>
                           </div>
                         </div>
                       </td>
@@ -1721,7 +1731,7 @@ export function AvailabilityCalendarTab() {
                   {rooms.map((r: any) => (
                     <SelectItem key={r.id} value={r.id}>
                       {r.name} ({r.type === "villa" ? "Function Hall" : r.type || "Room"}) - ₱
-                      {Number(r.price).toLocaleString()}/night
+                      {Number(r.price).toLocaleString()}{r.type === "cottage" ? "/day" : "/night"}
                     </SelectItem>
                   ))}
                 </SelectContent>

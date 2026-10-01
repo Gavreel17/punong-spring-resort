@@ -89,10 +89,27 @@ function BookPage() {
   const { data: bookings } = useQuery({
     queryKey: ["room-bookings", roomId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("bookings").select("*").eq("room_id", roomId);
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from("bookings")
+          .select("id, room_id, check_in, check_out, status, deleted_at")
+          .eq("room_id", roomId)
+          .is("deleted_at", null);
+        if (error) {
+          console.warn("Direct bookings query failed, trying RPC fallback:", error);
+          const { data: rpcData, error: rpcErr } = await supabase.rpc("get_room_booked_dates" as any, {
+            p_room_id: roomId,
+          });
+          if (rpcErr) console.warn("RPC fallback also failed:", rpcErr);
+          return rpcData || [];
+        }
+        return data || [];
+      } catch (e) {
+        console.error("Failed to load room bookings", e);
+        return [];
+      }
     },
+    refetchInterval: 5000,
   });
 
   const { data: blocks } = useQuery({
@@ -105,6 +122,7 @@ function BookPage() {
         return [] as any[];
       }
     },
+    refetchInterval: 10000,
   });
 
   useEffect(() => {
@@ -128,49 +146,66 @@ function BookPage() {
 
   useEffect(() => {
     if (form.check_in && form.check_out) {
-      const start = new Date(form.check_in + "T00:00:00").getTime();
-      const end = new Date(form.check_out + "T00:00:00").getTime();
-      let hasConflict = false;
-      let conflictReason =
-        "Sorry, this room/cottage is already booked for the selected dates. Please choose another date.";
+      const start = new Date(form.check_in + "T00:00:00");
+      const end = new Date(form.check_out + "T00:00:00");
 
-      if (start > end) {
+      if (start.getTime() > end.getTime()) {
         setConflictWarning("Check-out cannot be before check-in.");
         return;
       }
 
+      let hasConflict = false;
+      let conflictReason =
+        "Sorry, this room/cottage is already booked for the selected dates. Please choose another date.";
+
+      const isSingleDayBooking = form.check_in === form.check_out;
+
+      // Check maintenance
       if (room?.maintenance_start && room?.maintenance_end) {
         const mStart = new Date(room.maintenance_start + "T00:00:00").getTime();
         const mEnd = new Date(room.maintenance_end + "T00:00:00").getTime();
-        if (start < mEnd && end > mStart) {
+        if (start.getTime() <= mEnd && end.getTime() >= mStart) {
           hasConflict = true;
-          conflictReason = "Sorry, this room is under maintenance during these dates.";
+          conflictReason = "Sorry, this accommodation is under maintenance during these dates.";
         }
       }
 
-      if (blocks) {
+      // Check resort blocks
+      if (!hasConflict && blocks && blocks.length > 0) {
         for (const block of blocks) {
           const bStart = new Date(block.start_date + "T00:00:00").getTime();
           const bEnd = new Date(block.end_date + "T00:00:00").getTime();
-          if (start <= bEnd && end >= bStart) {
+          if (start.getTime() <= bEnd && end.getTime() >= bStart) {
             hasConflict = true;
-            conflictReason = "The resort is blocked during these dates.";
+            conflictReason = block.reason ? `Resort Blocked: ${block.reason}` : "The resort is blocked during these dates.";
+            break;
           }
         }
       }
 
-      if (bookings) {
+      // Check bookings
+      if (!hasConflict && bookings && bookings.length > 0) {
         for (const b of bookings) {
-          if (b.status === "approved" || b.status === "pending") {
+          if (b.deleted_at) continue;
+          const status = (b.status || "").toLowerCase();
+          if (status === "approved" || status === "pending" || status === "confirmed") {
             const bStart = new Date(b.check_in + "T00:00:00").getTime();
             const bEnd = new Date(b.check_out + "T00:00:00").getTime();
-            if (start === end || bStart === bEnd) {
-              if (start <= bEnd && end >= bStart) {
+            const isBookingSingleDay = b.check_in === b.check_out;
+
+            if (isSingleDayBooking || isBookingSingleDay) {
+              // If either is a single-day reservation, any overlap is a conflict
+              if (start.getTime() <= bEnd && end.getTime() >= bStart) {
                 hasConflict = true;
+                conflictReason = `Sorry, this accommodation is already booked on ${b.check_in}.`;
+                break;
               }
             } else {
-              if (start < bEnd && end > bStart) {
+              // Overnight stays: conflict if ranges overlap
+              if (start.getTime() < bEnd && end.getTime() > bStart) {
                 hasConflict = true;
+                conflictReason = `Sorry, this accommodation is already reserved from ${b.check_in} to ${b.check_out}.`;
+                break;
               }
             }
           }
@@ -359,79 +394,112 @@ function BookPage() {
   today.setHours(0, 0, 0, 0);
 
   const getDayStatus = (date: Date) => {
-    if (date < today) return { status: "past", tooltip: "Past date" };
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    if (d < today) return { status: "past", tooltip: "Past date" };
 
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-    if (blocks) {
+    if (blocks && blocks.length > 0) {
       for (const block of blocks) {
         if (dateStr >= block.start_date && dateStr <= block.end_date) {
-          return { status: "booked", tooltip: "Resort Blocked" };
+          return { status: "booked", tooltip: block.reason ? `Resort Blocked: ${block.reason}` : "Resort Blocked" };
         }
       }
     }
 
-    if (room.maintenance_start && room.maintenance_end) {
-      if (dateStr >= room.maintenance_start && dateStr < room.maintenance_end) {
-        return { status: "booked", tooltip: "Under Maintenance" };
+    if (room?.maintenance_start && room?.maintenance_end) {
+      if (dateStr >= room.maintenance_start && dateStr <= room.maintenance_end) {
+        return { status: "booked", tooltip: "Room Under Maintenance" };
       }
     }
 
-    if (bookings) {
+    if (bookings && bookings.length > 0) {
       for (const b of bookings) {
-        if (b.status === "approved" || b.status === "pending") {
-          if (dateStr >= b.check_in && dateStr < b.check_out) {
-            return { status: "booked", tooltip: "Booked" };
+        if (b.deleted_at) continue;
+        const status = (b.status || "").toLowerCase();
+        if (status === "approved" || status === "pending" || status === "confirmed") {
+          // If single day booking
+          if (b.check_in === b.check_out) {
+            if (dateStr === b.check_in) {
+              return { status: "booked", tooltip: `Booked (${status === "approved" ? "Confirmed" : "Reserved"})` };
+            }
+          } else {
+            // For multi-day stays: check_in <= dateStr < check_out
+            if (dateStr >= b.check_in && dateStr < b.check_out) {
+              return { status: "booked", tooltip: `Booked (${status === "approved" ? "Confirmed" : "Reserved"})` };
+            }
           }
         }
       }
     }
 
-    return { status: "available", tooltip: "Available" };
+    return { status: "available", tooltip: "Available for Booking" };
   };
 
   const CustomDayButton = (dayProps: React.ComponentProps<typeof DayButton>) => {
     const { day, modifiers, className: defaultClassName, ...btnProps } = dayProps;
     const { status, tooltip } = getDayStatus(day.date);
 
-    let bgColor = "";
-    let textColor = "text-foreground";
-
-    if (status === "past") {
-      bgColor = "bg-muted opacity-50";
-      textColor = "text-muted-foreground";
-    } else if (status === "booked") {
-      bgColor = "bg-red-500 hover:bg-red-600";
-      textColor = "text-white";
-    } else if (status === "available") {
-      bgColor = "bg-green-500 hover:bg-green-600";
-      textColor = "text-white";
-    }
-
-    const isSelected = modifiers.selected;
-    if (isSelected) {
-      bgColor = "bg-primary text-primary-foreground font-bold ring-2 ring-primary ring-offset-2";
-    }
+    const isBooked = status === "booked";
+    const isPast = status === "past";
+    const isAvailable = status === "available";
+    const isSelected = !!modifiers.selected;
 
     return (
       <TooltipProvider>
         <Tooltip delayDuration={100}>
           <TooltipTrigger asChild>
-            <DayButton
-              day={day}
-              modifiers={modifiers}
+            <button
+              type="button"
               {...btnProps}
-              disabled={btnProps.disabled || status === "booked" || status === "past"}
+              disabled={btnProps.disabled || isBooked || isPast}
+              aria-disabled={isBooked || isPast}
+              data-status={status}
+              onClick={(e) => {
+                if (isBooked) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toast.error(`This date is already booked (${tooltip}). Please choose an available date.`);
+                  return;
+                }
+                if (isPast) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toast.error("You cannot select past dates.");
+                  return;
+                }
+                if (btnProps.onClick) {
+                  btnProps.onClick(e);
+                }
+              }}
               className={cn(
-                buttonVariants({ variant: "ghost", size: "icon" }),
-                "h-9 w-9 p-0 font-normal aria-selected:opacity-100 transition-colors rounded-md",
-                bgColor,
-                textColor,
-                defaultClassName,
+                "h-9 w-9 p-0 font-medium rounded-md transition-all flex items-center justify-center text-sm relative select-none",
+                // Red for booked dates - highest priority, never overridden
+                isBooked &&
+                  "!bg-red-600 hover:!bg-red-700 !text-white font-bold shadow-sm !cursor-not-allowed !opacity-100 border border-red-700 ring-0",
+                // Selected state (only for available dates) - Blue
+                isSelected &&
+                  !isBooked &&
+                  "!bg-blue-600 hover:!bg-blue-700 !text-white font-bold ring-2 ring-blue-400 ring-offset-2 shadow-sm",
+                // Available dates
+                isAvailable &&
+                  !isSelected &&
+                  "!bg-emerald-600 hover:!bg-emerald-700 !text-white font-medium shadow-xs hover:scale-105 transition-transform",
+                // Past dates
+                isPast &&
+                  "!bg-slate-100 !text-slate-400 !opacity-50 !cursor-not-allowed line-through",
               )}
-            />
+            >
+              <span>{day.date.getDate()}</span>
+              {isBooked && (
+                <span className="sr-only">(Booked)</span>
+              )}
+            </button>
           </TooltipTrigger>
-          <TooltipContent className="z-[60] font-medium shadow-md">{tooltip}</TooltipContent>
+          <TooltipContent className="z-[60] font-medium shadow-md text-xs">
+            {isBooked ? `🔴 ${tooltip}` : isAvailable ? "🟢 Available for Booking" : "Past Date"}
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );
@@ -456,11 +524,73 @@ function BookPage() {
                     to: form.check_out ? new Date(form.check_out + "T00:00:00") : undefined,
                   }}
                   onSelect={(range: any) => {
-                    let check_in = "";
-                    let check_out = "";
-                    if (range?.from) check_in = format(range.from, "yyyy-MM-dd");
-                    if (range?.to) check_out = format(range.to, "yyyy-MM-dd");
-                    setForm((f) => ({ ...f, check_in, check_out }));
+                    if (!range) {
+                      setForm((f) => ({ ...f, check_in: "", check_out: "" }));
+                      return;
+                    }
+
+                    // Single date clicked
+                    if (range.from && !range.to) {
+                      const fromStatus = getDayStatus(range.from);
+                      if (fromStatus.status === "booked") {
+                        toast.error(`This date is already booked (${fromStatus.tooltip}). Please choose an available date.`);
+                        return;
+                      }
+                      const check_in = format(range.from, "yyyy-MM-dd");
+                      setForm((f) => ({ ...f, check_in, check_out: check_in }));
+                      return;
+                    }
+
+                    // Range selected
+                    if (range.from && range.to) {
+                      const from = new Date(range.from);
+                      const to = new Date(range.to);
+
+                      // Check for booked dates anywhere within range
+                      let cur = new Date(from);
+                      let hasBooked = false;
+                      let conflictDateStr = "";
+                      let conflictTooltip = "";
+
+                      while (cur <= to) {
+                        const curStr = format(cur, "yyyy-MM-dd");
+                        const toStr = format(to, "yyyy-MM-dd");
+                        const isSingleDay = from.getTime() === to.getTime();
+
+                        if (!isSingleDay && curStr === toStr) {
+                          const st = getDayStatus(cur);
+                          if (st.status === "booked" && st.tooltip.includes("Resort Blocked")) {
+                            hasBooked = true;
+                            conflictDateStr = curStr;
+                            conflictTooltip = st.tooltip;
+                            break;
+                          }
+                        } else {
+                          const st = getDayStatus(cur);
+                          if (st.status === "booked") {
+                            hasBooked = true;
+                            conflictDateStr = curStr;
+                            conflictTooltip = st.tooltip;
+                            break;
+                          }
+                        }
+                        cur.setDate(cur.getDate() + 1);
+                      }
+
+                      if (hasBooked) {
+                        toast.error(
+                          `The selected date range contains booked date ${conflictDateStr} (${conflictTooltip}). Dates marked in red cannot be booked.`
+                        );
+                        // Reset to just the check-in date
+                        const check_in = format(range.from, "yyyy-MM-dd");
+                        setForm((f) => ({ ...f, check_in, check_out: check_in }));
+                        return;
+                      }
+
+                      const check_in = format(range.from, "yyyy-MM-dd");
+                      const check_out = format(range.to, "yyyy-MM-dd");
+                      setForm((f) => ({ ...f, check_in, check_out }));
+                    }
                   }}
                   disabled={(date) => getDayStatus(date).status === "booked" || date < today}
                   className="bg-white rounded-lg border shadow-xs p-2 sm:p-4 max-w-full"
@@ -468,20 +598,31 @@ function BookPage() {
                 />
               </div>
               
-              <div className="flex items-center justify-center gap-3 sm:gap-6 mt-4 sm:mt-6 text-xs sm:text-sm text-muted-foreground flex-wrap">
+              <div className="flex items-center justify-center gap-3 sm:gap-6 mt-4 sm:mt-6 text-xs sm:text-sm text-slate-700 flex-wrap font-medium">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3.5 h-3.5 rounded bg-green-500"></div>
+                  <div className="w-3.5 h-3.5 rounded bg-emerald-600 shadow-xs"></div>
                   <span>Available</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3.5 h-3.5 rounded bg-red-500"></div>
-                  <span>Booked</span>
+                  <div className="w-3.5 h-3.5 rounded bg-red-600 shadow-xs"></div>
+                  <span className="font-semibold text-red-600">Booked</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3.5 h-3.5 rounded bg-primary"></div>
+                  <div className="w-3.5 h-3.5 rounded bg-blue-600 shadow-xs"></div>
                   <span>Selected</span>
                 </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3.5 h-3.5 rounded bg-slate-200"></div>
+                  <span className="text-slate-400">Past Date</span>
+                </div>
               </div>
+
+              {conflictWarning && (
+                <div className="mt-4 w-full p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span className="font-medium">{conflictWarning}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -653,9 +794,9 @@ function BookPage() {
                 !form.guests
               }
               size="lg"
-              className="bg-accent text-accent-foreground hover:bg-accent/90 w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
             >
-              {submitting ? "Submitting…" : "Confirm Reservation"}
+              {submitting ? "Submitting…" : conflictWarning ? "Selected Dates Unavailable" : "Confirm Reservation"}
             </Button>
           </form>
         </Card>
@@ -668,7 +809,12 @@ function BookPage() {
             <h3 className="font-semibold">{room.name}</h3>
             <p className="text-sm text-muted-foreground capitalize">{room.type} · up to {room.capacity} guests</p>
             <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
-              <div className="flex justify-between"><span>Rate</span><span>₱{Number(room.price).toLocaleString()} / night</span></div>
+              <div className="flex justify-between">
+                <span>Rate</span>
+                <span>
+                  ₱{Number(room.price).toLocaleString()} {room?.type === "cottage" ? "/ day" : "/ night"}
+                </span>
+              </div>
               {form.check_in && (
                 <div className="flex justify-between">
                   <span>Check-in</span>
@@ -681,7 +827,10 @@ function BookPage() {
                   <span className="font-medium">{format(new Date(form.check_out + "T00:00:00"), "MMM d, yyyy")}</span>
                 </div>
               )}
-              <div className="flex justify-between"><span>Nights</span><span>{nights > 0 ? nights : 0}</span></div>
+              <div className="flex justify-between">
+                <span>{room?.type === "cottage" ? "Days" : "Nights"}</span>
+                <span>{nights > 0 ? nights : 0}</span>
+              </div>
               {room?.type === "room" && additionalFee > 0 && (
                 <div className="flex justify-between text-emerald-700 font-medium">
                   <span>Additional Fee</span>
@@ -749,7 +898,14 @@ function BookPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
                 <span className="text-slate-500">Stay Dates:</span>
                 <strong className="text-slate-900 text-left sm:text-right font-mono text-[11px] sm:text-xs">
-                  {form.check_in} → {form.check_out} ({nights} night{nights > 1 ? "s" : ""})
+                  {form.check_in} → {form.check_out} ({nights}{" "}
+                  {room.type === "cottage"
+                    ? nights > 1
+                      ? "days"
+                      : "day"
+                    : nights > 1
+                    ? "nights"
+                    : "night"})
                 </strong>
               </div>
 

@@ -189,7 +189,9 @@ function RoomsPage() {
                         <span className="text-xl sm:text-2xl font-bold text-primary">
                           ₱{Number(r.price).toLocaleString()}
                         </span>
-                        <span className="text-xs sm:text-sm text-muted-foreground"> / night</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">
+                          {r.type === "cottage" ? " / day" : " / night"}
+                        </span>
                       </div>
                       <Button
                         asChild

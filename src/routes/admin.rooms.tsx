@@ -379,7 +379,7 @@ function RoomsTab() {
               <TableRow className="border-b border-slate-200/80">
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Accommodation</TableHead>
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Type</TableHead>
-                <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Rate (₱ / night)</TableHead>
+                <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Rate (₱ / stay)</TableHead>
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Capacity</TableHead>
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Status</TableHead>
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4 text-right pr-6">Actions</TableHead>
@@ -414,6 +414,9 @@ function RoomsTab() {
                   <TableCell className="py-4">
                     <span className="font-display font-extrabold text-[#B38728] text-base">
                       ₱{Number(r.price).toLocaleString()}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-normal ml-1">
+                      {r.type === 'cottage' ? '/ day' : '/ night'}
                     </span>
                   </TableCell>
 

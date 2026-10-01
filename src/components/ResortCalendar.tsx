@@ -90,7 +90,11 @@ export function ResortCalendar({ className, onSelect, selected, mode = "range", 
             b.status !== "completed",
         );
         for (const b of dailyBookings) {
-          if (dateStr >= b.check_in && dateStr < b.check_out) {
+          const isBooked =
+            b.check_in === b.check_out
+              ? dateStr === b.check_in
+              : dateStr >= b.check_in && dateStr < b.check_out;
+          if (isBooked) {
             roomOccupied = true;
             break;
           }
@@ -126,55 +130,53 @@ export function ResortCalendar({ className, onSelect, selected, mode = "range", 
     const { day, modifiers, className: defaultClassName, ...btnProps } = dayProps;
     const { status, availableCount, detailsStr, reason } = getAvailability(day.date);
 
-    let bgColor = "";
-    let textColor = "text-foreground";
+    const isBooked = status === "booked";
+    const isPast = status === "past";
+    const isLimited = status === "limited";
+    const isAvailable = status === "available";
+    const isSelected = !!modifiers.selected;
+
     let tooltipText = "";
-
-    if (status === "past") {
-      bgColor = "bg-muted opacity-50";
-      textColor = "text-muted-foreground";
+    if (isPast) {
       tooltipText = "Past date";
-    } else if (status === "booked") {
-      bgColor = "bg-red-500 hover:bg-red-600";
-      textColor = "text-white";
+    } else if (isBooked) {
       tooltipText = reason ? reason : "Not Available (Fully Booked)";
-    } else if (status === "limited") {
-      bgColor = "bg-yellow-400 hover:bg-yellow-500";
-      textColor = "text-white";
+    } else if (isLimited) {
       tooltipText = `Limited Availability: ${detailsStr} left`;
-    } else if (status === "available") {
-      bgColor = "bg-green-500 hover:bg-green-600";
-      textColor = "text-white";
+    } else if (isAvailable) {
       tooltipText = `Available: ${detailsStr}`;
-    }
-
-    // Default classes from react-day-picker
-    const defaultClassNames = getDefaultClassNames();
-
-    const isSelected = modifiers.selected;
-    if (isSelected) {
-      bgColor = "bg-primary text-primary-foreground font-bold ring-2 ring-primary ring-offset-2";
     }
 
     return (
       <TooltipProvider>
         <Tooltip delayDuration={100}>
           <TooltipTrigger asChild>
-            <DayButton
-              day={day}
-              modifiers={modifiers}
+            <button
+              type="button"
               {...btnProps}
-              disabled={btnProps.disabled || status === "booked" || status === "past"}
+              disabled={btnProps.disabled || isBooked || isPast}
+              aria-disabled={isBooked || isPast}
               className={cn(
-                buttonVariants({ variant: "ghost", size: "icon" }),
-                "h-9 w-9 p-0 font-normal aria-selected:opacity-100 transition-colors rounded-md",
-                bgColor,
-                textColor,
-                defaultClassName,
+                "h-9 w-9 p-0 font-medium rounded-md transition-all flex items-center justify-center text-sm relative select-none",
+                isBooked &&
+                  "!bg-red-600 hover:!bg-red-700 !text-white font-bold shadow-sm !cursor-not-allowed !opacity-100 border border-red-700 ring-0",
+                isSelected &&
+                  !isBooked &&
+                  "!bg-blue-600 hover:!bg-blue-700 !text-white font-bold ring-2 ring-blue-400 ring-offset-2 shadow-sm",
+                isLimited &&
+                  !isSelected &&
+                  "!bg-amber-500 hover:!bg-amber-600 !text-white font-medium shadow-xs",
+                isAvailable &&
+                  !isSelected &&
+                  "!bg-emerald-600 hover:!bg-emerald-700 !text-white font-medium shadow-xs",
+                isPast &&
+                  "!bg-slate-100 !text-slate-400 !opacity-50 !cursor-not-allowed line-through",
               )}
-            />
+            >
+              <span>{day.date.getDate()}</span>
+            </button>
           </TooltipTrigger>
-          <TooltipContent className="z-[60] font-medium shadow-md">{tooltipText}</TooltipContent>
+          <TooltipContent className="z-[60] font-medium shadow-md text-xs">{tooltipText}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );
