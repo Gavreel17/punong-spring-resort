@@ -1,13 +1,15 @@
 -- Run this in your Supabase SQL Editor if needed to allow the calendar to show booked dates in red
+-- and prevent double-booking for all users (including anonymous visitors and logged-in customers).
+
 DROP POLICY IF EXISTS "anyone view booking schedule" ON public.bookings;
 CREATE POLICY "anyone view booking schedule" ON public.bookings
   FOR SELECT TO anon, authenticated
   USING (
     deleted_at IS NULL 
-    AND status IN ('approved', 'pending', 'confirmed', 'completed')
+    AND status NOT IN ('cancelled', 'rejected')
   );
 
--- Function fallback
+-- Function fallback with elevated security definer rights
 CREATE OR REPLACE FUNCTION public.get_room_booked_dates(p_room_id UUID)
 RETURNS TABLE (
   id UUID,
@@ -30,7 +32,7 @@ AS $$
   FROM public.bookings b
   WHERE b.room_id = p_room_id
     AND b.deleted_at IS NULL
-    AND b.status IN ('approved', 'pending', 'confirmed', 'completed');
+    AND b.status NOT IN ('cancelled', 'rejected');
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_room_booked_dates(UUID) TO anon, authenticated;

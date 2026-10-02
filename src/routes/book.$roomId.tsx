@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { z } from "zod";
@@ -91,6 +91,16 @@ function BookPage() {
     queryKey: ["room-bookings", roomId],
     queryFn: async () => {
       try {
+        const { getRoomBookingsServerFn } = await import("@/lib/api/booking.functions");
+        const serverData = await getRoomBookingsServerFn({ data: { roomId } });
+        if (serverData && serverData.length > 0) {
+          return serverData;
+        }
+      } catch (e) {
+        console.warn("ServerFn room bookings fetch fallback to client query:", e);
+      }
+
+      try {
         const { data, error } = await supabase
           .from("bookings")
           .select("id, room_id, check_in, check_out, status, deleted_at")
@@ -145,6 +155,69 @@ function BookPage() {
         );
   }, [user]);
 
+  const today = useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }, []);
+
+  const getDayStatus = (date: Date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    if (d < today) return { status: "past", tooltip: "Past date" };
+
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    if (blocks && blocks.length > 0) {
+      for (const block of blocks) {
+        if (dateStr >= block.start_date && dateStr <= block.end_date) {
+          return { status: "booked", tooltip: block.reason ? `Resort Blocked: ${block.reason}` : "Resort Blocked" };
+        }
+      }
+    }
+
+    if (room?.maintenance_start && room?.maintenance_end) {
+      if (dateStr >= room.maintenance_start && dateStr <= room.maintenance_end) {
+        return { status: "booked", tooltip: "Room Under Maintenance" };
+      }
+    }
+
+    if (bookings && bookings.length > 0) {
+      for (const b of bookings) {
+        if (b.deleted_at) continue;
+        const status = (b.status || "").toLowerCase();
+        if (status !== "cancelled" && status !== "rejected") {
+          if (dateStr >= b.check_in && dateStr <= b.check_out) {
+            const statusLabel =
+              status === "approved" || status === "confirmed"
+                ? "Confirmed"
+                : status === "completed"
+                ? "Completed"
+                : "Reserved";
+            return { status: "booked", tooltip: `Booked (${statusLabel})` };
+          }
+        }
+      }
+    }
+
+    return { status: "available", tooltip: "Available for Booking" };
+  };
+
+  const isSelectedDateRangeBooked = useMemo(() => {
+    if (!form.check_in || !form.check_out) return false;
+    const start = new Date(form.check_in + "T00:00:00");
+    const end = new Date(form.check_out + "T00:00:00");
+    if (start.getTime() > end.getTime()) return true;
+    let cur = new Date(start);
+    while (cur <= end) {
+      if (getDayStatus(cur).status === "booked") {
+        return true;
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    return false;
+  }, [form.check_in, form.check_out, bookings, blocks, room, today]);
+
   useEffect(() => {
     if (form.check_in && form.check_out) {
       const start = new Date(form.check_in + "T00:00:00");
@@ -155,73 +228,22 @@ function BookPage() {
         return;
       }
 
-      let hasConflict = false;
-      let conflictReason =
-        "Sorry, this room/cottage is already booked for the selected dates. Please choose another date.";
-
-      const isSingleDayBooking = form.check_in === form.check_out;
-
-      // Check maintenance
-      if (room?.maintenance_start && room?.maintenance_end) {
-        const mStart = new Date(room.maintenance_start + "T00:00:00").getTime();
-        const mEnd = new Date(room.maintenance_end + "T00:00:00").getTime();
-        if (start.getTime() <= mEnd && end.getTime() >= mStart) {
-          hasConflict = true;
-          conflictReason = "Sorry, this accommodation is under maintenance during these dates.";
+      let cur = new Date(start);
+      let conflictReason: string | null = null;
+      while (cur <= end) {
+        const st = getDayStatus(cur);
+        if (st.status === "booked") {
+          conflictReason = `Sorry, date ${format(cur, "MMM d, yyyy")} is already booked (${st.tooltip}) and cannot be reserved.`;
+          break;
         }
+        cur.setDate(cur.getDate() + 1);
       }
 
-      // Check resort blocks
-      if (!hasConflict && blocks && blocks.length > 0) {
-        for (const block of blocks) {
-          const bStart = new Date(block.start_date + "T00:00:00").getTime();
-          const bEnd = new Date(block.end_date + "T00:00:00").getTime();
-          if (start.getTime() <= bEnd && end.getTime() >= bStart) {
-            hasConflict = true;
-            conflictReason = block.reason ? `Resort Blocked: ${block.reason}` : "The resort is blocked during these dates.";
-            break;
-          }
-        }
-      }
-
-      // Check bookings
-      if (!hasConflict && bookings && bookings.length > 0) {
-        for (const b of bookings) {
-          if (b.deleted_at) continue;
-          const status = (b.status || "").toLowerCase();
-          if (status === "approved" || status === "pending" || status === "confirmed") {
-            const bStart = new Date(b.check_in + "T00:00:00").getTime();
-            const bEnd = new Date(b.check_out + "T00:00:00").getTime();
-            const isBookingSingleDay = b.check_in === b.check_out;
-
-            if (isSingleDayBooking || isBookingSingleDay) {
-              // If either is a single-day reservation, any overlap is a conflict
-              if (start.getTime() <= bEnd && end.getTime() >= bStart) {
-                hasConflict = true;
-                conflictReason = `Sorry, this accommodation is already booked on ${b.check_in}.`;
-                break;
-              }
-            } else {
-              // Overnight stays: conflict if ranges overlap
-              if (start.getTime() < bEnd && end.getTime() > bStart) {
-                hasConflict = true;
-                conflictReason = `Sorry, this accommodation is already reserved from ${b.check_in} to ${b.check_out}.`;
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      if (hasConflict) {
-        setConflictWarning(conflictReason);
-      } else {
-        setConflictWarning(null);
-      }
+      setConflictWarning(conflictReason);
     } else {
       setConflictWarning(null);
     }
-  }, [form.check_in, form.check_out, room, bookings, blocks]);
+  }, [form.check_in, form.check_out, room, bookings, blocks, today]);
 
   const [singleFoamBeds, setSingleFoamBeds] = useState(0);
   const [doubleFoamBeds, setDoubleFoamBeds] = useState(0);
@@ -252,7 +274,15 @@ function BookPage() {
   function handleInitiateBooking(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !room) return;
-    if (conflictWarning) return toast.error(conflictWarning);
+    if (!form.check_in || !form.check_out) {
+      return toast.error("Please select your reservation date(s) on the calendar.");
+    }
+    if (isSelectedDateRangeBooked || conflictWarning) {
+      return toast.error(
+        conflictWarning ||
+          "Selected dates include dates marked in red (already booked). Dates marked in red cannot be booked."
+      );
+    }
     if (nights <= 0) return toast.error("Invalid dates selected");
 
     if (!form.fullname.trim()) {
@@ -297,6 +327,9 @@ function BookPage() {
 
   async function handleConfirmAndSubmit() {
     if (submitting || !user || !room) return;
+    if (isSelectedDateRangeBooked || conflictWarning) {
+      return toast.error("Cannot proceed: Selected dates include dates marked in red (already booked).");
+    }
     setSubmitting(true);
 
     try {
@@ -413,53 +446,6 @@ function BookPage() {
   if (authLoading || !room)
     return <div className="flex min-h-screen items-center justify-center">Loading…</div>;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const getDayStatus = (date: Date) => {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    if (d < today) return { status: "past", tooltip: "Past date" };
-
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-
-    if (blocks && blocks.length > 0) {
-      for (const block of blocks) {
-        if (dateStr >= block.start_date && dateStr <= block.end_date) {
-          return { status: "booked", tooltip: block.reason ? `Resort Blocked: ${block.reason}` : "Resort Blocked" };
-        }
-      }
-    }
-
-    if (room?.maintenance_start && room?.maintenance_end) {
-      if (dateStr >= room.maintenance_start && dateStr <= room.maintenance_end) {
-        return { status: "booked", tooltip: "Room Under Maintenance" };
-      }
-    }
-
-    if (bookings && bookings.length > 0) {
-      for (const b of bookings) {
-        if (b.deleted_at) continue;
-        const status = (b.status || "").toLowerCase();
-        if (status === "approved" || status === "pending" || status === "confirmed") {
-          // If single day booking
-          if (b.check_in === b.check_out) {
-            if (dateStr === b.check_in) {
-              return { status: "booked", tooltip: `Booked (${status === "approved" ? "Confirmed" : "Reserved"})` };
-            }
-          } else {
-            // For multi-day stays: check_in <= dateStr < check_out
-            if (dateStr >= b.check_in && dateStr < b.check_out) {
-              return { status: "booked", tooltip: `Booked (${status === "approved" ? "Confirmed" : "Reserved"})` };
-            }
-          }
-        }
-      }
-    }
-
-    return { status: "available", tooltip: "Available for Booking" };
-  };
-
   const CustomDayButton = (dayProps: React.ComponentProps<typeof DayButton>) => {
     const { day, modifiers, className: defaultClassName, ...btnProps } = dayProps;
     const { status, tooltip } = getDayStatus(day.date);
@@ -476,14 +462,14 @@ function BookPage() {
             <button
               type="button"
               {...btnProps}
-              disabled={btnProps.disabled || isBooked || isPast}
+              disabled={isBooked || isPast}
               aria-disabled={isBooked || isPast}
               data-status={status}
               onClick={(e) => {
                 if (isBooked) {
                   e.preventDefault();
                   e.stopPropagation();
-                  toast.error(`This date is already booked (${tooltip}). Please choose an available date.`);
+                  toast.error(`This date is already booked (${tooltip}). Dates marked in red cannot be booked.`);
                   return;
                 }
                 if (isPast) {
@@ -521,7 +507,7 @@ function BookPage() {
             </button>
           </TooltipTrigger>
           <TooltipContent className="z-[60] font-medium shadow-md text-xs">
-            {isBooked ? `🔴 ${tooltip}` : isAvailable ? "🟢 Available for Booking" : "Past Date"}
+            {isBooked ? `🔴 ${tooltip} — Not Available` : isAvailable ? "🟢 Available for Booking" : "Past Date"}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -556,7 +542,13 @@ function BookPage() {
                     if (range.from && !range.to) {
                       const fromStatus = getDayStatus(range.from);
                       if (fromStatus.status === "booked") {
-                        toast.error(`This date is already booked (${fromStatus.tooltip}). Please choose an available date.`);
+                        toast.error(`This date is already booked (${fromStatus.tooltip}). Dates marked in red cannot be booked.`);
+                        setForm((f) => ({ ...f, check_in: "", check_out: "" }));
+                        return;
+                      }
+                      if (fromStatus.status === "past") {
+                        toast.error("You cannot select past dates.");
+                        setForm((f) => ({ ...f, check_in: "", check_out: "" }));
                         return;
                       }
                       const check_in = format(range.from, "yyyy-MM-dd");
@@ -577,25 +569,12 @@ function BookPage() {
 
                       while (cur <= to) {
                         const curStr = format(cur, "yyyy-MM-dd");
-                        const toStr = format(to, "yyyy-MM-dd");
-                        const isSingleDay = from.getTime() === to.getTime();
-
-                        if (!isSingleDay && curStr === toStr) {
-                          const st = getDayStatus(cur);
-                          if (st.status === "booked" && st.tooltip.includes("Resort Blocked")) {
-                            hasBooked = true;
-                            conflictDateStr = curStr;
-                            conflictTooltip = st.tooltip;
-                            break;
-                          }
-                        } else {
-                          const st = getDayStatus(cur);
-                          if (st.status === "booked") {
-                            hasBooked = true;
-                            conflictDateStr = curStr;
-                            conflictTooltip = st.tooltip;
-                            break;
-                          }
+                        const st = getDayStatus(cur);
+                        if (st.status === "booked") {
+                          hasBooked = true;
+                          conflictDateStr = curStr;
+                          conflictTooltip = st.tooltip;
+                          break;
                         }
                         cur.setDate(cur.getDate() + 1);
                       }
@@ -604,9 +583,8 @@ function BookPage() {
                         toast.error(
                           `The selected date range contains booked date ${conflictDateStr} (${conflictTooltip}). Dates marked in red cannot be booked.`
                         );
-                        // Reset to just the check-in date
-                        const check_in = format(range.from, "yyyy-MM-dd");
-                        setForm((f) => ({ ...f, check_in, check_out: check_in }));
+                        // Reset and clear the selection completely so red date is NEVER part of check-in/out
+                        setForm((f) => ({ ...f, check_in: "", check_out: "" }));
                         return;
                       }
 
@@ -955,6 +933,7 @@ function BookPage() {
               disabled={
                 submitting ||
                 !!conflictWarning ||
+                isSelectedDateRangeBooked ||
                 !form.check_in ||
                 !form.check_out ||
                 !form.fullname.trim() ||
@@ -965,9 +944,18 @@ function BookPage() {
                 !form.guests
               }
               size="lg"
-              className="bg-accent text-accent-foreground hover:bg-accent/90 w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed font-bold cursor-pointer"
+              className={cn(
+                "w-full mt-4 font-bold transition-all",
+                isSelectedDateRangeBooked || !!conflictWarning
+                  ? "bg-red-600 hover:bg-red-600 text-white cursor-not-allowed opacity-80"
+                  : "bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              )}
             >
-              {submitting ? "Submitting…" : conflictWarning ? "Selected Dates Unavailable" : "Confirm Reservation"}
+              {submitting
+                ? "Submitting…"
+                : isSelectedDateRangeBooked || conflictWarning
+                ? "Dates Marked in Red Cannot Be Booked"
+                : "Confirm Reservation"}
             </Button>
           </form>
         </Card>

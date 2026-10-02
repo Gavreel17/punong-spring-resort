@@ -75,7 +75,7 @@ export function ResortCalendar({ className, onSelect, selected, mode = "range", 
       if (r.status === "maintenance" || (r.maintenance_start && r.maintenance_end)) {
         if (
           !r.maintenance_start ||
-          (dateStr >= r.maintenance_start && dateStr < r.maintenance_end)
+          (dateStr >= r.maintenance_start && dateStr <= r.maintenance_end)
         ) {
           roomOccupied = true;
         }
@@ -86,14 +86,10 @@ export function ResortCalendar({ className, onSelect, selected, mode = "range", 
           (b: any) =>
             b.room_id === r.id &&
             b.status !== "rejected" &&
-            b.status !== "cancelled" &&
-            b.status !== "completed",
+            b.status !== "cancelled"
         );
         for (const b of dailyBookings) {
-          const isBooked =
-            b.check_in === b.check_out
-              ? dateStr === b.check_in
-              : dateStr >= b.check_in && dateStr < b.check_out;
+          const isBooked = dateStr >= b.check_in && dateStr <= b.check_out;
           if (isBooked) {
             roomOccupied = true;
             break;
