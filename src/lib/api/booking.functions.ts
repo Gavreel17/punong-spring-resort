@@ -7,7 +7,7 @@ if (typeof window === "undefined" && typeof (globalThis as any).WebSocket === "u
 }
 
 export const getRoomBookingsServerFn = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ roomId: z.string() }))
+  .validator(z.object({ roomId: z.string() }))
   .handler(async ({ data }) => {
     try {
       const { createClient } = await import("@supabase/supabase-js");
