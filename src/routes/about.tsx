@@ -48,25 +48,13 @@ function About() {
             <AccordionItem value="1">
               <AccordionTrigger>What time is check-in and check-out?</AccordionTrigger>
               <AccordionContent>
-                Check-in starts at 2:00 PM and check-out is by 12:00 PM.
+                Check-in for overnight rooms and cottages starts at 2:00 PM, and check-out is by 12:00 PM (noon). Day-use cottages are available from 8:00 AM to 6:00 PM.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="2">
-              <AccordionTrigger>Do you offer airport transfers?</AccordionTrigger>
-              <AccordionContent>
-                Yes, complimentary transfers are available for all confirmed bookings.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="3">
-              <AccordionTrigger>Is breakfast included?</AccordionTrigger>
-              <AccordionContent>
-                Daily buffet breakfast is included with every stay.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="4">
               <AccordionTrigger>What is your cancellation policy?</AccordionTrigger>
               <AccordionContent>
-                Free cancellation up to 7 days before your check-in date.
+                Reservations can be cancelled directly through your customer dashboard before your stay is completed. Once cancelled, the reservation is released and recorded with your cancellation details. Any refund or payment inquiries will be reviewed and managed by the resort administration. Completed reservations cannot be cancelled.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
