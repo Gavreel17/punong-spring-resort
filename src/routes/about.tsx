@@ -54,7 +54,7 @@ function About() {
             <AccordionItem value="2">
               <AccordionTrigger>What is your cancellation policy?</AccordionTrigger>
               <AccordionContent>
-                Reservations can be cancelled directly through your customer dashboard before your stay is completed. Once cancelled, the reservation is released and recorded with your cancellation details. Any refund or payment inquiries will be reviewed and managed by the resort administration. Completed reservations cannot be cancelled.
+                Reservations can be cancelled directly through your customer dashboard. Once cancelled, the reservation is released and recorded with your cancellation details. Any refund or payment inquiries will be reviewed and managed by the resort administration.
               </AccordionContent>
             </AccordionItem>
           </Accordion>

@@ -206,9 +206,6 @@ function Dashboard() {
 
   async function handleCancel() {
     if (!cancelData) return;
-    if (cancelData.booking?.status === "completed") {
-      return toast.error("Completed reservations cannot be cancelled.");
-    }
     const finalReason = cancelReason === "Other" && otherReasonText.trim() 
       ? `Other: ${otherReasonText.trim()}` 
       : cancelReason;
@@ -224,42 +221,50 @@ function Dashboard() {
         return toast.error(bErr.message);
       }
 
-      const payment = cancelData.payment;
-      if (payment?.id) {
-        let parsedNotes: any = {};
-        try { parsedNotes = JSON.parse(payment.notes); } catch(e){}
+      try {
+        const payment = cancelData.payment;
+        if (payment?.id) {
+          let parsedNotes: any = {};
+          try { parsedNotes = JSON.parse(payment.notes); } catch(e){}
 
-        parsedNotes.cancellation_reason = finalReason;
-        parsedNotes.cancellation_date = new Date().toISOString();
-        parsedNotes.cancelled_by = "Customer";
-        parsedNotes.cancelled_by_name = cancelData.booking?.guest_name || user?.user_metadata?.fullname || user?.email || "Customer";
+          parsedNotes.cancellation_reason = finalReason;
+          parsedNotes.cancellation_date = new Date().toISOString();
+          parsedNotes.cancelled_by = "Customer";
+          parsedNotes.cancelled_by_name = cancelData.booking?.guest_name || user?.user_metadata?.fullname || user?.email || "Customer";
 
-        let newPaymentStatus = payment.status;
-        if (parsedNotes.method === "resort") {
-          newPaymentStatus = "unpaid";
-        } else if (parsedNotes.method === "gcash") {
-          newPaymentStatus = "refund_pending";
+          let newPaymentStatus = payment.status;
+          if (parsedNotes.method === "resort") {
+            newPaymentStatus = "unpaid";
+          }
+
+          const { error: pErr } = await supabase.from("payments").update({
+            status: newPaymentStatus,
+            notes: JSON.stringify(parsedNotes)
+          }).eq("id", payment.id);
+
+          if (pErr) {
+            await supabase.from("payments").update({
+              notes: JSON.stringify(parsedNotes)
+            }).eq("id", payment.id);
+          }
+        } else if (user) {
+          const notesPayload = JSON.stringify({
+            method: "resort",
+            cancellation_reason: finalReason,
+            cancellation_date: new Date().toISOString(),
+            cancelled_by: "Customer",
+            cancelled_by_name: cancelData.booking?.guest_name || user?.user_metadata?.fullname || user?.email || "Customer"
+          });
+          await supabase.from("payments").insert({
+            booking_id: cancelData.id,
+            user_id: user.id,
+            amount: 0,
+            status: "unpaid",
+            notes: notesPayload
+          });
         }
-
-        await supabase.from("payments").update({
-          status: newPaymentStatus,
-          notes: JSON.stringify(parsedNotes)
-        }).eq("id", payment.id);
-      } else if (user) {
-        const notesPayload = JSON.stringify({
-          method: "resort",
-          cancellation_reason: finalReason,
-          cancellation_date: new Date().toISOString(),
-          cancelled_by: "Customer",
-          cancelled_by_name: cancelData.booking?.guest_name || user?.user_metadata?.fullname || user?.email || "Customer"
-        });
-        await supabase.from("payments").insert({
-          booking_id: cancelData.id,
-          user_id: user.id,
-          amount: 0,
-          status: "unpaid",
-          notes: notesPayload
-        });
+      } catch (payErr) {
+        console.warn("Payment status/notes update during cancellation:", payErr);
       }
 
       toast.success("Booking cancelled successfully.");
@@ -667,10 +672,6 @@ function Dashboard() {
                               size="sm" 
                               className="border-rose-300 bg-rose-50/70 hover:bg-rose-100 text-rose-700 hover:text-rose-800 font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
                               onClick={() => {
-                                if (b.status === "completed") {
-                                  toast.error("Completed bookings cannot be cancelled.");
-                                  return;
-                                }
                                 setCancelData({ id: b.id, payment: b.payments?.[0], booking: b });
                                 setCancelReason("");
                                 setOtherReasonText("");
@@ -706,7 +707,7 @@ function Dashboard() {
           </DialogHeader>
 
           {/* Reservation Selector if multiple cancellable bookings exist */}
-          {bookings.filter((b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "completed").length > 1 && (
+          {bookings.filter((b: any) => b.status !== "cancelled" && b.status !== "rejected").length > 1 && (
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold uppercase text-slate-600">Select Reservation to Cancel</Label>
               <Select
@@ -723,7 +724,7 @@ function Dashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   {bookings
-                    .filter((b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "completed")
+                    .filter((b: any) => b.status !== "cancelled" && b.status !== "rejected")
                     .map((cb: any) => (
                       <SelectItem key={cb.id} value={cb.id} className="text-xs">
                         {cb.room?.name || "Accommodation"} ({cb.check_in} to {cb.check_out})
