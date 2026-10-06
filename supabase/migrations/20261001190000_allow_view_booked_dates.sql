@@ -7,7 +7,7 @@ CREATE POLICY "anyone view booking schedule" ON public.bookings
   FOR SELECT TO anon, authenticated
   USING (
     deleted_at IS NULL 
-    AND status NOT IN ('cancelled', 'rejected')
+    AND status NOT IN ('cancelled', 'rejected', 'no-show')
   );
 
 -- 2. Create RPC function as an additional secure fallback
@@ -33,7 +33,7 @@ AS $$
   FROM public.bookings b
   WHERE b.room_id = p_room_id
     AND b.deleted_at IS NULL
-    AND b.status NOT IN ('cancelled', 'rejected');
+    AND b.status NOT IN ('cancelled', 'rejected', 'no-show');
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_room_booked_dates(UUID) TO anon, authenticated;

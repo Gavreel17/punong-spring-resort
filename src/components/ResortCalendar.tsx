@@ -86,7 +86,8 @@ export function ResortCalendar({ className, onSelect, selected, mode = "range", 
           (b: any) =>
             b.room_id === r.id &&
             b.status !== "rejected" &&
-            b.status !== "cancelled"
+            b.status !== "cancelled" &&
+            b.status !== "no-show"
         );
         for (const b of dailyBookings) {
           const isBooked = dateStr >= b.check_in && dateStr <= b.check_out;

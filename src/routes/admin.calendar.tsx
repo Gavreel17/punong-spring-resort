@@ -253,7 +253,8 @@ export function AvailabilityCalendarTab() {
         b.room_id === room.id &&
         b.status !== "rejected" &&
         b.status !== "cancelled" &&
-        b.status !== "completed"
+        b.status !== "completed" &&
+        b.status !== "no-show"
     );
 
     for (const b of dailyBookings) {
@@ -405,6 +406,7 @@ export function AvailabilityCalendarTab() {
       return (
         b.status !== "rejected" &&
         b.status !== "cancelled" &&
+        b.status !== "no-show" &&
         b.check_in <= monthEnd &&
         b.check_out >= monthStart
       );
@@ -479,7 +481,7 @@ export function AvailabilityCalendarTab() {
     // Double-booking check
     const conflict = bookings.find((b: any) => {
       if (b.room_id !== bookingForm.room_id) return false;
-      if (b.status === "rejected" || b.status === "cancelled") return false;
+      if (b.status === "rejected" || b.status === "cancelled" || b.status === "no-show") return false;
       if (b.deleted_at) return false;
       if (b.check_in === b.check_out || bookingForm.check_in === bookingForm.check_out) {
         return bookingForm.check_in <= b.check_out && bookingForm.check_out >= b.check_in;
@@ -693,17 +695,18 @@ export function AvailabilityCalendarTab() {
   // Agenda Data for a Given Date
   const getAgendaForDate = (dateStr: string) => {
     const checkIns = bookings.filter(
-      (b: any) => b.check_in === dateStr && b.status !== "rejected" && b.status !== "cancelled"
+      (b: any) => b.check_in === dateStr && b.status !== "rejected" && b.status !== "cancelled" && b.status !== "no-show"
     );
     const checkOuts = bookings.filter(
-      (b: any) => b.check_out === dateStr && b.status !== "rejected" && b.status !== "cancelled"
+      (b: any) => b.check_out === dateStr && b.status !== "rejected" && b.status !== "cancelled" && b.status !== "no-show"
     );
     const stays = bookings.filter(
       (b: any) =>
         dateStr > b.check_in &&
         dateStr < b.check_out &&
         b.status !== "rejected" &&
-        b.status !== "cancelled"
+        b.status !== "cancelled" &&
+        b.status !== "no-show"
     );
 
     const occupiedRoomIds = new Set([

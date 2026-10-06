@@ -30,6 +30,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { processAutoBookingStatuses } from "@/lib/booking-utils";
 
 const MySwal = withReactContent(Swal);
 
@@ -90,11 +91,20 @@ function BookPage() {
   const { data: bookings } = useQuery({
     queryKey: ["room-bookings", roomId],
     queryFn: async () => {
+      // Proactively evaluate auto statuses so no-show bookings are converted and released immediately
+      try {
+        await processAutoBookingStatuses();
+      } catch (e) {
+        // silent
+      }
+
       try {
         const { getRoomBookingsServerFn } = await import("@/lib/api/booking.functions");
         const serverData = await getRoomBookingsServerFn({ data: { roomId } });
         if (serverData && serverData.length > 0) {
-          return serverData;
+          return serverData.filter(
+            (b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "no-show"
+          );
         }
       } catch (e) {
         console.warn("ServerFn room bookings fetch fallback to client query:", e);
@@ -112,9 +122,13 @@ function BookPage() {
             p_room_id: roomId,
           });
           if (rpcErr) console.warn("RPC fallback also failed:", rpcErr);
-          return rpcData || [];
+          return (rpcData || []).filter(
+            (b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "no-show"
+          );
         }
-        return data || [];
+        return (data || []).filter(
+          (b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "no-show"
+        );
       } catch (e) {
         console.error("Failed to load room bookings", e);
         return [];
@@ -186,7 +200,7 @@ function BookPage() {
       for (const b of bookings) {
         if (b.deleted_at) continue;
         const status = (b.status || "").toLowerCase();
-        if (status !== "cancelled" && status !== "rejected") {
+        if (status !== "cancelled" && status !== "rejected" && status !== "no-show") {
           if (dateStr >= b.check_in && dateStr <= b.check_out) {
             const statusLabel =
               status === "approved" || status === "confirmed"
@@ -846,7 +860,7 @@ function BookPage() {
                 <AlertCircle className="w-4 h-4" /> Resort Policies
               </h4>
               <p>
-                Reservations may be cancelled up to 24 hours before the scheduled check-in date. Failure to arrive without prior cancellation may result in the reservation being marked as a No-Show.
+                Reservations may be cancelled up to 5 hours before the scheduled check-in date. Failure to arrive without prior cancellation may result in the reservation being marked as a No-Show, and the accommodation will automatically be made available for other guests.
               </p>
             </div>
 

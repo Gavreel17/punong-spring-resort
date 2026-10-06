@@ -173,7 +173,7 @@ function About() {
             <AccordionItem value="2">
               <AccordionTrigger>What is your cancellation policy?</AccordionTrigger>
               <AccordionContent>
-                Reservations can be cancelled directly through your customer dashboard. Once cancelled, the reservation is released and recorded with your cancellation details. Any refund or payment inquiries will be reviewed and managed by the resort administration.
+                Reservations may be cancelled directly through your customer dashboard up to 5 hours before scheduled check-in. Failure to arrive within 5 hours of your scheduled check-in time without prior cancellation will automatically result in the reservation being marked as a No-Show, and the accommodation will automatically be made available for other guests.
               </AccordionContent>
             </AccordionItem>
           </Accordion>

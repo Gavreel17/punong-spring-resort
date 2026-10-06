@@ -35,7 +35,7 @@ export const getRoomBookingsServerFn = createServerFn({ method: "GET" })
       }
 
       return (bookingsData || []).filter(
-        (b: any) => b.status !== "cancelled" && b.status !== "rejected"
+        (b: any) => b.status !== "cancelled" && b.status !== "rejected" && b.status !== "no-show"
       );
     } catch (e) {
       console.error("getRoomBookingsServerFn error:", e);

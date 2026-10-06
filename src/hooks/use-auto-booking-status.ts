@@ -22,6 +22,7 @@ export function useAutoBookingStatus() {
           queryClient.invalidateQueries({ queryKey: ["calendar-bookings"] });
           queryClient.invalidateQueries({ queryKey: ["customer-bookings"] });
           queryClient.invalidateQueries({ queryKey: ["bookings"] });
+          queryClient.invalidateQueries({ queryKey: ["room-bookings"] });
           queryClient.invalidateQueries({ queryKey: ["admin-reports"] });
         }
       } catch (err) {

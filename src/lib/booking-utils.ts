@@ -127,16 +127,21 @@ export async function processAutoBookingStatuses(bookings?: any[]): Promise<bool
     }
 
     // ========================================================
-    // RULE 2: AUTOMATIC "no-show"
+    // RULE 2: AUTOMATIC "no-show" (Exceeded 5-hour check-in window)
     // ========================================================
-    // Case 2A: Check-in date has passed and booking was unpaid or guest never arrived
+    // When a customer exceeds the scheduled check-in window by 5 hours:
+    // - Day-use cottage (check-in at 8:00 AM): 5 hours past is 1:00 PM (13:00)
+    // - Overnight stay/room (check-in at 2:00 PM): 5 hours past is 7:00 PM (19:00)
+    // - Once marked as "no-show", the booking is released and the room automatically becomes available
     if (!newStatus) {
+      const fiveHourThreshold = isDayUse ? 13 : 19;
+
+      // Case 2A: Check-in date has passed (yesterday or earlier) and booking was unpaid or guest never arrived
       if ((b.status === "pending" || b.status === "approved") && checkInDate < today && isUnpaid) {
         newStatus = "no-show";
       }
-      // Case 2B: Check-in date is TODAY, but it is past resort policy closing hour (6:00 PM / 18:00)
-      else if ((b.status === "pending" || b.status === "approved") && checkInDate === today && currentHour >= 18) {
-        // Unpaid or pending bookings that failed to arrive by 6:00 PM policy closing time
+      // Case 2B: Check-in date is TODAY, and guest has exceeded the check-in time by 5 hours
+      else if ((b.status === "pending" || b.status === "approved") && checkInDate === today && currentHour >= fiveHourThreshold) {
         if (isUnpaid || isDayUse) {
           newStatus = "no-show";
         }
