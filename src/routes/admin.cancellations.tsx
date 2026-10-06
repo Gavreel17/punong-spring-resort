@@ -131,7 +131,6 @@ function CancellationsTab() {
 
   // Quick stats
   const stats = useMemo(() => {
-    let refundPending = 0;
     let customerWithReason = 0;
 
     bookings.forEach((b: any) => {
@@ -141,13 +140,11 @@ function CancellationsTab() {
         if (p?.notes) notes = JSON.parse(p.notes);
       } catch (e) {}
 
-      if (p?.status === "refund_pending") refundPending++;
       if (notes.cancellation_reason) customerWithReason++;
     });
 
     return {
       total: bookings.length,
-      refundPending,
       customerWithReason,
     };
   }, [bookings]);
@@ -187,7 +184,7 @@ function CancellationsTab() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="p-4 bg-white border-slate-200/80 shadow-xs rounded-xl flex items-center justify-between">
           <div>
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -211,19 +208,6 @@ function CancellationsTab() {
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
             <User className="w-5 h-5" />
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-white border-slate-200/80 shadow-xs rounded-xl flex items-center justify-between">
-          <div>
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Refunds Pending (GCash)
-            </div>
-            <div className="text-2xl font-bold text-indigo-700 mt-1">{stats.refundPending}</div>
-            <div className="text-xs text-slate-400 mt-0.5">Awaiting refund disbursement</div>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-            <CreditCard className="w-5 h-5" />
           </div>
         </Card>
       </div>
