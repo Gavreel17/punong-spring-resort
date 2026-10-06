@@ -151,22 +151,32 @@ function BookPage() {
   });
 
   useEffect(() => {
-    if (user)
+    if (user) {
       supabase
         .from("profiles")
         .select("fullname,email,phone")
         .eq("id", user.id)
-        .single()
-        .then(
-          ({ data }: any) =>
-            data &&
-            setForm((f) => ({
-              ...f,
-              fullname: data.fullname ?? "",
-              email: data.email ?? "",
-              phone: data.phone ?? "",
-            })),
-        );
+        .maybeSingle()
+        .then(({ data }: any) => {
+          const rawEmailUser = user?.email ? user.email.split("@")[0].toLowerCase().trim() : "";
+          let validFullName = data?.fullname?.trim() ?? "";
+          if (validFullName.toLowerCase() === rawEmailUser || !validFullName) {
+            validFullName = (
+              user.user_metadata?.fullname ||
+              user.user_metadata?.full_name ||
+              user.user_metadata?.name ||
+              ""
+            ).trim();
+          }
+
+          setForm((f) => ({
+            ...f,
+            fullname: validFullName,
+            email: data?.email ?? user.email ?? "",
+            phone: data?.phone ?? user.user_metadata?.phone ?? "",
+          }));
+        });
+    }
   }, [user]);
 
   const today = useMemo(() => {
@@ -441,6 +451,16 @@ function BookPage() {
 
       // Close reminder modal
       setShowReminderModal(false);
+
+      // Sync guest full name to user profile and auth metadata
+      if (form.fullname.trim()) {
+        supabase
+          .from("profiles")
+          .upsert({ id: user.id, fullname: form.fullname.trim(), email: user.email, phone: form.phone.trim() || undefined })
+          .then(() => {})
+          .catch(() => {});
+        supabase.auth.updateUser({ data: { fullname: form.fullname.trim() } }).catch(() => {});
+      }
 
       await MySwal.fire({
         title: "Booking Submitted!",

@@ -13,6 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -28,7 +30,7 @@ import { toast } from "sonner";
 import { 
   Upload, Eye, AlertCircle, RefreshCw, Star, Download, Sparkles, Plus, 
   Calendar, Users, CreditCard, Banknote, CheckCircle2, XCircle, Clock, 
-  MessageSquareQuote, ShieldCheck, Check, Loader2
+  MessageSquareQuote, ShieldCheck, Check, Loader2, Edit3, User
 } from "lucide-react";
 import { processAutoBookingStatuses } from "@/lib/booking-utils";
 import { cn } from "@/lib/utils";
@@ -106,10 +108,10 @@ function Dashboard() {
     const targetBooking = bookings.find((b: any) => b.id === feedbackData.id) || feedbackData.booking;
     const guestName =
       targetBooking?.guest_name?.trim() ||
+      profile?.fullname?.trim() ||
       user.user_metadata?.fullname?.trim() ||
       user.user_metadata?.full_name?.trim() ||
-      user.email?.split("@")[0] ||
-      "Guest";
+      "Guest Customer";
 
     const baseFeedback: any = {
       booking_id: feedbackData.id,
@@ -202,7 +204,111 @@ function Dashboard() {
     .filter((b: any) => b.status === "approved" || b.status === "completed")
     .reduce((sum: number, b: any) => sum + Number(b.total_amount || 0), 0);
 
-  const guestName = user?.email?.split("@")[0] || "Valued Guest";
+  const { data: profile, refetch: refetchProfile } = useQuery({
+    queryKey: ["user-profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, fullname, email, phone")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (error) {
+        console.warn("User profile fetch error:", error);
+        return null;
+      }
+      return data;
+    },
+  });
+
+  const guestFullName = useMemo(() => {
+    const rawEmailUser = user?.email ? user.email.split("@")[0].toLowerCase().trim() : "";
+
+    // 1. Check profile table fullname (if present and not just default email username)
+    const profileName = profile?.fullname?.trim();
+    if (profileName && profileName.toLowerCase() !== rawEmailUser) {
+      return profileName;
+    }
+
+    // 2. Check user auth metadata
+    const metaName = (
+      user?.user_metadata?.fullname ||
+      user?.user_metadata?.full_name ||
+      user?.user_metadata?.name
+    )?.trim();
+    if (metaName && metaName.toLowerCase() !== rawEmailUser) {
+      return metaName;
+    }
+
+    // 3. Check customer's existing bookings
+    const bookingGuest = bookings.find(
+      (b: any) => b.guest_name && b.guest_name.trim().toLowerCase() !== rawEmailUser
+    )?.guest_name?.trim();
+    if (bookingGuest) {
+      return bookingGuest;
+    }
+
+    // 4. Fallback if profile or metadata has any name
+    if (profileName) return profileName;
+    if (metaName) return metaName;
+
+    return "Valued Guest";
+  }, [profile, user, bookings]);
+
+  // Auto-sync real full name from bookings to profile if profile was unpopulated or default email
+  useEffect(() => {
+    if (!user) return;
+    const bookingWithRealName = bookings.find(
+      (b: any) => b.guest_name && b.guest_name.trim().includes(" ")
+    )?.guest_name?.trim();
+
+    if (
+      bookingWithRealName &&
+      (!profile?.fullname || profile.fullname.toLowerCase() === user.email?.split("@")[0].toLowerCase())
+    ) {
+      supabase
+        .from("profiles")
+        .update({ fullname: bookingWithRealName })
+        .eq("id", user.id)
+        .then(() => {
+          refetchProfile();
+        });
+    }
+  }, [user, bookings, profile, refetchProfile]);
+
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [updatingName, setUpdatingName] = useState(false);
+
+  async function handleUpdateName(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    const trimmed = nameInput.trim();
+    if (!trimmed) {
+      return toast.error("Please enter your full name.");
+    }
+    setUpdatingName(true);
+    try {
+      const { error: pErr } = await supabase
+        .from("profiles")
+        .upsert({ id: user.id, fullname: trimmed, email: user.email });
+      if (pErr) throw pErr;
+
+      await supabase.auth.updateUser({
+        data: { fullname: trimmed, full_name: trimmed, name: trimmed },
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["user-profile", user?.id] });
+      await refetchProfile();
+
+      toast.success("Full name updated successfully!");
+      setEditingName(false);
+    } catch (err: any) {
+      console.error("Failed to update name:", err);
+      toast.error(err?.message || "Failed to update full name.");
+    } finally {
+      setUpdatingName(false);
+    }
+  }
 
   async function handleCancel() {
     if (!cancelData) return;
@@ -230,7 +336,7 @@ function Dashboard() {
           parsedNotes.cancellation_reason = finalReason;
           parsedNotes.cancellation_date = new Date().toISOString();
           parsedNotes.cancelled_by = "Customer";
-          parsedNotes.cancelled_by_name = cancelData.booking?.guest_name || user?.user_metadata?.fullname || user?.email || "Customer";
+          parsedNotes.cancelled_by_name = cancelData.booking?.guest_name || guestFullName || "Customer";
 
           let newPaymentStatus = payment.status;
           if (parsedNotes.method === "resort") {
@@ -292,9 +398,24 @@ function Dashboard() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-widest">
                 <Sparkles className="w-3.5 h-3.5" /> Punong Reserve & Spa
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold font-display tracking-tight text-white capitalize">
-                Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E5C158] via-[#D4AF37] to-[#B38728]">{guestName}</span>
-              </h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl sm:text-4xl font-bold font-display tracking-tight text-white">
+                  Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E5C158] via-[#D4AF37] to-[#B38728]">{guestFullName}</span>
+                </h1>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setNameInput(guestFullName !== "Valued Guest" ? guestFullName : "");
+                    setEditingName(true);
+                  }}
+                  className="h-8 px-2.5 bg-white/10 hover:bg-white/20 text-[#D4AF37] hover:text-amber-300 border-white/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 backdrop-blur-md cursor-pointer transition-all shadow-xs"
+                  title="Update your full name"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit Name</span>
+                </Button>
+              </div>
               <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
                 Manage your stays, view reservation receipts, update payment proofs, and leave reviews for your Punong Spring Resort getaway.
               </p>
@@ -808,6 +929,59 @@ function Dashboard() {
               )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Full Name Dialog */}
+      <Dialog open={editingName} onOpenChange={setEditingName}>
+        <DialogContent className="rounded-2xl max-w-md p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold font-display text-slate-900 flex items-center gap-2">
+              <User className="w-5 h-5 text-[#D4AF37]" />
+              Update Full Name
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-600">
+              Please enter your complete full name as you would like it to appear on your reservations and receipts.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleUpdateName} className="space-y-4 py-2">
+            <div>
+              <Label className="text-xs font-semibold uppercase text-slate-600">Full Name *</Label>
+              <Input
+                required
+                placeholder="e.g. Gavreel Gomez"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                className="mt-1 rounded-xl border-slate-200"
+                autoFocus
+              />
+            </div>
+            <DialogFooter className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl h-10 text-xs font-semibold"
+                onClick={() => setEditingName(false)}
+                disabled={updatingName}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={updatingName || !nameInput.trim()}
+                className="bg-gradient-to-r from-[#B38728] via-[#D4AF37] to-[#AA771C] text-slate-950 font-bold h-10 rounded-xl shadow-md cursor-pointer"
+              >
+                {updatingName ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  "Save Full Name"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

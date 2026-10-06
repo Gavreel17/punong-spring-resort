@@ -131,7 +131,8 @@ function AdminSettingsPage() {
   useEffect(() => {
     if (user) {
       setAdminName(
-        user.user_metadata?.full_name ||
+        user.user_metadata?.fullname ||
+          user.user_metadata?.full_name ||
           user.user_metadata?.name ||
           user.email?.split("@")[0] ||
           "Administrator"
