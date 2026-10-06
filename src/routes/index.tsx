@@ -45,7 +45,7 @@ function Index() {
     queryFn: async () => {
       try {
         const { data, error } = await supabase.rpc("get_approved_feedbacks" as any);
-        if (!error && data) return data;
+        if (!error && Array.isArray(data) && data.length > 0) return data;
       } catch (e) {
         console.warn("RPC get_approved_feedbacks unavailable, using table query fallback:", e);
       }
@@ -59,7 +59,7 @@ function Index() {
       if (error || !feedbackRows) return [];
       return feedbackRows.map((f: any) => ({
         ...f,
-        guest_name: f.guest_name || f.booking?.guest_name || "Verified Guest",
+        guest_name: f.guest_name || f.booking?.guest_name || "Guest",
       }));
     },
   });
@@ -178,7 +178,7 @@ function Index() {
                   </div>
                   {t.comment && <p className="text-foreground/90">"{t.comment}"</p>}
                   <p className="mt-4 text-sm font-semibold">
-                    — {t.resolved_name || t.guest_name || t.booking?.guest_name || "Verified Guest"}
+                    — {t.guest_name || t.resolved_name || t.booking?.guest_name || "Guest"}
                   </p>
                 </Card>
               ))

@@ -104,7 +104,12 @@ function Dashboard() {
     setSubmittingFeedback(true);
     
     const targetBooking = bookings.find((b: any) => b.id === feedbackData.id) || feedbackData.booking;
-    const guestName = targetBooking?.guest_name || user.email?.split("@")[0] || "Guest";
+    const guestName =
+      targetBooking?.guest_name?.trim() ||
+      user.user_metadata?.fullname?.trim() ||
+      user.user_metadata?.full_name?.trim() ||
+      user.email?.split("@")[0] ||
+      "Guest";
 
     const baseFeedback: any = {
       booking_id: feedbackData.id,
@@ -128,8 +133,16 @@ function Dashboard() {
     // If RLS policy requires status = 'completed' on the booking, mark completed and retry
     if (error && (error.message?.includes("row-level security") || error.code === "42501")) {
       await supabase.from("bookings").update({ status: "completed" }).eq("id", feedbackData.id);
-      const retry = await supabase.from("feedbacks").insert(baseFeedback);
-      error = retry.error;
+      const retry = await supabase.from("feedbacks").insert({
+        ...baseFeedback,
+        guest_name: guestName,
+      });
+      if (retry.error && (retry.error.message?.includes("guest_name") || retry.error.code === "PGRST204" || retry.error.code === "42703")) {
+        const retryFallback = await supabase.from("feedbacks").insert(baseFeedback);
+        error = retryFallback.error;
+      } else {
+        error = retry.error;
+      }
     }
 
     setSubmittingFeedback(false);
