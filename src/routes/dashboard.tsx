@@ -32,7 +32,8 @@ import {
   Calendar, Users, CreditCard, Banknote, CheckCircle2, XCircle, Clock, 
   MessageSquareQuote, ShieldCheck, Check, Loader2, Edit3, User
 } from "lucide-react";
-import { processAutoBookingStatuses } from "@/lib/booking-utils";
+import { processAutoBookingStatuses, getPhilippineTime } from "@/lib/booking-utils";
+import { cancelBookingCustomerServerFn } from "@/lib/api/booking.functions";
 import { cn } from "@/lib/utils";
 import { CustomerInquiriesSection } from "@/components/CustomerInquiriesSection";
 import { 
@@ -310,21 +311,102 @@ function Dashboard() {
     }
   }
 
+  function handleOpenCancelModal(booking: any) {
+    if (!user) {
+      toast.error("Please log in to manage your reservations.");
+      return;
+    }
+
+    // 1. Verify that the booking belongs to the currently logged-in customer
+    if (booking.user_id !== user.id) {
+      toast.error("Unauthorized: You can only cancel your own reservations.");
+      return;
+    }
+
+    const status = (booking.status || "").toLowerCase();
+
+    // 2. Check if already cancelled
+    if (status === "cancelled" || status === "rejected") {
+      toast.error("This reservation has already been cancelled.");
+      return;
+    }
+
+    // 3. Check if completed or check-out date has arrived or passed (Asia/Manila)
+    const { dateStr: todayManila } = getPhilippineTime();
+    const isPastOrOnCheckOut = Boolean(booking.check_out && todayManila >= booking.check_out);
+
+    if (status === "completed" || status === "checked-out" || status === "no-show" || isPastOrOnCheckOut) {
+      toast.error("Cancellation Unavailable. This reservation has already been completed or has reached its check-out date and can no longer be cancelled.");
+      return;
+    }
+
+    // Eligible: Open modal for this specific reservation only
+    setCancelData({ id: booking.id, payment: booking.payments?.[0], booking });
+    setCancelReason("");
+    setOtherReasonText("");
+  }
+
   async function handleCancel() {
-    if (!cancelData) return;
+    if (!cancelData || !user) return;
+
+    // Verify ownership
+    if (cancelData.booking?.user_id && cancelData.booking.user_id !== user.id) {
+      toast.error("Unauthorized: You can only cancel your own reservations.");
+      return;
+    }
+
     const finalReason = cancelReason === "Other" && otherReasonText.trim() 
       ? `Other: ${otherReasonText.trim()}` 
       : cancelReason;
     if (!finalReason) {
       return toast.error("Please select or enter a cancellation reason.");
     }
+
+    // Validate date and status again before sending
+    const { dateStr: todayManila } = getPhilippineTime();
+    const status = (cancelData.booking?.status || "").toLowerCase();
+
+    if (status === "cancelled" || status === "rejected") {
+      toast.error("This reservation has already been cancelled.");
+      setCancelData(null);
+      return;
+    }
+
+    if (
+      status === "completed" || 
+      status === "checked-out" || 
+      status === "no-show" || 
+      (cancelData.booking?.check_out && todayManila >= cancelData.booking.check_out)
+    ) {
+      toast.error("Cancellation Unavailable. This reservation has already been completed or has reached its check-out date and can no longer be cancelled.");
+      setCancelData(null);
+      return;
+    }
     
     setCancelling(true);
     try {
-      const { error: bErr } = await supabase.from("bookings").update({ status: "cancelled" }).eq("id", cancelData.id);
+      // 1. Backend Server Validation and Execution
+      const serverResult = await cancelBookingCustomerServerFn({
+        data: {
+          bookingId: cancelData.id,
+          userId: user.id,
+          cancellationReason: finalReason,
+        },
+      });
+
+      if (!serverResult?.success) {
+        throw new Error(serverResult?.error || "Failed to cancel booking.");
+      }
+
+      // 2. Direct client session update for defense-in-depth
+      const { error: bErr } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", cancelData.id)
+        .eq("user_id", user.id);
+
       if (bErr) {
-        setCancelling(false);
-        return toast.error(bErr.message);
+        console.warn("Client booking status sync note:", bErr.message);
       }
 
       try {
@@ -343,16 +425,10 @@ function Dashboard() {
             newPaymentStatus = "unpaid";
           }
 
-          const { error: pErr } = await supabase.from("payments").update({
+          await supabase.from("payments").update({
             status: newPaymentStatus,
             notes: JSON.stringify(parsedNotes)
           }).eq("id", payment.id);
-
-          if (pErr) {
-            await supabase.from("payments").update({
-              notes: JSON.stringify(parsedNotes)
-            }).eq("id", payment.id);
-          }
         } else if (user) {
           const notesPayload = JSON.stringify({
             method: "resort",
@@ -377,6 +453,15 @@ function Dashboard() {
       setCancelData(null);
       setCancelReason("");
       setOtherReasonText("");
+
+      // 3. Invalidate relevant queries so UI, calendar, and admin counters reflect immediately
+      await queryClient.invalidateQueries({ queryKey: ["my-bookings", user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-cancellations"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
+      await queryClient.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-availability-calendar"] });
+
       refetch();
     } catch (err: any) {
       toast.error(err.message || "Failed to cancel booking.");
@@ -792,11 +877,7 @@ function Dashboard() {
                               variant="outline" 
                               size="sm" 
                               className="border-rose-300 bg-rose-50/70 hover:bg-rose-100 text-rose-700 hover:text-rose-800 font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
-                              onClick={() => {
-                                setCancelData({ id: b.id, payment: b.payments?.[0], booking: b });
-                                setCancelReason("");
-                                setOtherReasonText("");
-                              }}
+                              onClick={() => handleOpenCancelModal(b)}
                             >
                               <XCircle className="w-3.5 h-3.5 text-rose-600" />
                               Cancel Booking
@@ -827,44 +908,36 @@ function Dashboard() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Reservation Selector if multiple cancellable bookings exist */}
-          {bookings.filter((b: any) => b.status !== "cancelled" && b.status !== "rejected").length > 1 && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase text-slate-600">Select Reservation to Cancel</Label>
-              <Select
-                value={cancelData?.id}
-                onValueChange={(val) => {
-                  const selected = bookings.find((b: any) => b.id === val);
-                  if (selected) {
-                    setCancelData({ id: selected.id, payment: selected.payments?.[0], booking: selected });
-                  }
-                }}
-              >
-                <SelectTrigger className="rounded-xl border-slate-200 h-10 text-xs">
-                  <SelectValue placeholder="Choose a booking to cancel" />
-                </SelectTrigger>
-                <SelectContent>
-                  {bookings
-                    .filter((b: any) => b.status !== "cancelled" && b.status !== "rejected")
-                    .map((cb: any) => (
-                      <SelectItem key={cb.id} value={cb.id} className="text-xs">
-                        {cb.room?.name || "Accommodation"} ({cb.check_in} to {cb.check_out})
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
+          {/* Selected Booking Details (Exact Reservation Only - No Dropdown) */}
           {cancelData?.booking && (
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
-              <div className="font-bold text-slate-800 text-sm">{cancelData.booking.room?.name || "Accomodation"}</div>
-              <div className="flex flex-wrap items-center gap-3 text-slate-600">
-                <span>Check-in: <strong>{cancelData.booking.check_in}</strong></span>
-                <span>•</span>
-                <span>Check-out: <strong>{cancelData.booking.check_out}</strong></span>
-                <span>•</span>
-                <span>Total: <strong className="text-[#B38728]">₱{Number(cancelData.booking.total_amount).toLocaleString()}</strong></span>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2.5">
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/70">
+                <span className="font-bold text-slate-900 text-sm">
+                  {cancelData.booking.room?.name || "Accommodation"}
+                </span>
+                <span className="font-mono bg-slate-200/80 px-2 py-0.5 rounded text-[11px] font-bold text-slate-800">
+                  Ref: {formatBookingReference(cancelData.booking)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5 text-slate-600">
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Check-in Date</span>
+                  <strong className="text-slate-800 text-xs">{cancelData.booking.check_in}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Check-out Date</span>
+                  <strong className="text-slate-800 text-xs">{cancelData.booking.check_out}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Total Amount</span>
+                  <strong className="text-[#B38728] text-sm">₱{Number(cancelData.booking.total_amount).toLocaleString()}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Booking ID</span>
+                  <span className="font-mono text-[11px] text-slate-700 font-semibold block truncate" title={cancelData.booking.id}>
+                    {cancelData.booking.id}
+                  </span>
+                </div>
               </div>
             </div>
           )}
