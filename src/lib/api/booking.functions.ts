@@ -169,26 +169,15 @@ export const cancelBookingCustomerServerFn = createServerFn({ method: "POST" })
         return { success: false, error: "This reservation has already been cancelled." };
       }
 
-      // 4. Completed or checked-out verification
-      if (status === "completed" || status === "checked-out" || status === "no-show") {
+      // 4. Completed verification: Only completed bookings cannot be cancelled
+      if (status === "completed" || status === "checked-out") {
         return {
           success: false,
-          error: "Cancellation Unavailable. This reservation has already been completed or has reached its check-out date and can no longer be cancelled.",
+          error: "Cancellation Unavailable. This reservation has already been completed and can no longer be cancelled.",
         };
       }
 
-      // 5. Date validation in Asia/Manila timezone (resort-local time)
-      const now = new Date();
-      const todayManila = now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
-
-      if (booking.check_out && todayManila >= booking.check_out) {
-        return {
-          success: false,
-          error: "Cancellation Unavailable. This reservation has already been completed or has reached its check-out date and can no longer be cancelled.",
-        };
-      }
-
-      // 6. Update booking status to cancelled
+      // 5. Update booking status to cancelled
       const { error: updErr } = await client
         .from("bookings")
         .update({ status: "cancelled" })

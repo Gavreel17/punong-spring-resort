@@ -331,12 +331,9 @@ function Dashboard() {
       return;
     }
 
-    // 3. Check if completed or check-out date has arrived or passed (Asia/Manila)
-    const { dateStr: todayManila } = getPhilippineTime();
-    const isPastOrOnCheckOut = Boolean(booking.check_out && todayManila >= booking.check_out);
-
-    if (status === "completed" || status === "checked-out" || status === "no-show" || isPastOrOnCheckOut) {
-      toast.error("Cancellation Unavailable. This reservation has already been completed or has reached its check-out date and can no longer be cancelled.");
+    // 3. Completed verification: Only completed bookings cannot be cancelled
+    if (status === "completed" || status === "checked-out") {
+      toast.error("Cancellation Unavailable. This reservation has already been completed and can no longer be cancelled.");
       return;
     }
 
@@ -362,8 +359,7 @@ function Dashboard() {
       return toast.error("Please select or enter a cancellation reason.");
     }
 
-    // Validate date and status again before sending
-    const { dateStr: todayManila } = getPhilippineTime();
+    // Validate status: only completed or already cancelled cannot cancel
     const status = (cancelData.booking?.status || "").toLowerCase();
 
     if (status === "cancelled" || status === "rejected") {
@@ -372,13 +368,8 @@ function Dashboard() {
       return;
     }
 
-    if (
-      status === "completed" || 
-      status === "checked-out" || 
-      status === "no-show" || 
-      (cancelData.booking?.check_out && todayManila >= cancelData.booking.check_out)
-    ) {
-      toast.error("Cancellation Unavailable. This reservation has already been completed or has reached its check-out date and can no longer be cancelled.");
+    if (status === "completed" || status === "checked-out") {
+      toast.error("Cancellation Unavailable. This reservation has already been completed and can no longer be cancelled.");
       setCancelData(null);
       return;
     }
