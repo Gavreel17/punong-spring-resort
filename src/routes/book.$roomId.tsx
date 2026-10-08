@@ -81,8 +81,9 @@ function BookPage() {
     },
   });
 
+  const isUnlimited = String(room?.capacity || "").toLowerCase().includes("unlimited");
   const maxCapacity = (() => {
-    if (!room?.capacity) return undefined;
+    if (!room?.capacity || isUnlimited) return undefined;
     const nums = String(room.capacity).match(/\d+/g);
     if (!nums || nums.length === 0) return undefined;
     return Math.max(...nums.map(Number));
@@ -272,7 +273,7 @@ function BookPage() {
   const [singleFoamBeds, setSingleFoamBeds] = useState(0);
   const [doubleFoamBeds, setDoubleFoamBeds] = useState(0);
 
-  const isUnlimited = String(room?.capacity || "").toLowerCase().includes("unlimited");
+  const isCapacityExceeded = !isUnlimited && maxCapacity !== undefined && Number(form.guests) > maxCapacity;
   const regularGuestsIncluded = isUnlimited ? Infinity : (maxCapacity || 6);
   const numGuests = Number(form.guests) || 1;
   const extraPersons = isUnlimited ? 0 : Math.max(0, numGuests - regularGuestsIncluded);
@@ -345,6 +346,12 @@ function BookPage() {
       return toast.error("Please enter the number of guests.");
     }
 
+    if (isCapacityExceeded) {
+      return toast.error(
+        `Number of guests (${form.guests}) exceeds the maximum capacity of ${maxCapacity} guests set for this ${room.type === "villa" ? "Function Hall" : room.type}.`
+      );
+    }
+
     // Validation passed! Open Reminder Modal before submitting
     setShowReminderModal(true);
   }
@@ -353,6 +360,12 @@ function BookPage() {
     if (submitting || !user || !room) return;
     if (isSelectedDateRangeBooked || conflictWarning) {
       return toast.error("Cannot proceed: Selected dates include dates marked in red (already booked).");
+    }
+    if (isCapacityExceeded) {
+      setShowReminderModal(false);
+      return toast.error(
+        `Cannot proceed: Number of guests (${form.guests}) exceeds the maximum capacity of ${maxCapacity} guests.`
+      );
     }
     setSubmitting(true);
 
@@ -775,11 +788,39 @@ function BookPage() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <Label>Number of Guests <span className="text-red-500">*</span></Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label htmlFor="guests-count-input">
+                    Number of Guests <span className="text-red-500">*</span>
+                  </Label>
+                  {!isUnlimited && maxCapacity !== undefined && (
+                    <span
+                      className={cn(
+                        "text-xs font-semibold px-2.5 py-0.5 rounded-full transition-colors",
+                        isCapacityExceeded
+                          ? "bg-red-100 text-red-700 border border-red-200"
+                          : "bg-slate-100 text-slate-600 border border-slate-200"
+                      )}
+                    >
+                      Admin Capacity: Max {maxCapacity} {maxCapacity === 1 ? "guest" : "guests"}
+                    </span>
+                  )}
+                  {isUnlimited && (
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Unlimited Guests
+                    </span>
+                  )}
+                </div>
                 <Input 
+                  id="guests-count-input"
                   type="number" 
                   min={1} 
+                  max={!isUnlimited && maxCapacity ? maxCapacity : undefined}
                   required 
+                  placeholder={!isUnlimited && maxCapacity ? `Max ${maxCapacity} guests` : "Number of guests"}
+                  className={cn(
+                    "transition-colors",
+                    isCapacityExceeded && "border-red-500 focus-visible:ring-red-500 bg-red-50/40 text-red-950 font-medium"
+                  )}
                   value={form.guests || ""} 
                   onChange={(e) => {
                     if (e.target.value === "") {
@@ -790,6 +831,14 @@ function BookPage() {
                     setForm({ ...form, guests: val });
                   }} 
                 />
+                {isCapacityExceeded && (
+                  <p className="text-xs font-semibold text-red-600 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2.5 rounded-lg border border-red-200">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                    <span>
+                      The entered number of guests ({form.guests}) exceeds the admin capacity of {maxCapacity} {maxCapacity === 1 ? "guest" : "guests"} for this accommodation. You cannot complete this booking unless the guest count is {maxCapacity} or fewer.
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -891,6 +940,15 @@ function BookPage() {
               </div>
             )}
 
+            {isCapacityExceeded && (
+              <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>
+                  Guest capacity exceeded: This accommodation allows a maximum of {maxCapacity} {maxCapacity === 1 ? "guest" : "guests"}. Please reduce the number of guests to {maxCapacity} or fewer to complete your booking.
+                </span>
+              </div>
+            )}
+
             {/* Mobile Booking Summary (Shown above Confirm Reservation when customer opens on cellphone) */}
             <div className="block md:hidden border-t border-slate-200 pt-6 mt-4">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">
@@ -968,6 +1026,7 @@ function BookPage() {
                 submitting ||
                 !!conflictWarning ||
                 isSelectedDateRangeBooked ||
+                isCapacityExceeded ||
                 !form.check_in ||
                 !form.check_out ||
                 !form.fullname.trim() ||
@@ -980,7 +1039,7 @@ function BookPage() {
               size="lg"
               className={cn(
                 "w-full mt-4 font-bold transition-all",
-                isSelectedDateRangeBooked || !!conflictWarning
+                isSelectedDateRangeBooked || !!conflictWarning || isCapacityExceeded
                   ? "bg-red-600 hover:bg-red-600 text-white cursor-not-allowed opacity-80"
                   : "bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               )}
@@ -989,6 +1048,8 @@ function BookPage() {
                 ? "Submitting…"
                 : isSelectedDateRangeBooked || conflictWarning
                 ? "Dates Marked in Red Cannot Be Booked"
+                : isCapacityExceeded
+                ? `Exceeds Capacity (Max ${maxCapacity} Guests)`
                 : "Confirm Reservation"}
             </Button>
           </form>
@@ -1139,6 +1200,13 @@ function BookPage() {
                 <span className="text-slate-800 text-left sm:text-right break-all">
                   {form.email} • {form.phone}
                 </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
+                <span className="text-slate-500">Number of Guests:</span>
+                <strong className="text-slate-900 text-left sm:text-right">
+                  {form.guests} {Number(form.guests) === 1 ? "guest" : "guests"} {!isUnlimited && maxCapacity ? `(Capacity: ${maxCapacity})` : ""}
+                </strong>
               </div>
 
               {/* ONLY for Cottage reservations: Stay Type and Overnight Fee Breakdown */}

@@ -478,6 +478,18 @@ export function AvailabilityCalendarTab() {
     if (bookingForm.check_out <= bookingForm.check_in)
       return toast.error("Check-out date must be after Check-in date");
 
+    const targetRoom = rooms.find((r: any) => r.id === bookingForm.room_id);
+    if (targetRoom) {
+      const isTargetUnlimited = String(targetRoom.capacity || "").toLowerCase().includes("unlimited");
+      const capNums = String(targetRoom.capacity || "").match(/\d+/g);
+      const maxCap = capNums && capNums.length > 0 ? Math.max(...capNums.map(Number)) : undefined;
+      if (!isTargetUnlimited && maxCap !== undefined && Number(bookingForm.guests) > maxCap) {
+        return toast.error(
+          `Number of guests (${bookingForm.guests}) exceeds the accommodation capacity of ${maxCap} guests.`
+        );
+      }
+    }
+
     // Double-booking check
     const conflict = bookings.find((b: any) => {
       if (b.room_id !== bookingForm.room_id) return false;
@@ -1804,11 +1816,30 @@ export function AvailabilityCalendarTab() {
                 />
               </div>
               <div>
-                <Label className="text-xs font-semibold uppercase text-slate-600">Guests</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold uppercase text-slate-600">Guests</Label>
+                  {(() => {
+                    const selRoom = rooms.find((r: any) => r.id === bookingForm.room_id);
+                    if (!selRoom) return null;
+                    const isUnl = String(selRoom.capacity || "").toLowerCase().includes("unlimited");
+                    return (
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        {isUnl ? "Unlimited" : `Cap: ${selRoom.capacity || "N/A"}`}
+                      </span>
+                    );
+                  })()}
+                </div>
                 <Input
                   type="number"
                   min="1"
-                  max="50"
+                  max={(() => {
+                    const selRoom = rooms.find((r: any) => r.id === bookingForm.room_id);
+                    if (!selRoom) return 50;
+                    const isUnl = String(selRoom.capacity || "").toLowerCase().includes("unlimited");
+                    if (isUnl) return 100;
+                    const capNums = String(selRoom.capacity || "").match(/\d+/g);
+                    return capNums && capNums.length > 0 ? Math.max(...capNums.map(Number)) : 50;
+                  })()}
                   value={bookingForm.guests}
                   onChange={(e) => handleBookingFormChange({ guests: Number(e.target.value) })}
                   className="mt-1 rounded-xl text-xs h-9"
