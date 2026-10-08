@@ -273,10 +273,24 @@ function BookPage() {
   const [singleFoamBeds, setSingleFoamBeds] = useState(0);
   const [doubleFoamBeds, setDoubleFoamBeds] = useState(0);
 
-  const isCapacityExceeded = !isUnlimited && maxCapacity !== undefined && Number(form.guests) > maxCapacity;
+  const isRoomCategory = room?.type === "room";
   const regularGuestsIncluded = isUnlimited ? Infinity : (maxCapacity || 6);
   const numGuests = Number(form.guests) || 1;
-  const extraPersons = isUnlimited ? 0 : Math.max(0, numGuests - regularGuestsIncluded);
+  const extraPersons = isRoomCategory && !isUnlimited && maxCapacity !== undefined ? Math.max(0, numGuests - regularGuestsIncluded) : 0;
+
+  // Extra bed capacities:
+  // Single Foam Bed = 1 person
+  // Double Foam Bed = 2 persons
+  const extraBedCapacity = (singleFoamBeds * 1) + (doubleFoamBeds * 2);
+  const isMissingRequiredBeds = isRoomCategory && extraPersons > 0 && extraBedCapacity < extraPersons;
+  const bedsDeficit = Math.max(0, extraPersons - extraBedCapacity);
+
+  // Non-room category strict capacity check (cottages, function halls, etc.):
+  const isNonRoomCapacityExceeded = !isRoomCategory && !isUnlimited && maxCapacity !== undefined && numGuests > maxCapacity;
+
+  const extraBedValidationMessage = extraBedCapacity === 0
+    ? `This room accommodates ${regularGuestsIncluded} guests. You have added ${extraPersons} extra person${extraPersons > 1 ? "s" : ""}. Please select an extra bed type and quantity before continuing.`
+    : `This room accommodates ${regularGuestsIncluded} guests. You have added ${extraPersons} extra person${extraPersons > 1 ? "s" : ""}, but your selected extra beds only accommodate ${extraBedCapacity} person${extraBedCapacity > 1 ? "s" : ""}. Please add ${bedsDeficit} more bed slot${bedsDeficit > 1 ? "s" : ""} before continuing.`;
 
   const isCottage = room?.type === "cottage";
   const cottageOvernightFee = isCottage && stayType === "overnight" ? 1000 : 0;
@@ -346,10 +360,14 @@ function BookPage() {
       return toast.error("Please enter the number of guests.");
     }
 
-    if (isCapacityExceeded) {
+    if (isNonRoomCapacityExceeded) {
       return toast.error(
         `Number of guests (${form.guests}) exceeds the maximum capacity of ${maxCapacity} guests set for this ${room.type === "villa" ? "Function Hall" : room.type}.`
       );
+    }
+
+    if (isMissingRequiredBeds) {
+      return toast.error(extraBedValidationMessage);
     }
 
     // Validation passed! Open Reminder Modal before submitting
@@ -361,13 +379,38 @@ function BookPage() {
     if (isSelectedDateRangeBooked || conflictWarning) {
       return toast.error("Cannot proceed: Selected dates include dates marked in red (already booked).");
     }
-    if (isCapacityExceeded) {
+    if (isNonRoomCapacityExceeded) {
       setShowReminderModal(false);
       return toast.error(
         `Cannot proceed: Number of guests (${form.guests}) exceeds the maximum capacity of ${maxCapacity} guests.`
       );
     }
+    if (isMissingRequiredBeds) {
+      setShowReminderModal(false);
+      return toast.error(extraBedValidationMessage);
+    }
     setSubmitting(true);
+
+    // Perform server-side validation to ensure user cannot bypass extra-bed requirement
+    try {
+      const { validateBookingRequirementsServerFn } = await import("@/lib/api/booking.functions");
+      const serverValidation = await validateBookingRequirementsServerFn({
+        data: {
+          roomId: room.id,
+          guests: Number(form.guests),
+          singleFoamBeds,
+          doubleFoamBeds,
+        },
+      });
+
+      if (!serverValidation.valid) {
+        setSubmitting(false);
+        setShowReminderModal(false);
+        return toast.error(serverValidation.error || "Booking validation failed.");
+      }
+    } catch (err) {
+      console.warn("Server validation check fallback:", err);
+    }
 
     try {
       const extraDetails = [];
@@ -792,11 +835,16 @@ function BookPage() {
                   <Label htmlFor="guests-count-input">
                     Number of Guests <span className="text-red-500">*</span>
                   </Label>
-                  {!isUnlimited && maxCapacity !== undefined && (
+                  {isRoomCategory && maxCapacity !== undefined && (
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                      Regular Capacity: {maxCapacity} guests {extraPersons > 0 ? `(+${extraPersons} Extra)` : ""}
+                    </span>
+                  )}
+                  {!isRoomCategory && !isUnlimited && maxCapacity !== undefined && (
                     <span
                       className={cn(
                         "text-xs font-semibold px-2.5 py-0.5 rounded-full transition-colors",
-                        isCapacityExceeded
+                        isNonRoomCapacityExceeded
                           ? "bg-red-100 text-red-700 border border-red-200"
                           : "bg-slate-100 text-slate-600 border border-slate-200"
                       )}
@@ -814,12 +862,12 @@ function BookPage() {
                   id="guests-count-input"
                   type="number" 
                   min={1} 
-                  max={!isUnlimited && maxCapacity ? maxCapacity : undefined}
+                  max={!isRoomCategory && !isUnlimited && maxCapacity ? maxCapacity : undefined}
                   required 
-                  placeholder={!isUnlimited && maxCapacity ? `Max ${maxCapacity} guests` : "Number of guests"}
+                  placeholder={!isUnlimited && maxCapacity ? (isRoomCategory ? `Regular capacity: ${maxCapacity} guests` : `Max ${maxCapacity} guests`) : "Number of guests"}
                   className={cn(
                     "transition-colors",
-                    isCapacityExceeded && "border-red-500 focus-visible:ring-red-500 bg-red-50/40 text-red-950 font-medium"
+                    isNonRoomCapacityExceeded && "border-red-500 focus-visible:ring-red-500 bg-red-50/40 text-red-950 font-medium"
                   )}
                   value={form.guests || ""} 
                   onChange={(e) => {
@@ -831,7 +879,7 @@ function BookPage() {
                     setForm({ ...form, guests: val });
                   }} 
                 />
-                {isCapacityExceeded && (
+                {isNonRoomCapacityExceeded && (
                   <p className="text-xs font-semibold text-red-600 mt-1.5 flex items-center gap-1.5 bg-red-50 p-2.5 rounded-lg border border-red-200">
                     <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                     <span>
@@ -843,7 +891,7 @@ function BookPage() {
             </div>
 
             {/* Extra Persons & Foam Beds Options - only show for room, hide for cottage and function hall */}
-            {room?.type === "room" && (
+            {isRoomCategory && (
               <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Guest Breakdown & Extra Beds</h4>
@@ -859,16 +907,60 @@ function BookPage() {
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-slate-200">
                     <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider">Extra Persons</span>
-                    <span className="font-bold text-primary text-base">{isUnlimited ? "N/A" : `${extraPersons} person(s)`}</span>
+                    <span className={cn(
+                      "font-bold text-base",
+                      extraPersons > 0 ? "text-amber-700" : "text-slate-600"
+                    )}>
+                      {isUnlimited ? "N/A" : `${extraPersons} person(s)`}
+                    </span>
                   </div>
                 </div>
 
+                {/* Extra Bed Requirement Callout */}
+                {extraPersons > 0 && (
+                  <div className={cn(
+                    "p-3 rounded-xl border text-xs flex items-start gap-2.5 transition-colors",
+                    isMissingRequiredBeds
+                      ? "bg-amber-50 border-amber-300 text-amber-900"
+                      : "bg-emerald-50 border-emerald-200 text-emerald-900"
+                  )}>
+                    <AlertCircle className={cn(
+                      "w-4 h-4 shrink-0 mt-0.5",
+                      isMissingRequiredBeds ? "text-amber-600" : "text-emerald-600"
+                    )} />
+                    <div className="flex-1">
+                      {isMissingRequiredBeds ? (
+                        <>
+                          <strong className="font-semibold block mb-0.5">Extra Bed Required</strong>
+                          <span>{extraBedValidationMessage}</span>
+                        </>
+                      ) : (
+                        <>
+                          <strong className="font-semibold block mb-0.5">Extra Bed Requirement Satisfied</strong>
+                          <span>Selected extra beds accommodate {extraBedCapacity} person(s), fully accommodating all {extraPersons} extra person(s).</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-3 pt-2">
-                  <Label className="font-bold text-slate-800 text-sm block">Extra Bed Type:</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="font-bold text-slate-800 text-sm block">Extra Bed Type:</Label>
+                    {extraPersons > 0 && (
+                      <span className="text-xs text-slate-500">
+                        Bed capacity: <strong className={extraBedCapacity >= extraPersons ? "text-emerald-700" : "text-amber-700"}>{extraBedCapacity} / {extraPersons}</strong> persons
+                      </span>
+                    )}
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
+                    <div className={cn(
+                      "p-4 bg-white rounded-xl border space-y-3 transition-colors",
+                      isMissingRequiredBeds ? "border-amber-300 bg-amber-50/20" : "border-slate-200"
+                    )}>
                       <div>
                         <span className="font-bold text-slate-800 block text-sm">○ Single Foam Bed — ₱300/person</span>
+                        <span className="text-[11px] text-slate-500">Accommodates 1 person per bed</span>
                       </div>
                       <div>
                         <Label className="text-xs text-slate-600 mb-1.5 block font-medium">Number of Single Foam Beds</Label>
@@ -883,9 +975,13 @@ function BookPage() {
                       </div>
                     </div>
 
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
+                    <div className={cn(
+                      "p-4 bg-white rounded-xl border space-y-3 transition-colors",
+                      isMissingRequiredBeds ? "border-amber-300 bg-amber-50/20" : "border-slate-200"
+                    )}>
                       <div>
                         <span className="font-bold text-slate-800 block text-sm">○ Double Foam Bed — ₱600/bed</span>
+                        <span className="text-[11px] text-slate-500">Accommodates 2 persons per bed</span>
                       </div>
                       <div>
                         <Label className="text-xs text-slate-600 mb-1.5 block font-medium">Number of Double Foam Beds</Label>
@@ -940,12 +1036,19 @@ function BookPage() {
               </div>
             )}
 
-            {isCapacityExceeded && (
+            {isNonRoomCapacityExceeded && (
               <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-800 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                 <span>
                   Guest capacity exceeded: This accommodation allows a maximum of {maxCapacity} {maxCapacity === 1 ? "guest" : "guests"}. Please reduce the number of guests to {maxCapacity} or fewer to complete your booking.
                 </span>
+              </div>
+            )}
+
+            {isMissingRequiredBeds && (
+              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-300 p-3 text-xs text-amber-900 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                <span>{extraBedValidationMessage}</span>
               </div>
             )}
 
@@ -1026,7 +1129,8 @@ function BookPage() {
                 submitting ||
                 !!conflictWarning ||
                 isSelectedDateRangeBooked ||
-                isCapacityExceeded ||
+                isNonRoomCapacityExceeded ||
+                isMissingRequiredBeds ||
                 !form.check_in ||
                 !form.check_out ||
                 !form.fullname.trim() ||
@@ -1039,8 +1143,10 @@ function BookPage() {
               size="lg"
               className={cn(
                 "w-full mt-4 font-bold transition-all",
-                isSelectedDateRangeBooked || !!conflictWarning || isCapacityExceeded
+                isSelectedDateRangeBooked || !!conflictWarning || isNonRoomCapacityExceeded
                   ? "bg-red-600 hover:bg-red-600 text-white cursor-not-allowed opacity-80"
+                  : isMissingRequiredBeds
+                  ? "bg-amber-600 hover:bg-amber-600 text-white cursor-not-allowed opacity-90"
                   : "bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               )}
             >
@@ -1048,8 +1154,10 @@ function BookPage() {
                 ? "Submitting…"
                 : isSelectedDateRangeBooked || conflictWarning
                 ? "Dates Marked in Red Cannot Be Booked"
-                : isCapacityExceeded
+                : isNonRoomCapacityExceeded
                 ? `Exceeds Capacity (Max ${maxCapacity} Guests)`
+                : isMissingRequiredBeds
+                ? `Select Extra Bed (${bedsDeficit} Person${bedsDeficit > 1 ? "s" : ""} Remaining)`
                 : "Confirm Reservation"}
             </Button>
           </form>
@@ -1231,6 +1339,18 @@ function BookPage() {
                     </strong>
                   </div>
                 </>
+              )}
+              {/* Room category extra foam beds recap */}
+              {isRoomCategory && (singleFoamBeds > 0 || doubleFoamBeds > 0) && (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
+                  <span className="text-slate-500">Extra Beds:</span>
+                  <span className="text-slate-900 text-left sm:text-right font-medium">
+                    {[
+                      singleFoamBeds > 0 ? `${singleFoamBeds} Single Foam Bed${singleFoamBeds > 1 ? "s" : ""}` : null,
+                      doubleFoamBeds > 0 ? `${doubleFoamBeds} Double Foam Bed${doubleFoamBeds > 1 ? "s" : ""}` : null,
+                    ].filter(Boolean).join(", ")}
+                  </span>
+                </div>
               )}
 
               <div className="flex items-center justify-between pt-2 border-t border-slate-200">

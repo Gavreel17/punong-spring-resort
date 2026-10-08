@@ -479,7 +479,7 @@ export function AvailabilityCalendarTab() {
       return toast.error("Check-out date must be after Check-in date");
 
     const targetRoom = rooms.find((r: any) => r.id === bookingForm.room_id);
-    if (targetRoom) {
+    if (targetRoom && targetRoom.type !== "room") {
       const isTargetUnlimited = String(targetRoom.capacity || "").toLowerCase().includes("unlimited");
       const capNums = String(targetRoom.capacity || "").match(/\d+/g);
       const maxCap = capNums && capNums.length > 0 ? Math.max(...capNums.map(Number)) : undefined;
@@ -1835,6 +1835,7 @@ export function AvailabilityCalendarTab() {
                   max={(() => {
                     const selRoom = rooms.find((r: any) => r.id === bookingForm.room_id);
                     if (!selRoom) return 50;
+                    if (selRoom.type === "room") return 50;
                     const isUnl = String(selRoom.capacity || "").toLowerCase().includes("unlimited");
                     if (isUnl) return 100;
                     const capNums = String(selRoom.capacity || "").match(/\d+/g);
