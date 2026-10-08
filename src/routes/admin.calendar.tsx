@@ -458,10 +458,14 @@ export function AvailabilityCalendarTab() {
     if (updates.room_id || updates.check_in || updates.check_out) {
       const room = rooms.find((r: any) => r.id === next.room_id);
       if (room && next.check_in && next.check_out) {
-        const d1 = new Date(next.check_in);
-        const d2 = new Date(next.check_out);
-        const diffDays = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / 86400000));
-        next.total_amount = Number(room.price) * diffDays;
+        const d1 = new Date(next.check_in + "T00:00:00");
+        const d2 = new Date(next.check_out + "T00:00:00");
+        const diffDays = Math.round((d2.getTime() - d1.getTime()) / 86400000);
+        const rateType = room.rate_type === "day" ? "day" : "nightly";
+        const count = rateType === "day"
+          ? (next.check_in === next.check_out ? 1 : Math.max(1, diffDays + 1))
+          : Math.max(next.check_in === next.check_out ? 1 : 0, diffDays);
+        next.total_amount = Number(room.price) * count;
       }
     }
 
@@ -1117,7 +1121,7 @@ export function AvailabilityCalendarTab() {
                           <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                             <span>{r.type === "villa" ? "Function Hall" : r.type || "ROOM"}</span>
                             <span>•</span>
-                            <span>₱{Number(r.price).toLocaleString()}{r.type === "cottage" ? "/day" : "/night"}</span>
+                            <span>₱{Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}</span>
                           </div>
                         </div>
                       </td>
@@ -1746,7 +1750,7 @@ export function AvailabilityCalendarTab() {
                   {rooms.map((r: any) => (
                     <SelectItem key={r.id} value={r.id}>
                       {r.name} ({r.type === "villa" ? "Function Hall" : r.type || "Room"}) - ₱
-                      {Number(r.price).toLocaleString()}{r.type === "cottage" ? "/day" : "/night"}
+                      {Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}
                     </SelectItem>
                   ))}
                 </SelectContent>

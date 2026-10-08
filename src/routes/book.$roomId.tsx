@@ -293,21 +293,40 @@ function BookPage() {
     : `This room accommodates ${regularGuestsIncluded} guests. You have added ${extraPersons} extra person${extraPersons > 1 ? "s" : ""}, but your selected extra beds only accommodate ${extraBedCapacity} person${extraBedCapacity > 1 ? "s" : ""}. Please add ${bedsDeficit} more bed slot${bedsDeficit > 1 ? "s" : ""} before continuing.`;
 
   const isCottage = room?.type === "cottage";
+  const rateType: "nightly" | "day" = (room?.rate_type as any) === "day" ? "day" : "nightly";
   const cottageOvernightFee = isCottage && stayType === "overnight" ? 1000 : 0;
   const additionalFee = room?.type === "room" ? (singleFoamBeds * 300) + (doubleFoamBeds * 600) : (isCottage ? cottageOvernightFee : 0);
 
-  const nights =
+  const diffDays =
     form.check_in && form.check_out
-      ? Math.max(
-          form.check_in === form.check_out ? 1 : 0,
-          Math.round(
-            (new Date(form.check_out + "T00:00:00").getTime() -
-              new Date(form.check_in + "T00:00:00").getTime()) /
-              86400000,
-          ),
+      ? Math.round(
+          (new Date(form.check_out + "T00:00:00").getTime() -
+            new Date(form.check_in + "T00:00:00").getTime()) /
+            86400000,
         )
       : 0;
-  const baseTotal = room ? Number(room.price) * nights : 0;
+
+  // For nightly rates:
+  // Same-day counts as 1 night minimum.
+  // Oct 10 to Oct 11 = 1 night.
+  const nights =
+    form.check_in && form.check_out
+      ? Math.max(form.check_in === form.check_out ? 1 : 0, diffDays)
+      : 0;
+
+  // For day rates:
+  // Same-day (e.g. Oct 10 to Oct 10) = 1 day.
+  // Multi-day inclusive (e.g. Oct 10 to Oct 11) = 2 days.
+  const days =
+    form.check_in && form.check_out
+      ? (form.check_in === form.check_out ? 1 : Math.max(1, diffDays + 1))
+      : 0;
+
+  const durationCount = rateType === "day" ? days : nights;
+  const durationUnit = rateType === "day" ? (durationCount === 1 ? "day" : "days") : (durationCount === 1 ? "night" : "nights");
+  const durationLabel = rateType === "day" ? "Days" : "Nights";
+
+  const baseTotal = room ? Number(room.price) * durationCount : 0;
   const totalAmount = baseTotal + additionalFee;
 
   function handleInitiateBooking(e: React.FormEvent) {
@@ -322,7 +341,7 @@ function BookPage() {
           "Selected dates include dates marked in red (already booked). Dates marked in red cannot be booked."
       );
     }
-    if (nights <= 0) return toast.error("Invalid dates selected");
+    if (durationCount <= 0) return toast.error("Invalid dates selected");
 
     if (!form.fullname.trim()) {
       return toast.error("Please enter your full name.");
@@ -1065,9 +1084,9 @@ function BookPage() {
                 <p className="text-xs sm:text-sm text-muted-foreground capitalize">{room.type === "villa" ? "Function Hall" : room.type} · up to {room.capacity} guests</p>
                 <div className="mt-4 space-y-2 border-t border-border pt-4 text-xs sm:text-sm">
                   <div className="flex justify-between">
-                    <span>{isCottage ? "Cottage Rate" : "Rate"}</span>
-                    <span>
-                      ₱{Number(room.price).toLocaleString()} {isCottage ? "/ day" : "/ night"}
+                    <span>{rateType === "day" ? "Day Rate" : "Nightly Rate"}</span>
+                    <span className="font-semibold text-slate-900">
+                      ₱{Number(room.price).toLocaleString()} {rateType === "day" ? "/ day" : "/ night"}
                     </span>
                   </div>
                   {form.check_in && (
@@ -1083,8 +1102,8 @@ function BookPage() {
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span>{isCottage ? "Days" : "Nights"}</span>
-                    <span>{nights > 0 ? nights : 0}</span>
+                    <span>{durationLabel}</span>
+                    <span className="font-medium">{durationCount > 0 ? durationCount : 0}</span>
                   </div>
 
                   {/* ONLY for Cottage category: Subtotal, Stay Type, and Overnight Cottage Fee */}
@@ -1173,9 +1192,9 @@ function BookPage() {
             <p className="text-sm text-muted-foreground capitalize">{room.type === "villa" ? "Function Hall" : room.type} · up to {room.capacity} guests</p>
             <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between">
-                <span>{isCottage ? "Cottage Rate" : "Rate"}</span>
-                <span>
-                  ₱{Number(room.price).toLocaleString()} {isCottage ? "/ day" : "/ night"}
+                <span>{rateType === "day" ? "Day Rate" : "Nightly Rate"}</span>
+                <span className="font-semibold text-slate-900">
+                  ₱{Number(room.price).toLocaleString()} {rateType === "day" ? "/ day" : "/ night"}
                 </span>
               </div>
               {form.check_in && (
@@ -1191,8 +1210,8 @@ function BookPage() {
                 </div>
               )}
               <div className="flex justify-between">
-                <span>{isCottage ? "Days" : "Nights"}</span>
-                <span>{nights > 0 ? nights : 0}</span>
+                <span>{durationLabel}</span>
+                <span className="font-medium">{durationCount > 0 ? durationCount : 0}</span>
               </div>
 
               {/* ONLY for Cottage category: Subtotal, Stay Type, and Overnight Cottage Fee */}
@@ -1285,12 +1304,12 @@ function BookPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
                 <span className="text-slate-500">Stay Dates:</span>
                 <strong className="text-slate-900 text-left sm:text-right font-mono text-[11px] sm:text-xs">
-                  {form.check_in} → {form.check_out} ({nights}{" "}
-                  {room.type === "cottage"
-                    ? nights > 1
+                  {form.check_in} → {form.check_out} ({durationCount}{" "}
+                  {rateType === "day"
+                    ? durationCount > 1
                       ? "days"
                       : "day"
-                    : nights > 1
+                    : durationCount > 1
                     ? "nights"
                     : "night"})
                 </strong>

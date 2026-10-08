@@ -50,6 +50,7 @@ function RoomsTab() {
     name: "",
     type: "room",
     description: "",
+    rate_type: "nightly",
     price: 0,
     capacity: "1",
     image_url: "",
@@ -83,21 +84,36 @@ function RoomsTab() {
   }
   function openEdit(r: any) {
     setEdit(r);
-    setForm({ ...blank, ...r });
+    setForm({
+      ...blank,
+      ...r,
+      rate_type: r.rate_type || "nightly",
+    });
     setOpen(true);
   }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (Number(form.price) <= 0) {
+    const numericPrice = Number(form.price);
+    if (form.price === "" || isNaN(numericPrice) || numericPrice <= 0) {
       MySwal.fire({
-        title: "Invalid Price!",
-        text: "Price must be greater than 0. Please enter a valid price.",
+        title: "Invalid Rate!",
+        text: "Rate must be a valid number greater than 0. Please enter a valid rate.",
         icon: "error",
         confirmButtonText: "OK",
       }).then(() => {
         setForm({ ...form, price: "" as any });
         setTimeout(() => document.getElementById("room-price-input")?.focus(), 100);
+      });
+      return;
+    }
+
+    if (!form.rate_type || (form.rate_type !== "nightly" && form.rate_type !== "day")) {
+      MySwal.fire({
+        title: "Rate Type Required!",
+        text: "Please select a rate type (Nightly Rate or Day Rate).",
+        icon: "error",
+        confirmButtonText: "OK",
       });
       return;
     }
@@ -124,7 +140,8 @@ function RoomsTab() {
 
     const payload = {
       ...form,
-      price: Number(form.price),
+      rate_type: form.rate_type || "nightly",
+      price: numericPrice,
       capacity: form.capacity,
       maintenance_start:
         form.status === "maintenance" && form.maintenance_start ? form.maintenance_start : null,
@@ -132,9 +149,20 @@ function RoomsTab() {
         form.status === "maintenance" && form.maintenance_end ? form.maintenance_end : null,
     };
     try {
-      const { error } = edit
+      let { error } = edit
         ? await supabase.from("rooms").update(payload).eq("id", edit.id)
         : await supabase.from("rooms").insert(payload);
+
+      // Resilient fallback if remote Supabase schema cache has not yet refreshed for rate_type
+      if (error && (error.message?.includes("rate_type") || error.details?.includes("rate_type"))) {
+        console.warn("Retrying room save without rate_type column (schema cache pending):", error);
+        const fallbackPayload = { ...payload };
+        delete fallbackPayload.rate_type;
+        const retryResult = edit
+          ? await supabase.from("rooms").update(fallbackPayload).eq("id", edit.id)
+          : await supabase.from("rooms").insert(fallbackPayload);
+        error = retryResult.error;
+      }
 
       setSaving(false);
       if (error) {
@@ -327,8 +355,15 @@ function RoomsTab() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs text-slate-300 font-medium block">Nightly Rate</span>
-                      <span className="text-xl font-extrabold text-amber-300 font-display">₱{Number(r.price).toLocaleString()}</span>
+                      <span className="text-xs text-slate-300 font-medium block">
+                        {r.rate_type === "day" ? "Day Rate" : "Nightly Rate"}
+                      </span>
+                      <span className="text-xl font-extrabold text-amber-300 font-display">
+                        ₱{Number(r.price).toLocaleString()}
+                        <span className="text-xs font-normal text-slate-300 ml-1">
+                          {r.rate_type === "day" ? "/ day" : "/ night"}
+                        </span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -379,7 +414,7 @@ function RoomsTab() {
               <TableRow className="border-b border-slate-200/80">
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Accommodation</TableHead>
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Type</TableHead>
-                <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Rate (₱ / stay)</TableHead>
+                <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Rate</TableHead>
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Capacity</TableHead>
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Status</TableHead>
                 <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4 text-right pr-6">Actions</TableHead>
@@ -415,8 +450,11 @@ function RoomsTab() {
                     <span className="font-display font-extrabold text-[#B38728] text-base">
                       ₱{Number(r.price).toLocaleString()}
                     </span>
-                    <span className="text-[11px] text-slate-400 font-normal ml-1">
-                      {r.type === 'cottage' ? '/ day' : '/ night'}
+                    <span className="text-[11px] text-slate-500 font-medium ml-1">
+                      {r.rate_type === 'day' ? '/ day' : '/ night'}
+                    </span>
+                    <span className="block text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                      {r.rate_type === 'day' ? 'Day Rate' : 'Nightly Rate'}
                     </span>
                   </TableCell>
 
@@ -504,18 +542,78 @@ function RoomsTab() {
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="room-price-input" className="text-slate-700 font-semibold text-xs uppercase tracking-wider">Nightly Rate (₱ PHP)</Label>
-              <Input
-                id="room-price-input"
-                type="number"
-                step="0.01"
-                required
-                placeholder="e.g. 3500"
-                className="mt-1 rounded-xl border-slate-200 focus-visible:ring-[#D4AF37]"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-              />
+            {/* Rate Type & Pricing Section */}
+            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/70 space-y-3.5">
+              <div>
+                <Label className="text-slate-800 font-bold text-xs uppercase tracking-wider block mb-2">
+                  Rate Type <span className="text-rose-500">*</span>
+                </Label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, rate_type: "nightly" })}
+                    className={cn(
+                      "flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer",
+                      form.rate_type === "nightly"
+                        ? "bg-[#1E293B] text-amber-300 border-[#D4AF37] shadow-sm ring-1 ring-[#D4AF37]/50"
+                        : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100/70"
+                    )}
+                  >
+                    <span className={cn(
+                      "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                      form.rate_type === "nightly" ? "border-amber-400 bg-amber-400" : "border-slate-300 bg-white"
+                    )}>
+                      {form.rate_type === "nightly" && <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />}
+                    </span>
+                    Nightly Rate
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, rate_type: "day" })}
+                    className={cn(
+                      "flex items-center justify-center gap-2.5 py-2.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer",
+                      form.rate_type === "day"
+                        ? "bg-[#1E293B] text-amber-300 border-[#D4AF37] shadow-sm ring-1 ring-[#D4AF37]/50"
+                        : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100/70"
+                    )}
+                  >
+                    <span className={cn(
+                      "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                      form.rate_type === "day" ? "border-amber-400 bg-amber-400" : "border-slate-300 bg-white"
+                    )}>
+                      {form.rate_type === "day" && <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />}
+                    </span>
+                    Day Rate
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="room-price-input" className="text-slate-800 font-bold text-xs uppercase tracking-wider block mb-1">
+                  Rate (₱ PHP) <span className="text-rose-500">*</span>
+                  <span className="text-[11px] font-normal text-slate-500 lowercase ml-1">
+                    (billed {form.rate_type === "day" ? "per day" : "per night"})
+                  </span>
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₱</span>
+                  <Input
+                    id="room-price-input"
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    required
+                    placeholder={form.rate_type === "day" ? "e.g. 1500" : "e.g. 2500"}
+                    className="pl-8 bg-white rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] font-medium"
+                    value={form.price}
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Preview: <strong>₱{Number(form.price || 0).toLocaleString()}</strong> {form.rate_type === "day" ? "/ day" : "/ night"}
+                </p>
+              </div>
             </div>
 
             <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/60">

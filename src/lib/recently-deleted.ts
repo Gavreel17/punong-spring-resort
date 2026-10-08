@@ -107,7 +107,7 @@ export const trashService = {
             type: "room",
             title: r.name,
             subtitle: `${typeName} Accommodation`,
-            description: `Capacity: ${r.capacity} persons • Rate: ₱${Number(r.price).toLocaleString()}/night`,
+            description: `Capacity: ${r.capacity} persons • Rate: ₱${Number(r.price).toLocaleString()}${r.rate_type === 'day' ? '/day' : '/night'}`,
             amount: r.price,
             dates: `Rate: ₱${Number(r.price).toLocaleString()}`,
             deleted_at: r.updated_at || new Date().toISOString(),

@@ -302,6 +302,7 @@ export function generateReceiptWordHtml(booking: BookingData, settings: ResortSe
       ? "day_use" 
       : null);
   const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number(booking.overnight_fee) > 0);
+  const isDayRate = booking.room?.rate_type === "day" || isCottage;
   const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number(booking.overnight_fee) || 1000) : 0) : 0;
   const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
   const totalAmount = Number(booking.total_amount) || 0;
@@ -544,7 +545,7 @@ export function generateReceiptWordHtml(booking: BookingData, settings: ResortSe
         <table class="info-table" style="width: 100%;">
           <tr><td class="label">Check-in:</td><td class="value">${checkInFormatted} (2:00 PM)</td></tr>
           <tr><td class="label">Check-out:</td><td class="value">${checkOutFormatted} (12:00 PM)</td></tr>
-          <tr><td class="label">Duration:</td><td class="value">${nights} ${isCottage ? "day" : "night"}${nights > 1 ? "s" : ""}</td></tr>
+          <tr><td class="label">Duration:</td><td class="value">${nights} ${isDayRate ? "day" : "night"}${nights > 1 ? "s" : ""}</td></tr>
           ${isCottage ? `<tr><td class="label">Stay Type:</td><td class="value"><span class="${isOvernightCottage ? "badge-overnight" : "badge-dayuse"}">${stayTypeLabel}</span></td></tr>` : ""}
         </table>
       </td>
@@ -733,6 +734,7 @@ export async function generateAndDownloadReceiptPdf(
     const nights = calculateNights(booking.check_in, booking.check_out);
     const totalAmount = Number(booking.total_amount) || 0;
     const isCottage = booking.room?.type === "cottage";
+    const isDayRate = booking.room?.rate_type === "day" || isCottage;
     const rawStayType = booking.stay_type ||
       (booking.special_requests?.toLowerCase().includes("overnight stay") || booking.special_requests?.toLowerCase().includes("overnight cottage fee")
         ? "overnight"
@@ -889,7 +891,7 @@ export async function generateAndDownloadReceiptPdf(
     doc.text("Stay Duration:", rightCardX + 5, cardY + 26);
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "bold");
-    doc.text(isCottage ? `${nights} Day${nights > 1 ? "s" : ""}` : `${nights} Night${nights > 1 ? "s" : ""}`, rightCardX + cardWidth - 5, cardY + 26, { align: "right" });
+    doc.text(isDayRate ? `${nights} Day${nights > 1 ? "s" : ""}` : `${nights} Night${nights > 1 ? "s" : ""}`, rightCardX + cardWidth - 5, cardY + 26, { align: "right" });
 
     if (isCottage) {
       doc.setTextColor(71, 85, 105);
@@ -919,8 +921,8 @@ export async function generateAndDownloadReceiptPdf(
     doc.setFontSize(7.5);
     doc.text("ITEM / ACCOMMODATION", margin + 6, tableY + 5.5);
     doc.text("TYPE", margin + 85, tableY + 5.5);
-    doc.text(isCottage ? "RATE / DAY" : "RATE / NIGHT", margin + 122, tableY + 5.5, { align: "center" });
-    doc.text(isCottage ? "DAYS" : "NIGHTS", margin + 148, tableY + 5.5, { align: "center" });
+    doc.text(isDayRate ? "RATE / DAY" : "RATE / NIGHT", margin + 122, tableY + 5.5, { align: "center" });
+    doc.text(isDayRate ? "DAYS" : "NIGHTS", margin + 148, tableY + 5.5, { align: "center" });
     doc.text("AMOUNT (PHP)", pageWidth - margin - 6, tableY + 5.5, { align: "right" });
 
     // Table Content Row 1: Accommodation

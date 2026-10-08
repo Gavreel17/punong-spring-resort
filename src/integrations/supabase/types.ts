@@ -159,6 +159,7 @@ export type Database = {
           is_available: boolean;
           name: string;
           price: number;
+          rate_type: string | null;
           type: Database["public"]["Enums"]["room_type"];
           updated_at: string;
           status: string | null;
@@ -175,6 +176,7 @@ export type Database = {
           is_available?: boolean;
           name: string;
           price: number;
+          rate_type?: string | null;
           type?: Database["public"]["Enums"]["room_type"];
           updated_at?: string;
           status?: string | null;
@@ -191,6 +193,7 @@ export type Database = {
           is_available?: boolean;
           name?: string;
           price?: number;
+          rate_type?: string | null;
           type?: Database["public"]["Enums"]["room_type"];
           updated_at?: string;
           status?: string | null;

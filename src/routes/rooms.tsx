@@ -190,7 +190,7 @@ function RoomsPage() {
                           ₱{Number(r.price).toLocaleString()}
                         </span>
                         <span className="text-xs sm:text-sm text-muted-foreground">
-                          {r.type === "cottage" ? " / day" : " / night"}
+                          {r.rate_type === "day" ? " / day" : " / night"}
                         </span>
                       </div>
                       <Button
