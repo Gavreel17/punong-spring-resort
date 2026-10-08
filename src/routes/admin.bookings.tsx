@@ -164,7 +164,10 @@ function BookingsTab() {
 
   async function updatePaymentStatus(bookingId: string, userId: string, paymentId: string | undefined, status: string, totalAmount: number) {
     if (paymentId) {
-      const { error } = await supabase.from("payments").update({ status }).eq("id", paymentId);
+      const { error } = await supabase
+        .from("payments")
+        .update({ status, ...(status === "verified" && totalAmount > 0 ? { amount: totalAmount } : {}) })
+        .eq("id", paymentId);
       if (error) return toast.error(error.message);
     } else {
       const { error } = await supabase.from("payments").insert({

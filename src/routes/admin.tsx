@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { AdminStatsRow } from "@/components/AdminStatsRow";
 import {
   Users,
   CalendarCheck,
@@ -337,7 +338,7 @@ function AdminLayout() {
             {/* Display Stats Row only when Calendar or Bookings tabs are active */}
             {["/admin/calendar", "/admin/bookings"].includes(location.pathname) && (
               <div className="mb-4">
-                <StatsRow />
+                <AdminStatsRow showSubtitles={false} />
               </div>
             )}
 
@@ -351,108 +352,3 @@ function AdminLayout() {
     </div>
   );
 }
-
-function StatsRow() {
-  const { data } = useQuery({
-    queryKey: ["admin-stats"],
-    queryFn: async () => {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const [b, c, r, p] = await Promise.all([
-        supabase.from("bookings").select("id,status,total_amount,check_in,check_out,room_id"),
-        supabase.from("profiles").select("id"),
-        supabase.from("rooms").select("id,is_available,maintenance_start,maintenance_end"),
-        supabase.from("payments").select("amount,status"),
-      ]);
-      const totalRevenue = (p.data ?? [])
-        .filter((x: any) => x.status === "verified")
-        .reduce((s: number, x: any) => s + Number(x.amount), 0);
-
-      const allRooms = r.data || [];
-      const totalRooms = allRooms.length;
-      let occupied = 0;
-
-      allRooms.forEach((room: any) => {
-        let isOccupied = false;
-        if (room.maintenance_start && room.maintenance_end) {
-          if (todayStr >= room.maintenance_start && todayStr < room.maintenance_end)
-            isOccupied = true;
-        }
-        if (!isOccupied) {
-          const roomBookings = (b.data || []).filter(
-            (bk: any) => bk.room_id === room.id && bk.status === "approved",
-          );
-          for (const bk of roomBookings) {
-            if (todayStr >= bk.check_in && todayStr < bk.check_out) {
-              isOccupied = true;
-              break;
-            }
-          }
-        }
-        if (isOccupied) occupied++;
-      });
-
-      const occupancyRate = totalRooms > 0 ? Math.round((occupied / totalRooms) * 100) : 0;
-
-      return {
-        totalBookings: b.data?.length ?? 0,
-        customers: c.data?.length ?? 0,
-        occupancyRate,
-        revenue: totalRevenue,
-      };
-    },
-  });
-
-  const stats = [
-    { 
-      label: "Total Reservations", 
-      value: data?.totalBookings ?? 0, 
-      icon: CalendarCheck, 
-      color: "from-amber-500/20 to-amber-600/10 text-amber-700 border-amber-300/30",
-      iconBg: "bg-amber-500 text-white"
-    },
-    { 
-      label: "Occupancy Rate", 
-      value: `${data?.occupancyRate ?? 0}%`, 
-      icon: Percent, 
-      color: "from-blue-500/20 to-cyan-600/10 text-blue-700 border-blue-300/30",
-      iconBg: "bg-blue-600 text-white"
-    },
-    { 
-      label: "Resort Guests", 
-      value: data?.customers ?? 0, 
-      icon: Users, 
-      color: "from-emerald-500/20 to-teal-600/10 text-emerald-700 border-emerald-300/30",
-      iconBg: "bg-emerald-600 text-white"
-    },
-    {
-      label: "Verified Revenue",
-      value: `₱${(data?.revenue ?? 0).toLocaleString()}`,
-      icon: PhilippinePeso,
-      color: "from-yellow-500/20 via-amber-500/10 to-[#D4AF37]/20 text-slate-900 border-[#D4AF37]/30",
-      iconBg: "bg-gradient-to-br from-[#B38728] to-[#D4AF37] text-white shadow-md"
-    },
-  ];
-
-  return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {stats.map((s) => (
-        <div 
-          key={s.label} 
-          className="relative overflow-hidden rounded-2xl bg-white p-5 border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all duration-300 group"
-        >
-          <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl ${s.color} rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none`}></div>
-          <div className="flex items-center gap-4 relative z-10">
-            <div className={`rounded-xl ${s.iconBg} p-3.5 shadow-md shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-              <s.icon className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wider font-bold text-slate-600">{s.label}</p>
-              <p className="text-2xl font-extrabold text-slate-900 font-display mt-0.5">{s.value}</p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-

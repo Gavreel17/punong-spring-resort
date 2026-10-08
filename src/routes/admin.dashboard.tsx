@@ -4,17 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { format, parseISO, startOfMonth } from "date-fns";
+import { format, parseISO } from "date-fns";
 import {
   CalendarCheck,
   Users,
-  PhilippinePeso,
-  Percent,
   BedDouble,
   ArrowRight,
   TrendingUp,
   AlertCircle,
-  Clock,
   CheckCircle2,
   XCircle,
   BarChart3,
@@ -22,7 +19,8 @@ import {
   Star,
   Activity,
 } from "lucide-react";
-import { processAutoBookingStatuses } from "@/lib/booking-utils";
+import { useAdminStats } from "@/hooks/use-admin-stats";
+import { AdminStatsRow } from "@/components/AdminStatsRow";
 
 export const Route = createFileRoute("/admin/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Admin | Punong Spring Resort" }] }),
@@ -47,39 +45,7 @@ function statusBadge(status: string) {
 
 function AdminDashboard() {
   const todayStr = new Date().toISOString().split("T")[0];
-  const monthStart = format(startOfMonth(new Date()), "yyyy-MM-dd");
-
-  // ── Data Fetches ────────────────────────────────────────────────────────
-  const { data: bookings, isLoading: loadingBookings } = useQuery({
-    queryKey: ["dashboard-bookings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("id,status,total_amount,check_in,check_out,created_at,guest_name,room_id,room:rooms(name,type),payments(status,amount)")
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      if (data && data.length > 0) {
-        await processAutoBookingStatuses(data);
-      }
-      return data ?? [];
-    },
-    refetchInterval: 60000,
-    retry: 1,
-  });
-
-  const { data: rooms } = useQuery({
-    queryKey: ["dashboard-rooms"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("rooms")
-        .select("id,name,type,is_available,maintenance_start,maintenance_end");
-      if (error) throw error;
-      return data ?? [];
-    },
-    refetchInterval: 60000,
-    retry: 1,
-  });
+  const stats = useAdminStats();
 
   const { data: pendingPayments } = useQuery({
     queryKey: ["dashboard-pending-payments"],
@@ -91,17 +57,6 @@ function AdminDashboard() {
       return count ?? 0;
     },
     refetchInterval: 30000,
-    retry: 1,
-  });
-
-  const { data: customers } = useQuery({
-    queryKey: ["dashboard-customers"],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
-      return count ?? 0;
-    },
     retry: 1,
   });
 
@@ -119,59 +74,8 @@ function AdminDashboard() {
     retry: 1,
   });
 
-  // ── Derived Stats ───────────────────────────────────────────────────────
-
-  const allBookings = bookings ?? [];
-  const allRooms = rooms ?? [];
-
-  const totalBookings = allBookings.length;
-  const pendingCount = allBookings.filter((b: any) => b.status === "pending").length;
-  const approvedCount = allBookings.filter((b: any) => b.status === "approved").length;
-  const cancelledCount = allBookings.filter((b: any) => b.status === "cancelled" || b.status === "rejected").length;
-
-  // Revenue (approved + completed)
-  const totalRevenue = allBookings
-    .filter((b: any) => b.status === "approved" || b.status === "completed")
-    .reduce((s: number, b: any) => s + Number(b.total_amount || 0), 0);
-
-  // This-month bookings
-  const monthBookings = allBookings.filter(
-    (b: any) => b.created_at >= monthStart
-  ).length;
-
-  // Today's check-ins
-  const todayCheckIns = allBookings.filter(
-    (b: any) => b.check_in === todayStr && b.status === "approved"
-  ).length;
-
-  // Today's check-outs
-  const todayCheckOuts = allBookings.filter(
-    (b: any) => b.check_out === todayStr && b.status === "approved"
-  ).length;
-
-  // Occupancy rate (rooms currently occupied)
-  let occupiedCount = 0;
-  allRooms.forEach((room: any) => {
-    let isOccupied = false;
-    if (room.maintenance_start && room.maintenance_end) {
-      if (todayStr >= room.maintenance_start && todayStr < room.maintenance_end)
-        isOccupied = true;
-    }
-    if (!isOccupied) {
-      const roomBookings = allBookings.filter(
-        (bk: any) => bk.room_id === room.id && bk.status === "approved"
-      );
-      for (const bk of roomBookings) {
-        if (todayStr >= bk.check_in && todayStr < bk.check_out) {
-          isOccupied = true;
-          break;
-        }
-      }
-    }
-    if (isOccupied) occupiedCount++;
-  });
-  const occupancyRate =
-    allRooms.length > 0 ? Math.round((occupiedCount / allRooms.length) * 100) : 0;
+  const allBookings = stats.allBookings;
+  const allRooms = stats.allRooms;
 
   // Average review rating
   const avgRating =
@@ -182,52 +86,11 @@ function AdminDashboard() {
   // Recent 8 bookings
   const recentBookings = allBookings.slice(0, 8);
 
-  // ── KPI Cards ──────────────────────────────────────────────────────────
-
-  const kpis = [
-    {
-      label: "Total Reservations",
-      value: totalBookings,
-      sub: `+${monthBookings} this month`,
-      icon: CalendarCheck,
-      gradient: "from-amber-500/20 to-amber-600/10",
-      iconBg: "bg-amber-500",
-      textColor: "text-amber-700",
-    },
-    {
-      label: "Occupancy Rate",
-      value: `${occupancyRate}%`,
-      sub: `${occupiedCount} of ${allRooms.length} rooms`,
-      icon: Percent,
-      gradient: "from-blue-500/20 to-cyan-600/10",
-      iconBg: "bg-blue-600",
-      textColor: "text-blue-700",
-    },
-    {
-      label: "Resort Guests",
-      value: customers ?? 0,
-      sub: "registered accounts",
-      icon: Users,
-      gradient: "from-emerald-500/20 to-teal-600/10",
-      iconBg: "bg-emerald-600",
-      textColor: "text-emerald-700",
-    },
-    {
-      label: "Verified Revenue",
-      value: `₱${totalRevenue.toLocaleString()}`,
-      sub: "approved + completed",
-      icon: PhilippinePeso,
-      gradient: "from-yellow-500/20 to-[#D4AF37]/20",
-      iconBg: "bg-gradient-to-br from-[#B38728] to-[#D4AF37]",
-      textColor: "text-slate-900",
-    },
-  ];
-
   // ── Booking Status Breakdown ───────────────────────────────────────────
 
   const statusBreakdown = [
-    { label: "Confirmed / Active", count: approvedCount, icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-    { label: "Cancelled", count: cancelledCount, icon: XCircle, color: "text-rose-500 bg-rose-50 border-rose-200" },
+    { label: "Confirmed / Active", count: stats.approvedCount, icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+    { label: "Cancelled", count: stats.cancelledCount, icon: XCircle, color: "text-rose-500 bg-rose-50 border-rose-200" },
     { label: "Awaiting Payments", count: pendingPayments ?? 0, icon: AlertCircle, color: "text-orange-600 bg-orange-50 border-orange-200" },
   ];
 
@@ -241,9 +104,6 @@ function AdminDashboard() {
     { label: "Reports", to: "/admin/reports", icon: BarChart3, desc: "Analytics & exports" },
     { label: "Cancelled", to: "/admin/cancellations", icon: XCircle, desc: "Process refunds" },
   ];
-
-  // Never block the whole page — show skeleton KPIs while the primary query resolves.
-  // If the query errored, allBookings stays [] so we still render meaningful UI.
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -271,45 +131,17 @@ function AdminDashboard() {
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
             <Activity className="w-3.5 h-3.5" />
-            {todayCheckIns} Check-in{todayCheckIns !== 1 ? "s" : ""} Today
+            {stats.todayCheckIns} Check-in{stats.todayCheckIns !== 1 ? "s" : ""} Today
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700">
             <TrendingUp className="w-3.5 h-3.5" />
-            {todayCheckOuts} Check-out{todayCheckOuts !== 1 ? "s" : ""} Today
+            {stats.todayCheckOuts} Check-out{stats.todayCheckOuts !== 1 ? "s" : ""} Today
           </div>
         </div>
       </div>
 
-      {/* ── KPI Cards ──────────────────────────────────────────────── */}
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((kpi) => {
-          const Icon = kpi.icon;
-          return (
-            <div
-              key={kpi.label}
-              className="relative overflow-hidden rounded-2xl bg-white p-5 border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all duration-300 group"
-            >
-              <div
-                className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl ${kpi.gradient} rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none`}
-              />
-              <div className="flex items-center gap-4 relative z-10">
-                <div className={`rounded-xl ${kpi.iconBg} p-3.5 shadow-md shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider font-bold text-slate-500">
-                    {kpi.label}
-                  </p>
-                  <p className="text-2xl font-extrabold text-slate-900 font-display mt-0.5">
-                    {kpi.value}
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5 font-medium">{kpi.sub}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* ── KPI Cards (Unified Across Admin) ────────────────────────── */}
+      <AdminStatsRow showSubtitles={true} />
 
       {/* ── Status Breakdown + Quick Actions ───────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-5">
