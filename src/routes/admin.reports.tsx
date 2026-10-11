@@ -41,7 +41,7 @@ import {
   startOfMonth,
   startOfYear,
 } from "date-fns";
-import { FileDown, Printer, FileText, BarChart3, Users, BedDouble, History, RefreshCcw, Trash2 } from "lucide-react";
+import { FileDown, Printer, FileText, BarChart3, Users, BedDouble, History, RefreshCcw, Trash2, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/reports")({
@@ -49,6 +49,7 @@ export const Route = createFileRoute("/admin/reports")({
 });
 
 const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
+const REASON_COLORS = ["#ef4444", "#f59e0b", "#8b5cf6", "#3b82f6", "#06b6d4", "#ec4899", "#10b981", "#64748b"];
 
 function ReportsDashboard() {
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
@@ -94,6 +95,13 @@ function ReportsDashboard() {
       return rawBookings.filter((b: any) => !b.deleted_at);
     }
   }, [rawBookings, startDate, endDate]);
+
+  const allTimeCancellations = useMemo(() => {
+    if (!rawBookings) return [];
+    return rawBookings.filter(
+      (b: any) => (b.status === "cancelled" || b.status === "rejected") && !b.deleted_at
+    );
+  }, [rawBookings]);
 
   const { data: allTrashItems = [] } = useQuery({
     queryKey: ["admin-trash-all"],
@@ -143,24 +151,53 @@ function ReportsDashboard() {
       if (b.status === "approved") {
         confirmed++;
         revenue += Number(b.total_amount || 0);
-      } else if (b.status === "pending") pending++;
-      else if (b.status === "cancelled" || b.status === "rejected") cancelled++;
-      else if (b.status === "completed") {
+      } else if (b.status === "pending") {
+        pending++;
+      } else if (b.status === "cancelled" || b.status === "rejected") {
+        cancelled++;
+
+        let foundReason = "";
+        const paymentsList = Array.isArray(b.payments) ? b.payments : (b.payments ? [b.payments] : []);
+        for (const payment of paymentsList) {
+          if (payment?.notes) {
+            try {
+              const parsed = typeof payment.notes === "string" ? JSON.parse(payment.notes) : payment.notes;
+              if (parsed?.cancellation_reason && typeof parsed.cancellation_reason === "string" && parsed.cancellation_reason.trim()) {
+                foundReason = parsed.cancellation_reason.trim();
+                break;
+              }
+              if (parsed?.reason && typeof parsed.reason === "string" && parsed.reason.trim()) {
+                foundReason = parsed.reason.trim();
+                break;
+              }
+            } catch (e) {}
+          }
+        }
+
+        if (!foundReason) {
+          if (b.status === "rejected") {
+            foundReason = "Booking rejected by admin";
+          } else {
+            foundReason = "Requested by guest";
+          }
+        }
+
+        const displayReason = foundReason.charAt(0).toUpperCase() + foundReason.slice(1);
+        cancellationReasonsMap.set(displayReason, (cancellationReasonsMap.get(displayReason) || 0) + 1);
+      } else if (b.status === "completed") {
         completed++;
         revenue += Number(b.total_amount || 0);
-      } else if (b.status === "no-show") noShow++;
+      } else if (b.status === "no-show") {
+        noShow++;
+      }
 
       // Payment Stats
       const p = b.payments?.[0];
       let method = "unknown";
       if (p?.notes) {
         try {
-          const parsed = JSON.parse(p.notes);
+          const parsed = typeof p.notes === "string" ? JSON.parse(p.notes) : p.notes;
           method = parsed.method;
-          
-          if (b.status === "cancelled" && parsed.cancellation_reason) {
-            cancellationReasonsMap.set(parsed.cancellation_reason, (cancellationReasonsMap.get(parsed.cancellation_reason) || 0) + 1);
-          }
         } catch (e) {}
       }
 
@@ -476,23 +513,131 @@ function ReportsDashboard() {
             )}
           </div>
         </Card>
-        <Card className="p-6 shadow-sm border-slate-200 lg:col-span-2">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Cancellation Reasons</h3>
-          <div className="h-64 w-full">
+        <Card className="p-6 shadow-sm border-slate-200 lg:col-span-2 flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-800 font-display">Cancellation Reasons</h3>
+                {stats.cancelled > 0 && (
+                  <Badge variant="outline" className="text-rose-700 bg-rose-50 border-rose-200 font-bold text-xs">
+                    {stats.cancelled} Total
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Stated customer reasons and administrative cancellation audits.
+              </p>
+            </div>
+            <Link
+              to="/admin/cancellations"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#B38728] hover:text-[#8c671b] hover:underline transition-colors shrink-0"
+            >
+              Cancellations Log <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="flex-1 min-h-[220px]">
             {stats.cancellationReasonsData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={stats.cancellationReasonsData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
-                    {stats.cancellationReasonsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center h-full">
+                {/* Donut Chart */}
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.cancellationReasonsData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={75}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {stats.cancellationReasonsData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={REASON_COLORS[index % REASON_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        formatter={(value: any, name: any) => [
+                          `${value} booking${Number(value) === 1 ? "" : "s"} (${Math.round((Number(value) / stats.cancelled) * 100)}%)`,
+                          name,
+                        ]}
+                        contentStyle={{
+                          borderRadius: "8px",
+                          border: "none",
+                          boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                          fontSize: "12px",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Ranked List Breakdown with percentage bars */}
+                <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                  {stats.cancellationReasonsData.map((item, idx) => {
+                    const pct = Math.round((item.value / stats.cancelled) * 100);
+                    const color = REASON_COLORS[idx % REASON_COLORS.length];
+                    return (
+                      <div key={item.name} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between font-semibold text-slate-800">
+                          <span className="flex items-center gap-1.5 truncate max-w-[170px]" title={item.name}>
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                            <span className="truncate">{item.name}</span>
+                          </span>
+                          <span className="font-bold shrink-0 ml-2">
+                            {item.value} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-200/80 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${pct}%`, backgroundColor: color }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             ) : (
-              <div className="flex h-full items-center justify-center text-slate-400">No cancellations</div>
+              <div className="flex flex-col items-center justify-center h-56 text-center p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50">
+                {allTimeCancellations.length > 0 ? (
+                  <>
+                    <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
+                    <p className="text-sm font-semibold text-slate-700">No cancellations in selected date range</p>
+                    <p className="text-xs text-slate-500 max-w-xs mt-1">
+                      There are {allTimeCancellations.length} cancellations recorded in other reporting periods.
+                    </p>
+                    <div className="flex items-center gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs font-semibold rounded-lg bg-white shadow-2xs hover:bg-slate-100"
+                        onClick={() => {
+                          setStartDate("2020-01-01");
+                          setEndDate(format(endOfDay(new Date()), "yyyy-MM-dd"));
+                        }}
+                      >
+                        Show All Dates
+                      </Button>
+                      <Link
+                        to="/admin/cancellations"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-[#B38728] hover:underline"
+                      >
+                        View Cancellations Tab
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-2" />
+                    <p className="text-sm font-semibold text-slate-700">Zero Cancellations Recorded</p>
+                    <p className="text-xs text-slate-400 max-w-xs mt-1">
+                      All reservations in the resort inventory are active, confirmed, or completed.
+                    </p>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </Card>

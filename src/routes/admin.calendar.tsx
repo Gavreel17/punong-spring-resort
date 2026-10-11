@@ -27,7 +27,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { getRoomRateType, enrichRoomWithRateType } from "@/lib/rate-type-helper";
+import { getRoomRateType, enrichRoomWithRateType, getAccommodationCategoryLabel } from "@/lib/rate-type-helper";
 import {
   Calendar as CalendarIcon,
   CalendarDays,
@@ -604,7 +604,9 @@ export function AvailabilityCalendarTab() {
 
     if (error) return toast.error(error.message);
 
-    toast.success("Room set to maintenance schedule");
+    const targetRoom = rooms.find((r: any) => r.id === maintenanceForm.room_id);
+    const categoryLabel = getAccommodationCategoryLabel(targetRoom?.type);
+    toast.success(`${categoryLabel} set to maintenance schedule`);
     setMaintenanceModalOpen(false);
     refetch();
     qc.invalidateQueries({ queryKey: ["global-availability"] });
@@ -622,7 +624,9 @@ export function AvailabilityCalendarTab() {
       .eq("id", roomId);
 
     if (error) return toast.error(error.message);
-    toast.success("Room restored to available");
+    const targetRoom = rooms.find((r: any) => r.id === roomId);
+    const categoryLabel = getAccommodationCategoryLabel(targetRoom?.type);
+    toast.success(`${categoryLabel} restored to available`);
     refetch();
     qc.invalidateQueries({ queryKey: ["global-availability"] });
   };
@@ -1010,9 +1014,6 @@ export function AvailabilityCalendarTab() {
         <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-emerald-600"></span> Confirmed
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-amber-500"></span> Pending
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-slate-600"></span> Maintenance

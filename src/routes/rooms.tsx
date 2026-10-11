@@ -156,9 +156,6 @@ function RoomsPage() {
               <div className="h-3 w-3 rounded-full bg-green-500"></div> Available
             </span>
             <span className="flex items-center gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-yellow-400"></div> Limited
-            </span>
-            <span className="flex items-center gap-1.5">
               <div className="h-3 w-3 rounded-full bg-red-500"></div> Not Available
             </span>
             <span className="flex items-center gap-1.5">

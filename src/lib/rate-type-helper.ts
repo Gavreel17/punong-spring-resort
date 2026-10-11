@@ -87,3 +87,21 @@ export function getRateTypeDisplay(rateType: string | undefined | null) {
     durationLabel: isDay ? "Days" : "Nights",
   };
 }
+
+export function getAccommodationCategoryLabel(type?: string | null): string {
+  if (!type) return "Accommodation";
+  const normalized = String(type).trim().toLowerCase();
+  if (normalized === "cottage") return "Cottage";
+  if (
+    normalized === "villa" ||
+    normalized === "function hall" ||
+    normalized === "function_hall" ||
+    normalized.includes("function") ||
+    normalized.includes("hall")
+  ) {
+    return "Function Hall";
+  }
+  if (normalized === "room") return "Room";
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+

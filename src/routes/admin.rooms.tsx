@@ -36,6 +36,7 @@ import {
   attachRateTypeToAmenities,
   saveRoomRateTypeCache,
   getRateTypeDisplay,
+  getAccommodationCategoryLabel,
 } from "@/lib/rate-type-helper";
 
 const MySwal = withReactContent(Swal);
@@ -192,9 +193,12 @@ function RoomsTab() {
         saveRoomRateTypeCache(targetRoomId, selectedRateType);
       }
 
+      const categoryLabel = getAccommodationCategoryLabel(savedData?.[0]?.type || form.type || edit?.type);
+      const actionLabel = edit ? "updated" : "added";
+
       MySwal.fire(
         "Success!",
-        edit ? "Room updated successfully." : "Room added successfully.",
+        `${categoryLabel} ${actionLabel} successfully.`,
         "success",
       );
       setOpen(false);
@@ -258,9 +262,12 @@ function RoomsTab() {
   };
 
   async function remove(id: string) {
+    const targetRoom = rooms.find((r: any) => r.id === id);
+    const categoryLabel = getAccommodationCategoryLabel(targetRoom?.type);
+
     const result = await MySwal.fire({
-      title: "Delete Accommodation?",
-      text: "Are you sure you want to delete this room/cottage? This action cannot be undone.",
+      title: `Delete ${categoryLabel}?`,
+      text: `Are you sure you want to delete this ${categoryLabel.toLowerCase()}? This action cannot be undone.`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -277,7 +284,7 @@ function RoomsTab() {
       if (softErr) return MySwal.fire("Error!", softErr.message, "error");
     }
 
-    MySwal.fire("Deleted!", "Accommodation has been deleted.", "success");
+    MySwal.fire("Success!", `${categoryLabel} deleted successfully.`, "success");
     qc.invalidateQueries({ queryKey: ["admin-rooms"] });
     qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
   }

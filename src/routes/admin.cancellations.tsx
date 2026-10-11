@@ -30,13 +30,11 @@ import {
   Mail,
   Phone,
   Calendar,
-  CreditCard,
   Eye,
   Copy,
   Check,
   Clock,
   AlertCircle,
-  FileText,
   BedDouble,
 } from "lucide-react";
 
@@ -166,7 +164,7 @@ function CancellationsTab() {
             Cancelled Bookings & Customers
           </h2>
           <p className="text-sm text-slate-500">
-            View customer details for cancelled reservations, review stated cancellation reasons, and monitor refund actions.
+            View customer details for cancelled reservations and review stated cancellation reasons.
           </p>
         </div>
 
@@ -556,54 +554,6 @@ function CancellationsTab() {
                       <div className="text-xs pt-1 border-t border-slate-200">
                         <span className="text-slate-400 block">Special Requests</span>
                         <span className="text-slate-700 italic">"{b.special_requests}"</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Payment & Refund Details Card */}
-                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      <CreditCard className="w-4 h-4 text-[#D4AF37]" />
-                      Payment & Refund Record
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                      <div>
-                        <span className="text-slate-400 block">Total Amount</span>
-                        <span className="font-bold text-slate-900 text-sm">
-                          ₱{Number(b.total_amount || 0).toLocaleString()}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block">Payment Method</span>
-                        <span className="font-semibold text-slate-800 uppercase">
-                          {notes.method === "gcash" ? "GCash Online" : "Pay at Resort"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block">Payment / Refund Status</span>
-                        <span className="font-bold text-slate-900 capitalize">
-                          {p?.status ? p.status.replace("_", " ") : "Unpaid"}
-                        </span>
-                      </div>
-                    </div>
-
-                    {notes.reference_number && (
-                      <div className="text-xs pt-1 border-t border-slate-200">
-                        <span className="text-slate-400 block">Payment Reference Number</span>
-                        <span className="font-mono text-slate-700 font-semibold">{notes.reference_number}</span>
-                      </div>
-                    )}
-
-                    {p?.receipt_url && (
-                      <div className="text-xs pt-1">
-                        <a
-                          href={p.receipt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-semibold"
-                        >
-                          <FileText className="w-3.5 h-3.5" /> View Uploaded Payment Receipt
-                        </a>
                       </div>
                     )}
                   </div>
