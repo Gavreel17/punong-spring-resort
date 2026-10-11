@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
+import { getRoomRateType } from "./rate-type-helper";
 
 export interface BookingData {
   id: string;
@@ -302,7 +303,7 @@ export function generateReceiptWordHtml(booking: BookingData, settings: ResortSe
       ? "day_use" 
       : null);
   const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number(booking.overnight_fee) > 0);
-  const isDayRate = booking.room?.rate_type === "day" || isCottage;
+  const isDayRate = getRoomRateType(booking.room) === "day" || isCottage;
   const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number(booking.overnight_fee) || 1000) : 0) : 0;
   const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
   const totalAmount = Number(booking.total_amount) || 0;
@@ -734,7 +735,7 @@ export async function generateAndDownloadReceiptPdf(
     const nights = calculateNights(booking.check_in, booking.check_out);
     const totalAmount = Number(booking.total_amount) || 0;
     const isCottage = booking.room?.type === "cottage";
-    const isDayRate = booking.room?.rate_type === "day" || isCottage;
+    const isDayRate = getRoomRateType(booking.room) === "day" || isCottage;
     const rawStayType = booking.stay_type ||
       (booking.special_requests?.toLowerCase().includes("overnight stay") || booking.special_requests?.toLowerCase().includes("overnight cottage fee")
         ? "overnight"

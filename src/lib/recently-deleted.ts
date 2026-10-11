@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getRoomRateType } from "./rate-type-helper";
 
 export type TrashEntityType = "booking" | "room" | "inquiry" | "customer" | "feedback";
 
@@ -107,7 +108,7 @@ export const trashService = {
             type: "room",
             title: r.name,
             subtitle: `${typeName} Accommodation`,
-            description: `Capacity: ${r.capacity} persons • Rate: ₱${Number(r.price).toLocaleString()}${r.rate_type === 'day' ? '/day' : '/night'}`,
+            description: `Capacity: ${r.capacity} persons • Rate: ₱${Number(r.price).toLocaleString()}${getRoomRateType(r) === 'day' ? '/day' : '/night'}`,
             amount: r.price,
             dates: `Rate: ₱${Number(r.price).toLocaleString()}`,
             deleted_at: r.updated_at || new Date().toISOString(),

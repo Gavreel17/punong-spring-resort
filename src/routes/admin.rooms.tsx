@@ -30,6 +30,13 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { Plus, LayoutGrid, List, Users, Sparkles, Bed, Wrench, Edit3, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  getRoomRateType,
+  enrichRoomWithRateType,
+  attachRateTypeToAmenities,
+  saveRoomRateTypeCache,
+  getRateTypeDisplay,
+} from "@/lib/rate-type-helper";
 
 const MySwal = withReactContent(Swal);
 
@@ -69,7 +76,7 @@ function RoomsTab() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      return (data || []).map(enrichRoomWithRateType);
     },
   });
 
@@ -84,10 +91,11 @@ function RoomsTab() {
   }
   function openEdit(r: any) {
     setEdit(r);
+    const resolvedRateType = getRoomRateType(r);
     setForm({
       ...blank,
       ...r,
-      rate_type: r.rate_type || "nightly",
+      rate_type: resolvedRateType,
     });
     setOpen(true);
   }
@@ -138,9 +146,13 @@ function RoomsTab() {
 
     setSaving(true);
 
+    const selectedRateType = form.rate_type === "day" ? "day" : "nightly";
+    const updatedAmenities = attachRateTypeToAmenities(form.amenities, selectedRateType);
+
     const payload = {
       ...form,
-      rate_type: form.rate_type || "nightly",
+      amenities: updatedAmenities,
+      rate_type: selectedRateType,
       price: numericPrice,
       capacity: form.capacity,
       maintenance_start:
@@ -149,24 +161,35 @@ function RoomsTab() {
         form.status === "maintenance" && form.maintenance_end ? form.maintenance_end : null,
     };
     try {
-      let { error } = edit
-        ? await supabase.from("rooms").update(payload).eq("id", edit.id)
-        : await supabase.from("rooms").insert(payload);
+      let savedData: any = null;
+      let { data, error } = edit
+        ? await supabase.from("rooms").update(payload).eq("id", edit.id).select()
+        : await supabase.from("rooms").insert(payload).select();
 
-      // Resilient fallback if remote Supabase schema cache has not yet refreshed for rate_type
+      savedData = data;
+
+      // Resilient fallback: If rate_type column is not yet present on remote Supabase table,
+      // save without rate_type column but with updated amenities tag (which persists in DB).
       if (error && (error.message?.includes("rate_type") || error.details?.includes("rate_type"))) {
-        console.warn("Retrying room save without rate_type column (schema cache pending):", error);
+        console.warn("Retrying room save without rate_type column (persisting via amenities tag):", error);
         const fallbackPayload = { ...payload };
         delete fallbackPayload.rate_type;
         const retryResult = edit
-          ? await supabase.from("rooms").update(fallbackPayload).eq("id", edit.id)
-          : await supabase.from("rooms").insert(fallbackPayload);
+          ? await supabase.from("rooms").update(fallbackPayload).eq("id", edit.id).select()
+          : await supabase.from("rooms").insert(fallbackPayload).select();
         error = retryResult.error;
+        savedData = retryResult.data;
       }
 
       setSaving(false);
       if (error) {
         return MySwal.fire("Error!", error.message, "error");
+      }
+
+      // Persist in client-side room rate cache for instantaneous multi-tab sync
+      const targetRoomId = edit?.id || savedData?.[0]?.id;
+      if (targetRoomId) {
+        saveRoomRateTypeCache(targetRoomId, selectedRateType);
       }
 
       MySwal.fire(
@@ -177,8 +200,11 @@ function RoomsTab() {
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-rooms"] });
       qc.invalidateQueries({ queryKey: ["rooms"] });
+      qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
+      qc.invalidateQueries({ queryKey: ["room"] });
       qc.invalidateQueries({ queryKey: ["admin-availability-calendar"] });
       qc.invalidateQueries({ queryKey: ["admin-stats"] });
+      qc.invalidateQueries({ queryKey: ["reports-rooms-all"] });
     } catch (err: any) {
       setSaving(false);
       if (err.message === "Failed to fetch" || err.name === "TypeError") {

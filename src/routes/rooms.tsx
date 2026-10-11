@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Card } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Search, Info } from "lucide-react";
+import { enrichRoomWithRateType } from "@/lib/rate-type-helper";
 
 export const Route = createFileRoute("/rooms")({
   head: () => ({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/rooms")({
 });
 
 function RoomsPage() {
+  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [type, setType] = useState<string>("all");
 
@@ -42,9 +44,33 @@ function RoomsPage() {
         .select("*")
         .order("price");
       if (error) throw error;
-      return { rooms: roomsData || [] };
+      return { rooms: (roomsData || []).map(enrichRoomWithRateType) };
     },
   });
+
+  // Real-time synchronization whenever admin updates or changes rooms/rate types
+  useEffect(() => {
+    const channel = supabase
+      .channel("customer-rooms-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rooms" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
+        }
+      )
+      .subscribe();
+
+    const handleRateTypeChange = () => {
+      qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
+    };
+    window.addEventListener("punong-rate-type-changed", handleRateTypeChange);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener("punong-rate-type-changed", handleRateTypeChange);
+    };
+  }, [qc]);
 
   const rooms = data?.rooms || [];
 
@@ -186,12 +212,23 @@ function RoomsPage() {
                     </div>
                     <div className="mt-auto pt-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-t border-slate-100">
                       <div>
-                        <span className="text-xl sm:text-2xl font-bold text-primary">
-                          ₱{Number(r.price).toLocaleString()}
-                        </span>
-                        <span className="text-xs sm:text-sm text-muted-foreground">
-                          {r.rate_type === "day" ? " / day" : " / night"}
-                        </span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl sm:text-2xl font-bold text-primary">
+                            ₱{Number(r.price).toLocaleString()}
+                          </span>
+                          <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+                            {r.rate_type === "day" ? " / day" : " / night"}
+                          </span>
+                        </div>
+                        <div className="mt-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            r.rate_type === "day"
+                              ? "bg-amber-100 text-amber-800 border border-amber-300"
+                              : "bg-blue-100 text-blue-800 border border-blue-300"
+                          }`}>
+                            {r.rate_type === "day" ? "Day Rate" : "Nightly Rate"}
+                          </span>
+                        </div>
                       </div>
                       <Button
                         asChild

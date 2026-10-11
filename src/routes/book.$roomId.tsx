@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { z } from "zod";
 import { Navbar } from "@/components/Navbar";
@@ -31,6 +31,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { processAutoBookingStatuses } from "@/lib/booking-utils";
+import { getRoomRateType, enrichRoomWithRateType } from "@/lib/rate-type-helper";
 
 const MySwal = withReactContent(Swal);
 
@@ -47,6 +48,7 @@ function BookPage() {
   const { roomId } = useParams({ from: "/book/$roomId" });
   const searchParams = Route.useSearch();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { user, loading: authLoading } = useAuth();
 
   const [form, setForm] = useState({
@@ -71,15 +73,40 @@ function BookPage() {
     if (!authLoading && !user) navigate({ to: "/auth" });
   }, [user, authLoading, navigate]);
 
-
   const { data: room } = useQuery({
     queryKey: ["room", roomId],
     queryFn: async () => {
       const { data, error } = await supabase.from("rooms").select("*").eq("id", roomId).single();
       if (error) throw error;
-      return data;
+      return enrichRoomWithRateType(data);
     },
   });
+
+  // Real-time synchronization when admin alters rate type or room information
+  useEffect(() => {
+    const channel = supabase
+      .channel(`room-rate-sync-${roomId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rooms", filter: `id=eq.${roomId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["room", roomId] });
+        }
+      )
+      .subscribe();
+
+    const handleRateTypeChange = (e: any) => {
+      if (!e.detail?.roomId || e.detail?.roomId === roomId) {
+        qc.invalidateQueries({ queryKey: ["room", roomId] });
+      }
+    };
+    window.addEventListener("punong-rate-type-changed", handleRateTypeChange);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener("punong-rate-type-changed", handleRateTypeChange);
+    };
+  }, [qc, roomId]);
 
   const isUnlimited = String(room?.capacity || "").toLowerCase().includes("unlimited");
   const maxCapacity = (() => {
@@ -293,7 +320,7 @@ function BookPage() {
     : `This room accommodates ${regularGuestsIncluded} guests. You have added ${extraPersons} extra person${extraPersons > 1 ? "s" : ""}, but your selected extra beds only accommodate ${extraBedCapacity} person${extraBedCapacity > 1 ? "s" : ""}. Please add ${bedsDeficit} more bed slot${bedsDeficit > 1 ? "s" : ""} before continuing.`;
 
   const isCottage = room?.type === "cottage";
-  const rateType: "nightly" | "day" = (room?.rate_type as any) === "day" ? "day" : "nightly";
+  const rateType: "nightly" | "day" = getRoomRateType(room);
   const cottageOvernightFee = isCottage && stayType === "overnight" ? 1000 : 0;
   const additionalFee = room?.type === "room" ? (singleFoamBeds * 300) + (doubleFoamBeds * 600) : (isCottage ? cottageOvernightFee : 0);
 
@@ -628,8 +655,29 @@ function BookPage() {
       <Navbar />
       <section className="container mx-auto grid gap-6 sm:gap-8 px-3 sm:px-4 py-6 sm:py-12 md:grid-cols-[1fr_360px] lg:grid-cols-[1fr_400px]">
         <Card className="p-4 sm:p-6 md:p-8 rounded-xl bg-white shadow-sm border-slate-200">
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Reserve {room.name}</h1>
-          <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground">{room.description}</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Reserve {room.name}</h1>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{room.description}</p>
+            </div>
+            <div className="flex sm:flex-col items-center sm:items-end justify-between gap-1 shrink-0 bg-slate-50 sm:bg-transparent p-2.5 sm:p-0 rounded-lg">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                rateType === "day"
+                  ? "bg-amber-100 text-amber-900 border border-amber-300"
+                  : "bg-blue-100 text-blue-900 border border-blue-300"
+              }`}>
+                {rateType === "day" ? "Day Rate" : "Nightly Rate"}
+              </span>
+              <div className="text-right">
+                <span className="text-xl sm:text-2xl font-extrabold text-primary font-display">
+                  ₱{Number(room.price).toLocaleString()}
+                </span>
+                <span className="text-xs sm:text-sm text-muted-foreground ml-1 font-medium">
+                  {rateType === "day" ? "/ day" : "/ night"}
+                </span>
+              </div>
+            </div>
+          </div>
 
           <div className="mt-6 sm:mt-8 mb-6 sm:mb-8 border border-border/60 bg-slate-50/50 p-3 sm:p-6 rounded-xl shadow-xs overflow-hidden">
             <h2 className="text-lg sm:text-xl font-semibold mb-4 text-center text-slate-800">1. Select Your Dates</h2>

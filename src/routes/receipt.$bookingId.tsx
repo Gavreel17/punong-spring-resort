@@ -10,6 +10,7 @@ import {
   formatBookingReference 
 } from "@/lib/receipt-generator";
 import { toast } from "sonner";
+import { enrichRoomWithRateType } from "@/lib/rate-type-helper";
 
 export const Route = createFileRoute("/receipt/$bookingId")({
   component: ReceiptPage,
@@ -48,7 +49,7 @@ function ReceiptPage() {
 
       return {
         ...bData,
-        room: rRes.data || null,
+        room: rRes.data ? enrichRoomWithRateType(rRes.data) : null,
         payments: pRes.data || [],
       };
     },
@@ -189,6 +190,15 @@ function ReceiptPage() {
                       Check-out: {new Date(booking.check_out).toLocaleDateString()}
                       <br />
                       Guests: {booking.guests}
+                      {booking.room?.rate_type && (
+                        <>
+                          <br />
+                          <span className="font-medium text-slate-700">Rate Type: </span>
+                          <span className="font-semibold text-slate-900">
+                            {booking.room.rate_type === "day" ? "Day Rate" : "Nightly Rate"}
+                          </span>
+                        </>
+                      )}
                       {isCottage && (
                         <>
                           <br />

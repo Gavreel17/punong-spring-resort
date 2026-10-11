@@ -27,6 +27,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import { getRoomRateType, enrichRoomWithRateType } from "@/lib/rate-type-helper";
 import {
   Calendar as CalendarIcon,
   CalendarDays,
@@ -131,7 +132,7 @@ export function AvailabilityCalendarTab() {
         supabase
           .from("bookings")
           .select(
-            "*, room:rooms(name, type, price), profile:profiles!bookings_user_id_fkey(fullname,email), payments(*)"
+            "*, room:rooms(name, type, price, amenities), profile:profiles!bookings_user_id_fkey(fullname,email), payments(*)"
           )
           .is("deleted_at", null)
           .order("check_in", { ascending: true }),
@@ -150,8 +151,11 @@ export function AvailabilityCalendarTab() {
       await processAutoBookingStatuses(fetchedBookings);
 
       return {
-        rooms: roomsRes.data || [],
-        bookings: fetchedBookings,
+        rooms: (roomsRes.data || []).map(enrichRoomWithRateType),
+        bookings: fetchedBookings.map((b: any) => ({
+          ...b,
+          room: b.room ? enrichRoomWithRateType(b.room) : b.room,
+        })),
         blocks: blocksRes.data || [],
       };
     },
@@ -461,7 +465,7 @@ export function AvailabilityCalendarTab() {
         const d1 = new Date(next.check_in + "T00:00:00");
         const d2 = new Date(next.check_out + "T00:00:00");
         const diffDays = Math.round((d2.getTime() - d1.getTime()) / 86400000);
-        const rateType = room.rate_type === "day" ? "day" : "nightly";
+        const rateType = getRoomRateType(room);
         const count = rateType === "day"
           ? (next.check_in === next.check_out ? 1 : Math.max(1, diffDays + 1))
           : Math.max(next.check_in === next.check_out ? 1 : 0, diffDays);
