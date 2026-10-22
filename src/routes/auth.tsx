@@ -11,6 +11,7 @@ import { Palmtree, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { validatePhilippineMobileNumber } from "@/lib/phone-validation";
 import { PhoneInputField } from "@/components/PhoneInputField";
+import { markNewRegistration, markSubsequentLogin } from "@/lib/auth-welcome-service";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -45,7 +46,7 @@ function AuthPage() {
   async function onSignIn(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword(signIn);
+    const { data: signInData, error } = await supabase.auth.signInWithPassword(signIn);
     setLoading(false);
     if (error) {
       if (error.message.toLowerCase().includes("email not confirmed")) {
@@ -56,7 +57,23 @@ function AuthPage() {
       }
       return toast.error(error.message);
     }
-    toast.success("Welcome back!");
+
+    if (signInData?.user) {
+      const isInitialRegSession =
+        typeof window !== "undefined" &&
+        sessionStorage.getItem(`punong_active_new_reg_${signInData.user.id}`) === "true";
+
+      if (isInitialRegSession) {
+        const displayName =
+          signInData.user.user_metadata?.fullname ||
+          signInData.user.user_metadata?.full_name ||
+          "";
+        toast.success(displayName ? `Welcome, ${displayName}!` : "Welcome!");
+      } else {
+        await markSubsequentLogin(signInData.user.id, signInData.user.user_metadata);
+        toast.success("Welcome back!");
+      }
+    }
   }
 
   async function onSignUp(e: React.FormEvent) {
@@ -71,12 +88,18 @@ function AuthPage() {
       return toast.error(phoneVal.error || "Please enter a valid Philippine mobile number starting with 09.");
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: signUp.email,
       password: signUp.password,
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: { fullname: signUp.fullname, phone: signUp.phone },
+        data: {
+          fullname: signUp.fullname,
+          phone: signUp.phone,
+          is_new_registration: true,
+          login_count: 1,
+          registration_date: new Date().toISOString(),
+        },
       },
     });
     setLoading(false);
@@ -96,6 +119,30 @@ function AuthPage() {
         error.message === "Invalid login credentials" ? "Invalid email or password." : error.message
       );
     }
+
+    if (signUpData?.user) {
+      await markNewRegistration(signUpData.user.id, signUp.fullname);
+
+      if (signUpData.session) {
+        toast.success(`Welcome, ${signUp.fullname}!`);
+        navigate({ to: "/dashboard", replace: true });
+        return;
+      }
+
+      // If session is null, attempt immediate sign-in (e.g. if email confirmation is disabled)
+      const { data: autoSignIn, error: autoErr } = await supabase.auth.signInWithPassword({
+        email: signUp.email,
+        password: signUp.password,
+      });
+
+      if (autoSignIn?.user && !autoErr) {
+        await markNewRegistration(autoSignIn.user.id, signUp.fullname);
+        toast.success(`Welcome, ${signUp.fullname}!`);
+        navigate({ to: "/dashboard", replace: true });
+        return;
+      }
+    }
+
     toast.success(
       "Account created! You can now sign in to manage your bookings.",
       { duration: 6000 }

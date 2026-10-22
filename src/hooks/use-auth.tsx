@@ -1,5 +1,6 @@
 import { useEffect, useState, createContext, useContext, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { markSignOut } from "@/lib/auth-welcome-service";
 
 type Role = "admin" | "customer";
 
@@ -122,6 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         signOut: async () => {
           console.log("[DEBUG] Signing out from Supabase Auth...");
+          const currentUserId = session?.user?.id;
+          if (currentUserId) {
+            await markSignOut(currentUserId);
+          }
           const wasAdmin = role === "admin" || (typeof window !== "undefined" && !!localStorage.getItem("punong_admin_session"));
           if (typeof window !== "undefined") {
             localStorage.removeItem("punong_admin_session");

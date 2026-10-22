@@ -42,6 +42,7 @@ import {
 } from "@/lib/receipt-generator";
 import { validatePhilippineMobileNumber } from "@/lib/phone-validation";
 import { PhoneInputField } from "@/components/PhoneInputField";
+import { isReturningCustomer } from "@/lib/auth-welcome-service";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "My Guest Portal — Punong Spring Resort" }] }),
@@ -211,18 +212,32 @@ function Dashboard() {
     queryKey: ["user-profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
+      // First attempt with login_count if column exists
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, fullname, email, phone")
+        .select("id, fullname, email, phone, created_at, login_count")
         .eq("id", user.id)
         .maybeSingle();
       if (error) {
-        console.warn("User profile fetch error:", error);
-        return null;
+        // Fallback without login_count if column doesn't exist yet
+        const { data: fallbackData, error: fbError } = await supabase
+          .from("profiles")
+          .select("id, fullname, email, phone, created_at")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (fbError) {
+          console.warn("User profile fetch error:", fbError);
+          return null;
+        }
+        return fallbackData;
       }
       return data;
     },
   });
+
+  const isReturningUser = useMemo(() => {
+    return isReturningCustomer(user, profile);
+  }, [user, profile]);
 
   const guestFullName = useMemo(() => {
     const rawEmailUser = user?.email ? user.email.split("@")[0].toLowerCase().trim() : "";
@@ -496,7 +511,7 @@ function Dashboard() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl sm:text-4xl font-bold font-display tracking-tight text-white">
-                  Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E5C158] via-[#D4AF37] to-[#B38728]">{guestFullName}</span>
+                  {isReturningUser ? "Welcome Back" : "Welcome"}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E5C158] via-[#D4AF37] to-[#B38728]">{guestFullName}</span>
                 </h1>
                 <Button
                   variant="outline"
