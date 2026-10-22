@@ -43,6 +43,8 @@ import {
 } from "date-fns";
 import { FileDown, Printer, FileText, BarChart3, Users, BedDouble, History, RefreshCcw, Trash2, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { ExecutiveReportPrintDocument } from "@/components/ExecutiveReportPrintDocument";
 
 export const Route = createFileRoute("/admin/reports")({
   component: ReportsDashboard,
@@ -52,8 +54,35 @@ const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
 const REASON_COLORS = ["#ef4444", "#f59e0b", "#8b5cf6", "#3b82f6", "#06b6d4", "#ec4899", "#10b981", "#64748b"];
 
 function ReportsDashboard() {
+  const { user } = useAuth();
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfDay(new Date()), "yyyy-MM-dd"));
+
+  const { data: adminProfile } = useQuery({
+    queryKey: ["admin-profile-name", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("fullname")
+        .eq("id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const adminName = useMemo(() => {
+    if (adminProfile?.fullname) return adminProfile.fullname;
+    const metaName = user?.user_metadata?.fullname || user?.user_metadata?.full_name;
+    if (metaName) return metaName;
+    if (user?.email) {
+      return user.email
+        .split("@")[0]
+        .replace(/[._-]/g, " ")
+        .replace(/\b\w/g, (c: string) => c.toUpperCase());
+    }
+    return "Administrative Management";
+  }, [adminProfile, user]);
 
   const { data: rawBookings, isLoading } = useQuery({
     queryKey: ["reports-bookings-all"],
@@ -317,7 +346,45 @@ function ReportsDashboard() {
   };
 
   const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = `Punong_Spring_Resort_Executive_Management_Report_${startDate}_to_${endDate}`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
+  };
+
+  const handleSavePdf = () => {
+    toast.info("Opening Print preview: choose 'Save as PDF' under Destination to export.", {
+      duration: 4000,
+    });
+    handlePrint();
+  };
+
+  const exportExecutiveCSV = () => {
+    const rows = [
+      { Category: "Report Metadata", Metric: "Resort", Value: "Punong Spring Resort" },
+      { Category: "Report Metadata", Metric: "Report Title", Value: "Executive Management Performance Report" },
+      { Category: "Report Metadata", Metric: "Reporting Period Start", Value: startDate },
+      { Category: "Report Metadata", Metric: "Reporting Period End", Value: endDate },
+      { Category: "Report Metadata", Metric: "Generated Timestamp", Value: format(new Date(), "yyyy-MM-dd HH:mm:ss") },
+      { Category: "Report Metadata", Metric: "Prepared By", Value: adminName },
+      { Category: "Executive Summary", Metric: "Total Reservations", Value: stats.total },
+      { Category: "Executive Summary", Metric: "Confirmed Stays", Value: stats.confirmed },
+      { Category: "Executive Summary", Metric: "Reserved / Pending", Value: stats.pending },
+      { Category: "Executive Summary", Metric: "Cancelled Bookings", Value: stats.cancelled },
+      { Category: "Executive Summary", Metric: "No-Show Bookings", Value: stats.noShow },
+      { Category: "Executive Summary", Metric: "Total Net Revenue (PHP)", Value: stats.revenue },
+      { Category: "Payment Breakdown", Metric: "Verified Payments", Value: stats.verifiedPayments },
+      { Category: "Payment Breakdown", Metric: "Pending Payments", Value: stats.pendingPayments },
+      { Category: "Payment Breakdown", Metric: "Rejected Payments", Value: stats.rejectedPayments },
+      { Category: "Payment Channel", Metric: "GCash Direct", Value: stats.gcashCount },
+      { Category: "Payment Channel", Metric: "Pay At Resort", Value: stats.resortCount },
+      { Category: "Refund Status", Metric: "Refunds Completed", Value: stats.refunded },
+      { Category: "Refund Status", Metric: "Refunds Pending", Value: stats.refundPending },
+      { Category: "Refund Status", Metric: "Non-Refundable Cancellations", Value: stats.nonRefundable },
+    ];
+    exportCSV(rows, `Executive_Summary_${startDate}_to_${endDate}.csv`);
   };
 
   if (isLoading) {
@@ -330,79 +397,95 @@ function ReportsDashboard() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 print:m-0 print:p-0">
-      {/* Header & Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-100 print:hidden">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38728] font-bold text-[10px] uppercase tracking-wider border border-[#D4AF37]/30">
-              Executive Analytics
-            </span>
-            <span className="text-xs text-slate-400 font-medium">Financial & Occupancy Intelligence</span>
+    <>
+      {/* SCREEN DASHBOARD: Hidden entirely during printing */}
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 print:hidden">
+        {/* Header & Controls */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38728] font-bold text-[10px] uppercase tracking-wider border border-[#D4AF37]/30">
+                Executive Analytics
+              </span>
+              <span className="text-xs text-slate-400 font-medium">Financial & Occupancy Intelligence</span>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 font-display tracking-tight mt-1 flex items-center gap-2">
+              Reports & Performance Intelligence
+            </h2>
+            <p className="text-sm text-slate-500">Analyze revenue streams, room occupancy rates, guest payment trends, and historical logs.</p>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 font-display tracking-tight mt-1 flex items-center gap-2">
-            Reports & Performance Intelligence
-          </h2>
-          <p className="text-sm text-slate-500">Analyze revenue streams, room occupancy rates, guest payment trends, and historical logs.</p>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-200/80">
-          <div className="flex items-center gap-2">
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-36 h-9 rounded-xl border-slate-200 bg-white text-xs"
-            />
-            <span className="text-xs text-slate-400 font-semibold">to</span>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-36 h-9 rounded-xl border-slate-200 bg-white text-xs"
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 px-3 rounded-xl text-xs font-semibold hover:bg-white"
-              onClick={() => {
-                setStartDate(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-                setEndDate(format(endOfDay(new Date()), "yyyy-MM-dd"));
-              }}
-            >
-              This Month
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 px-3 rounded-xl text-xs font-semibold hover:bg-white"
-              onClick={() => {
-                setStartDate(format(startOfYear(new Date()), "yyyy-MM-dd"));
-                setEndDate(format(endOfDay(new Date()), "yyyy-MM-dd"));
-              }}
-            >
-              This Year
-            </Button>
-          </div>
-          <div className="pl-2 border-l border-slate-200">
-            <Button variant="default" size="sm" onClick={handlePrint} className="h-9 px-4 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 shadow-md">
-              <Printer className="mr-1.5 h-4 w-4 text-[#D4AF37]" /> Print / PDF
-            </Button>
+          <div className="flex flex-wrap items-center gap-2.5 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-200/80">
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-36 h-9 rounded-xl border-slate-200 bg-white text-xs"
+              />
+              <span className="text-xs text-slate-400 font-semibold">to</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-36 h-9 rounded-xl border-slate-200 bg-white text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 rounded-xl text-xs font-semibold hover:bg-white"
+                onClick={() => {
+                  setStartDate(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+                  setEndDate(format(endOfDay(new Date()), "yyyy-MM-dd"));
+                }}
+              >
+                This Month
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 rounded-xl text-xs font-semibold hover:bg-white"
+                onClick={() => {
+                  setStartDate(format(startOfYear(new Date()), "yyyy-MM-dd"));
+                  setEndDate(format(endOfDay(new Date()), "yyyy-MM-dd"));
+                }}
+              >
+                This Year
+              </Button>
+            </div>
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handlePrint}
+                className="h-9 px-3.5 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 shadow-sm transition-all"
+                title="Print official Executive Management Report"
+              >
+                <Printer className="mr-1.5 h-4 w-4 text-[#D4AF37]" /> Print Report
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSavePdf}
+                className="h-9 px-3 rounded-xl border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 shadow-2xs transition-all"
+                title="Save report directly as PDF document"
+              >
+                <FileDown className="mr-1.5 h-4 w-4 text-rose-600" /> Save as PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportExecutiveCSV}
+                className="h-9 px-3 rounded-xl border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 shadow-2xs transition-all"
+                title="Export executive metrics and KPIs to CSV"
+              >
+                <FileText className="mr-1.5 h-4 w-4 text-emerald-600" /> Export CSV
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Print Header */}
-      <div className="hidden print:block text-center mb-8 border-b pb-4">
-        <h1 className="text-3xl font-bold font-display uppercase tracking-wider text-slate-900">Punong Spring Resort</h1>
-        <h2 className="text-xl font-semibold mt-1 text-[#B38728]">Executive Management Report</h2>
-        <p className="text-slate-600 mt-1 text-sm">
-          Reporting Period: {format(parseISO(startDate), "MMM dd, yyyy")} to {format(parseISO(endDate), "MMM dd, yyyy")}
-        </p>
-        <p className="text-xs text-slate-400 mt-1">Generated: {format(new Date(), "MMM dd, yyyy HH:mm")}</p>
-      </div>
 
       {/* Top Luxury Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -665,7 +748,7 @@ function ReportsDashboard() {
 
           <div className="p-0">
             {/* BOOKINGS TABLE */}
-            <TabsContent value="bookings" className="m-0 focus-visible:ring-0 print:block">
+            <TabsContent value="bookings" className="m-0 focus-visible:ring-0">
               <div className="p-4 flex items-center justify-between print:hidden bg-white border-b">
                 <h3 className="font-semibold text-lg">Reservation Records</h3>
                 <Button
@@ -930,6 +1013,20 @@ function ReportsDashboard() {
           </div>
         </Tabs>
       </Card>
-    </div>
+      </div>
+
+      {/* DEDICATED EXECUTIVE MANAGEMENT REPORT DOCUMENT: Visible ONLY when printing / saving as PDF */}
+      <div className="hidden print:block w-full">
+        <ExecutiveReportPrintDocument
+          startDate={startDate}
+          endDate={endDate}
+          adminName={adminName}
+          stats={stats}
+          bookings={filteredBookings}
+          roomOccupancyData={roomOccupancyData}
+          customerData={customerData}
+        />
+      </div>
+    </>
   );
 }

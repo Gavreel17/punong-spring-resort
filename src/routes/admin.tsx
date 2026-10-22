@@ -129,9 +129,9 @@ function AdminLayout() {
   const currentLink = links.find((link) => location.pathname === link.to) || links[0];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-900/5 text-slate-900 w-full font-sans">
+    <div className="flex h-screen overflow-hidden bg-slate-900/5 text-slate-900 w-full font-sans print:h-auto print:overflow-visible print:bg-white print:block">
       {/* Desktop Luxury Sidebar */}
-      <aside className="hidden md:flex md:w-72 md:flex-col bg-gradient-to-b from-[#081216] via-[#0D1C24] to-[#0A141A] text-slate-100 border-r border-[#D4AF37]/20 shadow-2xl z-20">
+      <aside className="hidden md:flex md:w-72 md:flex-col bg-gradient-to-b from-[#081216] via-[#0D1C24] to-[#0A141A] text-slate-100 border-r border-[#D4AF37]/20 shadow-2xl z-20 print:hidden">
         {/* Brand Header */}
         <div className="flex h-20 items-center gap-3 px-6 border-b border-[#D4AF37]/15 bg-[#050C0E]/60 backdrop-blur-md">
           <div className="relative">
@@ -204,7 +204,7 @@ function AdminLayout() {
 
       {/* Mobile Drawer */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
+        <div className="fixed inset-0 z-50 flex md:hidden print:hidden">
           <div
             className="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300"
             onClick={() => setSidebarOpen(false)}
@@ -278,9 +278,9 @@ function AdminLayout() {
       )}
 
       {/* Main Content Pane */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden print:h-auto print:overflow-visible print:block">
         {/* Luxury Top Header */}
-        <header className="flex h-20 items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md px-6 md:px-8 shadow-sm z-10 shrink-0">
+        <header className="flex h-20 items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md px-6 md:px-8 shadow-sm z-10 shrink-0 print:hidden">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -333,17 +333,17 @@ function AdminLayout() {
         </header>
 
         {/* Scrollable Dashboard Canvas */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/60">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/60 print:p-0 print:m-0 print:bg-white print:overflow-visible print:block">
+          <div className="max-w-7xl mx-auto space-y-6 print:max-w-none print:w-full print:m-0 print:p-0 print:space-y-0">
             {/* Display Stats Row only when Calendar or Bookings tabs are active */}
             {["/admin/calendar", "/admin/bookings"].includes(location.pathname) && (
-              <div className="mb-4">
+              <div className="mb-4 print:hidden">
                 <AdminStatsRow showSubtitles={false} />
               </div>
             )}
 
             {/* Subpage Container */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_10px_35px_rgba(0,0,0,0.03)] p-6 md:p-8 min-h-[550px] relative">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_10px_35px_rgba(0,0,0,0.03)] p-6 md:p-8 min-h-[550px] relative print:border-none print:shadow-none print:p-0 print:m-0 print:min-h-0 print:rounded-none print:bg-white">
               <Outlet />
             </div>
           </div>
