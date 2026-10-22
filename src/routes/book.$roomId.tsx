@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/dialog";
 import { processAutoBookingStatuses } from "@/lib/booking-utils";
 import { getRoomRateType, enrichRoomWithRateType } from "@/lib/rate-type-helper";
+import { validatePhilippineMobileNumber, isValidPhilippineMobileNumber } from "@/lib/phone-validation";
+import { PhoneInputField } from "@/components/PhoneInputField";
 
 const MySwal = withReactContent(Swal);
 
@@ -376,14 +378,10 @@ function BookPage() {
     if (!form.email.trim()) {
       return toast.error("Please enter your email address.");
     }
-    if (!form.phone.trim()) {
-      return toast.error("Please enter your phone number.");
-    }
-
-    const phoneRegex = /^(09|\+639)\d{9}$/;
-    if (!phoneRegex.test(form.phone.replace(/[\s-]/g, ""))) {
+    const phoneValidation = validatePhilippineMobileNumber(form.phone, { required: true });
+    if (!phoneValidation.isValid) {
       return toast.error(
-        "Please provide a valid Philippine phone number (e.g. 09171234567 or +639171234567).",
+        phoneValidation.error || "Please provide a valid Philippine phone number starting with 09."
       );
     }
 
@@ -435,6 +433,15 @@ function BookPage() {
       setShowReminderModal(false);
       return toast.error(extraBedValidationMessage);
     }
+
+    const phoneValidation = validatePhilippineMobileNumber(form.phone, { required: true });
+    if (!phoneValidation.isValid) {
+      setShowReminderModal(false);
+      return toast.error(
+        phoneValidation.error || "Please provide a valid Philippine phone number starting with 09."
+      );
+    }
+
     setSubmitting(true);
 
     // Perform server-side validation to ensure user cannot bypass extra-bed requirement
@@ -444,6 +451,7 @@ function BookPage() {
         data: {
           roomId: room.id,
           guests: Number(form.guests),
+          phone: form.phone,
           singleFoamBeds,
           doubleFoamBeds,
         },
@@ -872,10 +880,12 @@ function BookPage() {
                 <Label>Email <span className="text-red-500">*</span></Label>
                 <Input type="email" required placeholder="Email Address" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               </div>
-              <div>
-                <Label>Phone <span className="text-red-500">*</span></Label>
-                <Input required placeholder="e.g. 09120627744" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              </div>
+              <PhoneInputField
+                label="Phone"
+                required
+                value={form.phone}
+                onChange={(phone) => setForm({ ...form, phone })}
+              />
               <div>
                 <Label>Age <span className="text-red-500">*</span></Label>
                 <Input 
@@ -1096,7 +1106,7 @@ function BookPage() {
               </p>
             </div>
 
-            {(!form.fullname.trim() || !form.email.trim() || !form.phone.trim() || !String(form.age).trim() || !form.address.trim() || !form.guests) && (
+            {(!form.fullname.trim() || !form.email.trim() || !isValidPhilippineMobileNumber(form.phone) || !String(form.age).trim() || !form.address.trim() || !form.guests) && (
               <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
                 <span>Please complete all required guest details (Full Name, Email, Phone, Age, Address, and Number of Guests) to proceed with your booking.</span>
@@ -1202,7 +1212,7 @@ function BookPage() {
                 !form.check_out ||
                 !form.fullname.trim() ||
                 !form.email.trim() ||
-                !form.phone.trim() ||
+                !isValidPhilippineMobileNumber(form.phone) ||
                 !String(form.age).trim() ||
                 !form.address.trim() ||
                 !form.guests

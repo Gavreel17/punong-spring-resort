@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { SYSTEM_SETTINGS_STORAGE_KEY } from "@/hooks/use-system-settings";
+import { validatePhilippineMobileNumber } from "@/lib/phone-validation";
+import { PhoneInputField } from "@/components/PhoneInputField";
 import {
   User,
   Bell,
@@ -79,7 +81,7 @@ interface SystemSettingsState {
 
 const DEFAULT_SETTINGS: SystemSettingsState = {
   resort_name: "Punong Spring Resort",
-  contact_number: "+63 917 123 4567",
+  contact_number: "09171234567",
   contact_email: "punongspringresort@gmail.com",
   address: "Brgy. Buburay, Dimataling, Zamboanga Del Sur, Philippines",
   business_hours: "8:00 AM - 6:00 PM (Daily)",
@@ -245,6 +247,13 @@ function AdminSettingsPage() {
 
   // 2. Save Persistent System Settings (for Notifications, System, Appearance)
   async function handleSaveSettings(sectionName: string) {
+    if (sectionName.toLowerCase().includes("resort") || sectionName.toLowerCase().includes("contact") || sectionName.toLowerCase().includes("general")) {
+      const phoneVal = validatePhilippineMobileNumber(settings.contact_number, { required: true });
+      if (!phoneVal.isValid) {
+        toast.error(`Resort Contact Number: ${phoneVal.error || "Please enter a valid Philippine mobile number starting with 09."}`);
+        return;
+      }
+    }
     setSavingSettings(true);
     try {
       let savedSuccessfully = false;
@@ -1182,23 +1191,22 @@ function AdminSettingsPage() {
               </div>
 
               {/* Contact Number */}
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-[#D4AF37]" /> Resort Contact Number
-                </Label>
-                <Input
-                  type="text"
-                  required
-                  value={settings.contact_number}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      contact_number: e.target.value,
-                    }))
-                  }
-                  className="rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] h-10"
-                />
-              </div>
+              <PhoneInputField
+                label={
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-[#D4AF37]" /> Resort Contact Number
+                  </span>
+                }
+                required
+                value={settings.contact_number}
+                onChange={(contact_number) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    contact_number,
+                  }))
+                }
+                inputClassName="rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] h-10"
+              />
 
               {/* Official Email */}
               <div className="space-y-2">

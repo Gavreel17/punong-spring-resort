@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { getRoomRateType, enrichRoomWithRateType, getAccommodationCategoryLabel } from "@/lib/rate-type-helper";
+import { validatePhilippineMobileNumber } from "@/lib/phone-validation";
+import { PhoneInputField } from "@/components/PhoneInputField";
 import {
   Calendar as CalendarIcon,
   CalendarDays,
@@ -486,6 +488,11 @@ export function AvailabilityCalendarTab() {
     if (bookingForm.check_out <= bookingForm.check_in)
       return toast.error("Check-out date must be after Check-in date");
 
+    const phoneVal = validatePhilippineMobileNumber(bookingForm.guest_phone, { required: true });
+    if (!phoneVal.isValid) {
+      return toast.error(phoneVal.error || "Please enter a valid Philippine mobile number starting with 09.");
+    }
+
     const targetRoom = rooms.find((r: any) => r.id === bookingForm.room_id);
     if (targetRoom && targetRoom.type !== "room") {
       const isTargetUnlimited = String(targetRoom.capacity || "").toLowerCase().includes("unlimited");
@@ -532,7 +539,7 @@ export function AvailabilityCalendarTab() {
           room_id: bookingForm.room_id,
           guest_name: bookingForm.guest_name.trim(),
           guest_email: bookingForm.guest_email.trim() || "walkin@punongresort.com",
-          guest_phone: bookingForm.guest_phone.trim() || "N/A",
+          guest_phone: bookingForm.guest_phone.trim(),
           check_in: bookingForm.check_in,
           check_out: bookingForm.check_out,
           guests: Number(bookingForm.guests) || 1,
@@ -1776,17 +1783,13 @@ export function AvailabilityCalendarTab() {
                   className="mt-1 rounded-xl text-xs h-9"
                 />
               </div>
-              <div>
-                <Label className="text-xs font-semibold uppercase text-slate-600">
-                  Contact Phone
-                </Label>
-                <Input
-                  placeholder="0917 123 4567"
-                  value={bookingForm.guest_phone}
-                  onChange={(e) => handleBookingFormChange({ guest_phone: e.target.value })}
-                  className="mt-1 rounded-xl text-xs h-9"
-                />
-              </div>
+              <PhoneInputField
+                label="Contact Phone"
+                required
+                value={bookingForm.guest_phone}
+                onChange={(phone) => handleBookingFormChange({ guest_phone: phone })}
+                inputClassName="mt-1 rounded-xl text-xs h-9"
+              />
             </div>
 
             <div>

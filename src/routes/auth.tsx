@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Palmtree, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { validatePhilippineMobileNumber } from "@/lib/phone-validation";
+import { PhoneInputField } from "@/components/PhoneInputField";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -64,11 +66,9 @@ function AuthPage() {
       return toast.error("Please provide a valid Gmail address.");
     }
 
-    const phoneRegex = /^(09|\+639)\d{9}$/;
-    if (!phoneRegex.test(signUp.phone.replace(/[\s-]/g, ""))) {
-      return toast.error(
-        "Please provide a valid Philippine phone number (e.g. 09171234567 or +639171234567).",
-      );
+    const phoneVal = validatePhilippineMobileNumber(signUp.phone, { required: true });
+    if (!phoneVal.isValid) {
+      return toast.error(phoneVal.error || "Please enter a valid Philippine mobile number starting with 09.");
     }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
@@ -179,14 +179,12 @@ function AuthPage() {
                   onChange={(e) => setSignUp({ ...signUp, email: e.target.value })}
                 />
               </div>
-              <div>
-                <Label>Phone</Label>
-                <Input
-                  type="tel"
-                  value={signUp.phone}
-                  onChange={(e) => setSignUp({ ...signUp, phone: e.target.value })}
-                />
-              </div>
+              <PhoneInputField
+                label="Mobile Number"
+                required
+                value={signUp.phone}
+                onChange={(phone) => setSignUp({ ...signUp, phone })}
+              />
               <div>
                 <Label>Password</Label>
                 <div className="relative">
@@ -209,7 +207,7 @@ function AuthPage() {
               </div>
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !validatePhilippineMobileNumber(signUp.phone, { required: true }).isValid}
                 className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
               >
                 {loading ? "Creating..." : "Create Account"}

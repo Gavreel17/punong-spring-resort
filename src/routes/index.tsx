@@ -8,6 +8,7 @@ import hero from "@/assets/hero-resort.jpg";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/use-system-settings";
+import { cn } from "@/lib/utils";
 import gallery1 from "@/assets/gallery-1.jpg";
 import gallery2 from "@/assets/gallery-2.jpg";
 import gallery3 from "@/assets/gallery-3.jpg";
@@ -169,19 +170,30 @@ function Index() {
             {feedbacks.length === 0 ? (
               <p className="text-center text-muted-foreground col-span-3">No guest stories yet.</p>
             ) : (
-              feedbacks.map((t: any) => (
-                <Card key={t.id} className="border-border/60 p-6">
-                  <div className="mb-3 flex gap-1 text-accent">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-current" />
-                    ))}
-                  </div>
-                  {t.comment && <p className="text-foreground/90">"{t.comment}"</p>}
-                  <p className="mt-4 text-sm font-semibold">
-                    — {t.guest_name || t.resolved_name || t.booking?.guest_name || "Guest"}
-                  </p>
-                </Card>
-              ))
+              feedbacks.map((t: any) => {
+                const customerRating = Math.max(1, Math.min(5, Math.round(Number(t.rating) || 5)));
+                return (
+                  <Card key={t.id} className="border-border/60 p-6">
+                    <div className="mb-3 flex gap-1" aria-label={`${customerRating} out of 5 stars`}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={cn(
+                            "h-4 w-4",
+                            star <= customerRating
+                              ? "fill-current text-accent"
+                              : "text-slate-300 fill-none"
+                          )}
+                        />
+                      ))}
+                    </div>
+                    {t.comment && <p className="text-foreground/90">"{t.comment}"</p>}
+                    <p className="mt-4 text-sm font-semibold">
+                      — {t.guest_name || t.resolved_name || t.booking?.guest_name || "Guest"}
+                    </p>
+                  </Card>
+                );
+              })
             )}
           </div>
         </div>

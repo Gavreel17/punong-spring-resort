@@ -40,6 +40,8 @@ import {
   generateAndDownloadReceiptWord,
   formatBookingReference 
 } from "@/lib/receipt-generator";
+import { validatePhilippineMobileNumber } from "@/lib/phone-validation";
+import { PhoneInputField } from "@/components/PhoneInputField";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "My Guest Portal — Punong Spring Resort" }] }),
@@ -279,6 +281,7 @@ function Dashboard() {
 
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
   const [updatingName, setUpdatingName] = useState(false);
 
   async function handleUpdateName(e?: React.FormEvent) {
@@ -287,15 +290,32 @@ function Dashboard() {
     if (!trimmed) {
       return toast.error("Please enter your full name.");
     }
+    const cleanPhone = phoneInput.trim();
+    if (cleanPhone) {
+      const phoneVal = validatePhilippineMobileNumber(cleanPhone, { required: false });
+      if (!phoneVal.isValid) {
+        return toast.error(phoneVal.error || "Please enter a valid Philippine mobile number starting with 09.");
+      }
+    }
     setUpdatingName(true);
     try {
       const { error: pErr } = await supabase
         .from("profiles")
-        .upsert({ id: user.id, fullname: trimmed, email: user.email });
+        .upsert({
+          id: user.id,
+          fullname: trimmed,
+          email: user.email,
+          phone: cleanPhone || null,
+        });
       if (pErr) throw pErr;
 
       await supabase.auth.updateUser({
-        data: { fullname: trimmed, full_name: trimmed, name: trimmed },
+        data: {
+          fullname: trimmed,
+          full_name: trimmed,
+          name: trimmed,
+          phone: cleanPhone || undefined,
+        },
       });
 
       await queryClient.invalidateQueries({ queryKey: ["user-profile", user?.id] });
@@ -483,13 +503,14 @@ function Dashboard() {
                   size="sm"
                   onClick={() => {
                     setNameInput(guestFullName !== "Valued Guest" ? guestFullName : "");
+                    setPhoneInput(profile?.phone || user?.user_metadata?.phone || "");
                     setEditingName(true);
                   }}
                   className="h-8 px-2.5 bg-white/10 hover:bg-white/20 text-[#D4AF37] hover:text-amber-300 border-white/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 backdrop-blur-md cursor-pointer transition-all shadow-xs"
-                  title="Update your full name"
+                  title="Update your profile & contact details"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
-                  <span>Edit Name</span>
+                  <span>Edit Profile</span>
                 </Button>
               </div>
               <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
@@ -996,16 +1017,16 @@ function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Full Name Dialog */}
+      {/* Edit Profile Dialog */}
       <Dialog open={editingName} onOpenChange={setEditingName}>
         <DialogContent className="rounded-2xl max-w-md p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold font-display text-slate-900 flex items-center gap-2">
               <User className="w-5 h-5 text-[#D4AF37]" />
-              Update Full Name
+              Update Profile & Contact
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-600">
-              Please enter your complete full name as you would like it to appear on your reservations and receipts.
+              Please enter your complete full name and mobile number as you would like them to appear on your reservations and receipts.
             </DialogDescription>
           </DialogHeader>
 
@@ -1021,6 +1042,14 @@ function Dashboard() {
                 autoFocus
               />
             </div>
+            <PhoneInputField
+              label={<span className="text-xs font-semibold uppercase text-slate-600">Mobile Number (Optional)</span>}
+              required={false}
+              value={phoneInput}
+              onChange={setPhoneInput}
+              inputClassName="mt-1 rounded-xl border-slate-200"
+              helperText="Must be an 11-digit Philippine mobile number starting with 09."
+            />
             <DialogFooter className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
@@ -1033,7 +1062,11 @@ function Dashboard() {
               </Button>
               <Button
                 type="submit"
-                disabled={updatingName || !nameInput.trim()}
+                disabled={
+                  updatingName ||
+                  !nameInput.trim() ||
+                  (phoneInput.trim() ? !validatePhilippineMobileNumber(phoneInput, { required: false }).isValid : false)
+                }
                 className="bg-gradient-to-r from-[#B38728] via-[#D4AF37] to-[#AA771C] text-slate-950 font-bold h-10 rounded-xl shadow-md cursor-pointer"
               >
                 {updatingName ? (
@@ -1041,7 +1074,7 @@ function Dashboard() {
                     <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Saving...
                   </>
                 ) : (
-                  "Save Full Name"
+                  "Save Changes"
                 )}
               </Button>
             </DialogFooter>

@@ -48,12 +48,40 @@ export const validateBookingRequirementsServerFn = createServerFn({ method: "POS
     z.object({
       roomId: z.string(),
       guests: z.number(),
+      phone: z.string().optional(),
       singleFoamBeds: z.number().default(0),
       doubleFoamBeds: z.number().default(0),
     })
   )
   .handler(async ({ data }) => {
     try {
+      if (data.phone !== undefined) {
+        const rawPhone = (data.phone || "").trim();
+        if (!rawPhone) {
+          return { valid: false, error: "Mobile number is required." };
+        }
+        if (/\D/.test(rawPhone)) {
+          return { valid: false, error: "Only numeric digits are allowed." };
+        }
+        if (!rawPhone.startsWith("09")) {
+          return {
+            valid: false,
+            error: "Please enter a valid Philippine mobile number starting with 09.",
+          };
+        }
+        if (rawPhone.length !== 11) {
+          return {
+            valid: false,
+            error: "Mobile number must contain exactly 11 digits.",
+          };
+        }
+        if (!/^09[0-9]{9}$/.test(rawPhone)) {
+          return {
+            valid: false,
+            error: "Please enter a valid Philippine mobile number starting with 09.",
+          };
+        }
+      }
       const { createClient } = await import("@supabase/supabase-js");
       const supabaseUrl =
         process.env.VITE_SUPABASE_URL || "https://dqpbbzsxfwbozqcguwux.supabase.co";
