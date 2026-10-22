@@ -377,8 +377,6 @@ function ReportsDashboard() {
       { Category: "Executive Summary", Metric: "Total Net Revenue (PHP)", Value: stats.revenue },
       { Category: "Payment Breakdown", Metric: "Verified Payments", Value: stats.verifiedPayments },
       { Category: "Payment Breakdown", Metric: "Pending Payments", Value: stats.pendingPayments },
-      { Category: "Payment Breakdown", Metric: "Rejected Payments", Value: stats.rejectedPayments },
-      { Category: "Payment Channel", Metric: "GCash Direct", Value: stats.gcashCount },
       { Category: "Payment Channel", Metric: "Pay At Resort", Value: stats.resortCount },
       { Category: "Refund Status", Metric: "Refunds Completed", Value: stats.refunded },
       { Category: "Refund Status", Metric: "Refunds Pending", Value: stats.refundPending },

@@ -214,9 +214,9 @@
       background: #ffffff !important;
       background-color: #ffffff !important;
       color: #0f172a !important;
-      font-size: 9.5pt !important;
+      font-size: 12pt !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-      line-height: 1.35 !important;
+      line-height: 1.4 !important;
       margin: 0 !important;
       padding: 0 !important;
       width: 100% !important;
@@ -225,6 +225,21 @@
       overflow: visible !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
+    }
+
+    .executive-report-document {
+      font-size: 12pt !important;
+      line-height: 1.4 !important;
+      color: #0f172a !important;
+    }
+
+    .executive-report-document table {
+      font-size: 11pt !important;
+    }
+
+    .executive-report-document th,
+    .executive-report-document td {
+      font-size: 11pt !important;
     }
 
     /* Suppress administrative web chrome */
