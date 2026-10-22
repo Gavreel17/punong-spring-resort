@@ -41,7 +41,7 @@ import {
   startOfMonth,
   startOfYear,
 } from "date-fns";
-import { FileDown, Printer, FileText, BarChart3, Users, BedDouble, History, RefreshCcw, Trash2, CheckCircle2, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
+import { FileDown, Printer, FileText, BarChart3, Users, BedDouble, History, RefreshCcw, Trash2, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { ExecutiveReportPrintDocument } from "@/components/ExecutiveReportPrintDocument";
@@ -354,66 +354,6 @@ function ReportsDashboard() {
     }, 1000);
   };
 
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-
-  const handleDownloadPdf = async () => {
-    const filename = `Punong_Spring_Resort_Executive_Management_Report_${startDate}_to_${endDate}.pdf`;
-    const toastId = toast.loading("Generating and formatting Executive Report PDF...");
-    setIsDownloadingPdf(true);
-
-    try {
-      const source = document.getElementById("executive-report-document-container");
-      if (!source) {
-        toast.error("Report document is not ready yet.", { id: toastId });
-        return;
-      }
-
-      // Clone container off-screen with fixed width and visible styling
-      const clone = source.cloneNode(true) as HTMLElement;
-      clone.classList.remove("hidden");
-      clone.style.display = "block";
-      clone.style.position = "fixed";
-      clone.style.left = "-9999px";
-      clone.style.top = "0";
-      clone.style.width = "820px";
-      clone.style.background = "#ffffff";
-      clone.style.padding = "24px";
-      clone.style.boxSizing = "border-box";
-      clone.style.zIndex = "-9999";
-      document.body.appendChild(clone);
-
-      try {
-        const html2pdfModule = await import("html2pdf.js");
-        const html2pdf = (html2pdfModule as any).default || html2pdfModule;
-
-        const opt = {
-          margin: [10, 10, 10, 10], // mm: top, left, bottom, right
-          filename,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            letterRendering: true,
-          },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-        };
-
-        await html2pdf().set(opt).from(clone).save();
-        toast.success("Executive Report PDF downloaded successfully!", { id: toastId });
-      } finally {
-        if (clone.parentNode) {
-          clone.parentNode.removeChild(clone);
-        }
-      }
-    } catch (err: any) {
-      console.error("PDF generation failed:", err);
-      toast.error("Could not generate PDF download. You can also use 'Print Report'.", { id: toastId });
-    } finally {
-      setIsDownloadingPdf(false);
-    }
-  };
 
   const exportExecutiveCSV = () => {
     const rows = [
@@ -516,24 +456,6 @@ function ReportsDashboard() {
                 title="Print official Executive Management Report"
               >
                 <Printer className="mr-1.5 h-4 w-4 text-[#D4AF37]" /> Print Report
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadPdf}
-                disabled={isDownloadingPdf}
-                className="h-9 px-3 rounded-xl border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 shadow-2xs transition-all disabled:opacity-70"
-                title="Download report directly as PDF document"
-              >
-                {isDownloadingPdf ? (
-                  <>
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin text-rose-600" /> Downloading PDF...
-                  </>
-                ) : (
-                  <>
-                    <FileDown className="mr-1.5 h-4 w-4 text-rose-600" /> Download PDF
-                  </>
-                )}
               </Button>
               <Button
                 variant="outline"
