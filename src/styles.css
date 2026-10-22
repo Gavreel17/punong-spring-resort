@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
   --font-sans: "Inter", system-ui, sans-serif;
@@ -23,120 +23,184 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-      --color-muted: var(--muted);
-      --color-muted-foreground: var(--muted-foreground);
-      --color-accent: var(--accent);
-      --color-accent-foreground: var(--accent-foreground);
-      --color-destructive: var(--destructive);
-      --color-destructive-foreground: var(--destructive-foreground);
-      --color-border: var(--border);
-      --color-input: var(--input);
-      --color-ring: var(--ring);
-      --color-ocean: var(--ocean);
-      --color-sand: var(--sand);
-      --color-coral: var(--coral);
-      --color-palm: var(--palm);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ocean: var(--ocean);
+  --color-sand: var(--sand);
+  --color-coral: var(--coral);
+  --color-palm: var(--palm);
 
-      --shadow-soft: 0 2px 12px -2px color-mix(in oklab, var(--primary) 15%, transparent);
-      --shadow-elegant: 0 20px 50px -20px color-mix(in oklab, var(--primary) 30%, transparent);
-      --shadow-gold: 0 10px 30px -10px rgba(212, 175, 55, 0.25);
-      --shadow-glass: 0 10px 35px -5px rgba(0, 0, 0, 0.05);
+  --shadow-soft: 0 2px 12px -2px color-mix(in oklab, var(--primary) 15%, transparent);
+  --shadow-elegant: 0 20px 50px -20px color-mix(in oklab, var(--primary) 30%, transparent);
+  --shadow-gold: 0 10px 30px -10px rgba(212, 175, 55, 0.25);
+  --shadow-glass: 0 10px 35px -5px rgba(0, 0, 0, 0.05);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Tropical & Luxury Resort Palette */
+  --background: oklch(0.985 0.005 95);
+  /* warm luxury off-white */
+  --foreground: oklch(0.20 0.04 220);
+  /* deep navy slate */
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.04 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.04 220);
+
+  --primary: oklch(0.42 0.09 200);
+  /* deep ocean emerald */
+  --primary-foreground: oklch(0.99 0.005 95);
+
+  --secondary: oklch(0.95 0.025 180);
+  /* pale champagne aqua */
+  --secondary-foreground: oklch(0.3 0.08 220);
+
+  --muted: oklch(0.96 0.012 90);
+  /* soft sand muted */
+  --muted-foreground: oklch(0.5 0.03 220);
+
+  --accent: oklch(0.75 0.15 65);
+  /* champagne gold / amber */
+  --accent-foreground: oklch(0.18 0.03 220);
+
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.99 0.005 95);
+
+  --border: oklch(0.92 0.015 200);
+  --input: oklch(0.92 0.015 200);
+  --ring: oklch(0.75 0.15 65);
+
+  /* Brand Luxury */
+  --ocean: oklch(0.42 0.09 200);
+  --sand: oklch(0.93 0.04 80);
+  --coral: oklch(0.72 0.16 50);
+  --palm: oklch(0.52 0.13 155);
+  --gold: #D4AF37;
+  --gold-light: #F4E0A5;
+
+  --gradient-hero: linear-gradient(135deg, oklch(0.4 0.1 200) 0%, oklch(0.55 0.13 180) 100%);
+  --gradient-sunset: linear-gradient(135deg, #D4AF37 0%, #F59E0B 100%);
+  --gradient-ocean: linear-gradient(180deg, oklch(0.55 0.12 200) 0%, oklch(0.4 0.1 210) 100%);
+  --gradient-gold: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+  --gradient-gold-subtle: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(197, 160, 89, 0.05) 100%);
+  --gradient-dark-emerald: linear-gradient(180deg, #091312 0%, #0D1F1D 100%);
+}
+
+.dark {
+  /* Centralized High-Contrast Luxury Dark Palette */
+  --background: #0B1220;
+  --foreground: #F8FAFC;
+  --card: #151F2E;
+  --card-foreground: #F8FAFC;
+  --popover: #151F2E;
+  --popover-foreground: #F8FAFC;
+  --primary: #D4AF37;
+  --primary-foreground: #0B1220;
+  --secondary: #1E293B;
+  --secondary-foreground: #F8FAFC;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --accent: #FACC15;
+  --accent-foreground: #0B1220;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #334155;
+  --input: #334155;
+  --ring: #FACC15;
+
+  --ocean: #38BDF8;
+  --sand: #1E293B;
+  --coral: #FB7185;
+  --palm: #34D399;
+  --gold: #FACC15;
+  --gold-light: #FDE047;
+
+  --gradient-hero: linear-gradient(135deg, #081216 0%, #0F2A33 100%);
+  --gradient-sunset: linear-gradient(135deg, #B38728 0%, #D4AF37 100%);
+  --gradient-ocean: linear-gradient(180deg, #0A1926 0%, #050E17 100%);
+  --gradient-gold: linear-gradient(135deg, #B38728 0%, #FDE047 25%, #D4AF37 50%, #FEF08A 75%, #AA771C 100%);
+  --gradient-gold-subtle: linear-gradient(135deg, rgba(250, 204, 21, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%);
+  --gradient-dark-emerald: linear-gradient(180deg, #04090A 0%, #071517 100%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
   }
 
-  :root {
-    --radius: 0.75rem;
-
-    /* Tropical & Luxury Resort Palette */
-    --background: oklch(0.985 0.005 95);
-    /* warm luxury off-white */
-    --foreground: oklch(0.20 0.04 220);
-    /* deep navy slate */
-
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.20 0.04 220);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.20 0.04 220);
-
-    --primary: oklch(0.42 0.09 200);
-    /* deep ocean emerald */
-    --primary-foreground: oklch(0.99 0.005 95);
-
-    --secondary: oklch(0.95 0.025 180);
-    /* pale champagne aqua */
-    --secondary-foreground: oklch(0.3 0.08 220);
-
-    --muted: oklch(0.96 0.012 90);
-    /* soft sand muted */
-    --muted-foreground: oklch(0.5 0.03 220);
-
-    --accent: oklch(0.75 0.15 65);
-    /* champagne gold / amber */
-    --accent-foreground: oklch(0.18 0.03 220);
-
-    --destructive: oklch(0.58 0.22 27);
-    --destructive-foreground: oklch(0.99 0.005 95);
-
-    --border: oklch(0.92 0.015 200);
-    --input: oklch(0.92 0.015 200);
-    --ring: oklch(0.75 0.15 65);
-
-    /* Brand Luxury */
-    --ocean: oklch(0.42 0.09 200);
-    --sand: oklch(0.93 0.04 80);
-    --coral: oklch(0.72 0.16 50);
-    --palm: oklch(0.52 0.13 155);
-    --gold: #D4AF37;
-    --gold-light: #F4E0A5;
-
-    --gradient-hero: linear-gradient(135deg, oklch(0.4 0.1 200) 0%, oklch(0.55 0.13 180) 100%);
-    --gradient-sunset: linear-gradient(135deg, #D4AF37 0%, #F59E0B 100%);
-    --gradient-ocean: linear-gradient(180deg, oklch(0.55 0.12 200) 0%, oklch(0.4 0.1 210) 100%);
-    --gradient-gold: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
-    --gradient-gold-subtle: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(197, 160, 89, 0.05) 100%);
-    --gradient-dark-emerald: linear-gradient(180deg, #091312 0%, #0D1F1D 100%);
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
 
-  .dark {
-    --background: oklch(0.15 0.03 220);
-    --foreground: oklch(0.97 0.01 95);
-    --card: oklch(0.19 0.04 220);
-    --card-foreground: oklch(0.97 0.01 95);
-    --popover: oklch(0.19 0.04 220);
-    --popover-foreground: oklch(0.97 0.01 95);
-    --primary: oklch(0.65 0.12 195);
-    --primary-foreground: oklch(0.18 0.03 220);
-    --secondary: oklch(0.25 0.04 220);
-    --secondary-foreground: oklch(0.97 0.01 95);
-    --muted: oklch(0.25 0.03 220);
-    --muted-foreground: oklch(0.7 0.02 220);
-    --accent: oklch(0.75 0.15 65);
-    --accent-foreground: oklch(0.18 0.03 220);
-    --destructive: oklch(0.6 0.2 27);
-    --destructive-foreground: oklch(0.97 0.01 95);
-    --border: oklch(1 0 0 / 12%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.75 0.15 65);
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
+}
 
-  @layer base {
-    * {
-      border-color: var(--color-border);
-    }
+/* ===================================================
+   GLOBAL HIGH-CONTRAST DARK MODE RULES
+   =================================================== */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
+.dark textarea {
+  color: #F8FAFC !important;
+}
 
-    body {
-      background-color: var(--color-background);
-      color: var(--color-foreground);
-      font-family: var(--font-sans);
-    }
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748B !important;
+}
 
-    h1,
-    h2,
-    h3,
-    h4 {
-      font-family: var(--font-display);
-      letter-spacing: -0.01em;
-    }
-  }
+/* SweetAlert2 High-Contrast Dark Mode */
+.dark .swal2-popup {
+  background: #151F2E !important;
+  color: #F8FAFC !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+.dark .swal2-title {
+  color: #F8FAFC !important;
+  font-family: var(--font-display), Georgia, serif !important;
+}
+
+.dark .swal2-html-container {
+  color: #CBD5E1 !important;
+}
+
+.dark .swal2-confirm {
+  background-color: #2563EB !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4) !important;
+}
+
+.dark .swal2-cancel {
+  background-color: #334155 !important;
+  color: #F8FAFC !important;
+}
+
+.dark .swal2-input,
+.dark .swal2-textarea {
+  background: #1E293B !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
 
   /* Custom Luxury Component Utilities */
   .glass-panel {

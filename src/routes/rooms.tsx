@@ -197,7 +197,7 @@ function RoomsPage() {
                     </div>
                   </div>
                   <div className="p-4 sm:p-5 flex-1 flex flex-col">
-                    <h3 className="text-lg sm:text-xl font-bold text-slate-900">{r.name}</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">{r.name}</h3>
                     <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground line-clamp-2">
                       {r.description}
                     </p>
@@ -207,7 +207,7 @@ function RoomsPage() {
                       </span>
                       <span className="capitalize">· {r.type === 'villa' ? 'function hall' : r.type}</span>
                     </div>
-                    <div className="mt-auto pt-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-t border-slate-100">
+                    <div className="mt-auto pt-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-t border-slate-100 dark:border-slate-800">
                       <div>
                         <div className="flex items-baseline gap-1">
                           <span className="text-xl sm:text-2xl font-bold text-primary">
@@ -220,8 +220,8 @@ function RoomsPage() {
                         <div className="mt-1">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                             r.rate_type === "day"
-                              ? "bg-amber-100 text-amber-800 border border-amber-300"
-                              : "bg-blue-100 text-blue-800 border border-blue-300"
+                              ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60"
+                              : "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60"
                           }`}>
                             {r.rate_type === "day" ? "Day Rate" : "Nightly Rate"}
                           </span>

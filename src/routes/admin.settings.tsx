@@ -683,7 +683,7 @@ function AdminSettingsPage() {
           </div>
 
           <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px; color: #92400e; font-size: 11px;">
-            ⚠️ <b>Upsert Mode:</b> Existing records matching IDs will be updated with the backup snapshot. Non-conflicting live data will be retained.
+            âš ï¸ <b>Upsert Mode:</b> Existing records matching IDs will be updated with the backup snapshot. Non-conflicting live data will be retained.
           </div>
         </div>
       `,
@@ -804,14 +804,14 @@ function AdminSettingsPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/60 space-y-6">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/60 dark:bg-[#0B1220] space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-display">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white font-display">
             System & Administrator Settings
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             Configure system defaults, notifications, security credentials, branding, and data backups.
           </p>
         </div>
@@ -819,26 +819,26 @@ function AdminSettingsPage() {
         <div className="flex items-center gap-2">
           <Badge
             variant="outline"
-            className="border-[#D4AF37]/40 bg-amber-50/60 text-[#B38728] font-bold text-xs px-3 py-1 flex items-center gap-1.5"
+            className="border-[#D4AF37]/40 bg-amber-50/60 dark:bg-amber-950/40 text-[#B38728] dark:text-[#FACC15] font-bold text-xs px-3 py-1 flex items-center gap-1.5"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37] dark:text-[#FACC15]" />
             Administrator Access Active
           </Badge>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200/80">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200/80 dark:border-slate-800">
         <button
           type="button"
           onClick={() => setActiveTab("account")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
             activeTab === "account"
-              ? "bg-slate-900 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+              ? "bg-slate-900 dark:bg-[#D4AF37] text-white dark:text-slate-950 shadow-sm"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
           }`}
         >
-          <User className="w-4 h-4 text-[#D4AF37]" />
+          <User className="w-4 h-4 text-[#D4AF37] dark:text-slate-950" />
           Account Settings
         </button>
 
@@ -847,11 +847,11 @@ function AdminSettingsPage() {
           onClick={() => setActiveTab("notifications")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
             activeTab === "notifications"
-              ? "bg-slate-900 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+              ? "bg-slate-900 dark:bg-[#D4AF37] text-white dark:text-slate-950 shadow-sm"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
           }`}
         >
-          <Bell className="w-4 h-4 text-[#D4AF37]" />
+          <Bell className="w-4 h-4 text-[#D4AF37] dark:text-slate-950" />
           Notification Settings
         </button>
 
@@ -860,11 +860,11 @@ function AdminSettingsPage() {
           onClick={() => setActiveTab("system")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
             activeTab === "system"
-              ? "bg-slate-900 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+              ? "bg-slate-900 dark:bg-[#D4AF37] text-white dark:text-slate-950 shadow-sm"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
           }`}
         >
-          <Sliders className="w-4 h-4 text-[#D4AF37]" />
+          <Sliders className="w-4 h-4 text-[#D4AF37] dark:text-slate-950" />
           System Settings
         </button>
 
@@ -873,11 +873,11 @@ function AdminSettingsPage() {
           onClick={() => setActiveTab("appearance")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
             activeTab === "appearance"
-              ? "bg-slate-900 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+              ? "bg-slate-900 dark:bg-[#D4AF37] text-white dark:text-slate-950 shadow-sm"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
           }`}
         >
-          <Palette className="w-4 h-4 text-[#D4AF37]" />
+          <Palette className="w-4 h-4 text-[#D4AF37] dark:text-slate-950" />
           Appearance
         </button>
 
@@ -886,11 +886,11 @@ function AdminSettingsPage() {
           onClick={() => setActiveTab("security")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
             activeTab === "security"
-              ? "bg-slate-900 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+              ? "bg-slate-900 dark:bg-[#D4AF37] text-white dark:text-slate-950 shadow-sm"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
           }`}
         >
-          <Shield className="w-4 h-4 text-[#D4AF37]" />
+          <Shield className="w-4 h-4 text-[#D4AF37] dark:text-slate-950" />
           Security
         </button>
 
@@ -899,11 +899,11 @@ function AdminSettingsPage() {
           onClick={() => setActiveTab("data")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 cursor-pointer ${
             activeTab === "data"
-              ? "bg-slate-900 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+              ? "bg-slate-900 dark:bg-[#D4AF37] text-white dark:text-slate-950 shadow-sm"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800"
           }`}
         >
-          <Database className="w-4 h-4 text-[#D4AF37]" />
+          <Database className="w-4 h-4 text-[#D4AF37] dark:text-slate-950" />
           Data & System Management
         </button>
       </div>
@@ -913,27 +913,27 @@ function AdminSettingsPage() {
       {/* ============================================================ */}
       {activeTab === "account" && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 bg-white border-slate-200/90 rounded-2xl shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#081216] to-[#0D1C24] border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] font-bold text-xl font-display shadow-md">
                   {adminName ? adminName.charAt(0).toUpperCase() : "A"}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold font-display text-slate-900">
+                  <h3 className="text-lg font-bold font-display text-slate-900 dark:text-white">
                     Administrator Profile
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Your personal administrative credentials for Punong Spring Resort.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 font-bold text-xs px-3 py-1">
-                  Super Admin
+                <Badge className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 font-bold text-xs px-3 py-1">
+                  Admin
                 </Badge>
-                <Badge variant="outline" className="text-slate-400 font-mono text-[11px]">
+                <Badge variant="outline" className="text-slate-400 font-mono text-[11px] dark:border-slate-700">
                   ID: {user?.id.slice(0, 8)}...
                 </Badge>
               </div>
@@ -942,7 +942,7 @@ function AdminSettingsPage() {
             <form onSubmit={handleSaveProfile} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Administrator Name
                   </Label>
                   <Input
@@ -951,36 +951,36 @@ function AdminSettingsPage() {
                     value={adminName}
                     onChange={(e) => setAdminName(e.target.value)}
                     placeholder="e.g. Resort Manager"
-                    className="rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] h-10"
+                    className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus-visible:ring-[#D4AF37] h-10"
                   />
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
                     Displayed on admin reply messages and system logs.
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Email Address
                   </Label>
                   <Input
                     type="email"
                     disabled
                     value={adminEmail}
-                    className="rounded-xl border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed h-10"
+                    className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 cursor-not-allowed h-10"
                   />
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
                     Primary login email managed by Supabase Authentication.
                   </p>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setActiveTab("security")}
-                  className="rounded-xl text-xs font-semibold text-slate-600 border-slate-200 hover:border-[#D4AF37] h-9 cursor-pointer"
+                  className="rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#D4AF37] dark:hover:bg-slate-700 h-9 cursor-pointer"
                 >
                   <KeyRound className="w-3.5 h-3.5 mr-1.5 text-[#D4AF37]" />
                   Change Password in Security Settings
@@ -1009,29 +1009,29 @@ function AdminSettingsPage() {
       {/* ============================================================ */}
       {activeTab === "notifications" && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 bg-white border-slate-200/90 rounded-2xl shadow-sm space-y-6">
-            <div className="pb-4 border-b border-slate-100">
-              <h3 className="text-lg font-bold font-display text-slate-900">
+          <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-6">
+            <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-lg font-bold font-display text-slate-900 dark:text-white">
                 System Notification Preferences
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Enable or disable automated system triggers and admin alert indicators.
               </p>
             </div>
 
             <div className="space-y-4">
               {/* Option 1: New Bookings */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all">
                 <div className="space-y-0.5 pr-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900">
+                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       New Booking Notifications
                     </span>
-                    <Badge className="bg-amber-100 text-amber-900 border-amber-200 text-[10px] font-semibold">
+                    <Badge className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-700/60 text-[10px] font-semibold">
                       Reservations
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Display alert badges and trigger automated logs whenever a guest submits a new reservation.
                   </p>
                 </div>
@@ -1044,17 +1044,17 @@ function AdminSettingsPage() {
               </div>
 
               {/* Option 2: Customer Inquiries */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all">
                 <div className="space-y-0.5 pr-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900">
+                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       New Customer Inquiry Notifications
                     </span>
-                    <Badge className="bg-blue-100 text-blue-900 border-blue-200 text-[10px] font-semibold">
+                    <Badge className="bg-blue-100 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border-blue-200 dark:border-blue-700/60 text-[10px] font-semibold">
                       Contact Us
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Increment unread inquiry counters on the sidebar when guests contact via the Contact Us form.
                   </p>
                 </div>
@@ -1067,17 +1067,17 @@ function AdminSettingsPage() {
               </div>
 
               {/* Option 3: Customer Message / Follow-up */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all">
                 <div className="space-y-0.5 pr-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900">
+                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       Customer Follow-up / Reply Notifications
                     </span>
-                    <Badge className="bg-purple-100 text-purple-900 border-purple-200 text-[10px] font-semibold">
+                    <Badge className="bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300 border-purple-200 dark:border-purple-700/60 text-[10px] font-semibold">
                       Conversations
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Flag inquiries with status "Waiting for Reply" and alert when customers reply in existing threads.
                   </p>
                 </div>
@@ -1090,17 +1090,17 @@ function AdminSettingsPage() {
               </div>
 
               {/* Option 4: Payment Verification */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all">
                 <div className="space-y-0.5 pr-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900">
+                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       Payment Verification Notifications
                     </span>
-                    <Badge className="bg-emerald-100 text-emerald-900 border-emerald-200 text-[10px] font-semibold">
+                    <Badge className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 text-[10px] font-semibold">
                       Payments
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Notify administrators when a customer uploads or re-uploads a GCash payment receipt proof.
                   </p>
                 </div>
@@ -1113,17 +1113,17 @@ function AdminSettingsPage() {
               </div>
 
               {/* Option 5: Cancellation Requests */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all">
                 <div className="space-y-0.5 pr-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900">
+                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       Cancellation Notifications
                     </span>
-                    <Badge className="bg-rose-100 text-rose-900 border-rose-200 text-[10px] font-semibold">
+                    <Badge className="bg-rose-100 dark:bg-rose-950/60 text-rose-900 dark:text-rose-300 border-rose-200 dark:border-rose-700/60 text-[10px] font-semibold">
                       Cancelled
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Send alert when a reservation cancellation is initiated by a guest from their portal.
                   </p>
                 </div>
@@ -1139,7 +1139,7 @@ function AdminSettingsPage() {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <Button
                 type="button"
                 onClick={() => handleSaveSettings("Notification settings")}
@@ -1163,12 +1163,12 @@ function AdminSettingsPage() {
       {/* ============================================================ */}
       {activeTab === "system" && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 bg-white border-slate-200/90 rounded-2xl shadow-sm space-y-6">
-            <div className="pb-4 border-b border-slate-100">
-              <h3 className="text-lg font-bold font-display text-slate-900">
+          <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-6">
+            <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-lg font-bold font-display text-slate-900 dark:text-white">
                 Resort & General System Settings
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Configure official resort contact details, operating hours, and booking defaults.
               </p>
             </div>
@@ -1176,7 +1176,7 @@ function AdminSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Resort Name */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-[#D4AF37]" /> Resort / System Name
                 </Label>
                 <Input
@@ -1186,14 +1186,14 @@ function AdminSettingsPage() {
                   onChange={(e) =>
                     setSettings((prev) => ({ ...prev, resort_name: e.target.value }))
                   }
-                  className="rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] h-10"
+                  className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus-visible:ring-[#D4AF37] h-10"
                 />
               </div>
 
               {/* Contact Number */}
               <PhoneInputField
                 label={
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-[#D4AF37]" /> Resort Contact Number
                   </span>
                 }
@@ -1205,12 +1205,12 @@ function AdminSettingsPage() {
                     contact_number,
                   }))
                 }
-                inputClassName="rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] h-10"
+                inputClassName="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus-visible:ring-[#D4AF37] h-10"
               />
 
               {/* Official Email */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-[#D4AF37]" /> Official Resort Email
                 </Label>
                 <Input
@@ -1223,13 +1223,13 @@ function AdminSettingsPage() {
                       contact_email: e.target.value,
                     }))
                   }
-                  className="rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] h-10"
+                  className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus-visible:ring-[#D4AF37] h-10"
                 />
               </div>
 
               {/* Business Hours */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#D4AF37]" /> Business Hours
                 </Label>
                 <Input
@@ -1242,13 +1242,13 @@ function AdminSettingsPage() {
                       business_hours: e.target.value,
                     }))
                   }
-                  className="rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] h-10"
+                  className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus-visible:ring-[#D4AF37] h-10"
                 />
               </div>
 
               {/* Physical Address */}
               <div className="md:col-span-2 space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" /> Resort Physical Address
                 </Label>
                 <Input
@@ -1258,13 +1258,13 @@ function AdminSettingsPage() {
                   onChange={(e) =>
                     setSettings((prev) => ({ ...prev, address: e.target.value }))
                   }
-                  className="rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] h-10"
+                  className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus-visible:ring-[#D4AF37] h-10"
                 />
               </div>
 
               {/* Default Booking Status */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Default New Booking Status
                 </Label>
                 <Select
@@ -1276,22 +1276,22 @@ function AdminSettingsPage() {
                     }))
                   }
                 >
-                  <SelectTrigger className="rounded-xl border-slate-200 h-10">
+                  <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 h-10">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-[#1E293B] dark:border-slate-700 dark:text-slate-100">
                     <SelectItem value="pending">Pending (Review Required)</SelectItem>
                     <SelectItem value="approved">Approved (Instant Auto-Confirm)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">
                   Status automatically assigned when a customer submits a room booking.
                 </p>
               </div>
 
               {/* Default Payment Status */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Default Payment Status
                 </Label>
                 <Select
@@ -1303,21 +1303,21 @@ function AdminSettingsPage() {
                     }))
                   }
                 >
-                  <SelectTrigger className="rounded-xl border-slate-200 h-10">
+                  <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 h-10">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-[#1E293B] dark:border-slate-700 dark:text-slate-100">
                     <SelectItem value="pending">Pending Verification</SelectItem>
                     <SelectItem value="unpaid">Unpaid (Resort Payment)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">
                   Default ledger state before administrator verification.
                 </p>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <Button
                 type="button"
                 onClick={() => handleSaveSettings("System settings")}
@@ -1341,19 +1341,19 @@ function AdminSettingsPage() {
       {/* ============================================================ */}
       {activeTab === "appearance" && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 bg-white border-slate-200/90 rounded-2xl shadow-sm space-y-6">
-            <div className="pb-4 border-b border-slate-100">
-              <h3 className="text-lg font-bold font-display text-slate-900">
+          <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-6">
+            <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-lg font-bold font-display text-slate-900 dark:text-white">
                 Appearance & Branding
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Manage theme color modes, logo branding, and visual presentation.
               </p>
             </div>
 
             {/* Theme Mode Selector */}
             <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 Color Theme Mode
               </Label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1365,18 +1365,18 @@ function AdminSettingsPage() {
                   }}
                   className={`p-4 rounded-2xl border-2 transition-all cursor-pointer space-y-2 text-center ${
                     settings.theme === "light"
-                      ? "border-[#D4AF37] bg-amber-50/40 shadow-sm"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-[#D4AF37] bg-amber-50/40 dark:bg-amber-950/30 shadow-sm"
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/50"
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center mx-auto">
                     <Sun className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="font-bold text-sm text-slate-900 block">
+                    <span className="font-bold text-sm text-slate-900 dark:text-slate-100 block">
                       Light Mode
                     </span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
                       Classic clean luxury resort palette
                     </span>
                   </div>
@@ -1390,18 +1390,18 @@ function AdminSettingsPage() {
                   }}
                   className={`p-4 rounded-2xl border-2 transition-all cursor-pointer space-y-2 text-center ${
                     settings.theme === "dark"
-                      ? "border-[#D4AF37] bg-amber-50/40 shadow-sm"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-[#D4AF37] bg-amber-50/40 dark:bg-amber-950/30 shadow-sm"
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/50"
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-slate-900 text-[#D4AF37] flex items-center justify-center mx-auto">
+                  <div className="w-10 h-10 rounded-full bg-slate-900 dark:bg-slate-800 text-[#D4AF37] dark:text-[#FACC15] flex items-center justify-center mx-auto">
                     <Moon className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="font-bold text-sm text-slate-900 block">
+                    <span className="font-bold text-sm text-slate-900 dark:text-slate-100 block">
                       Dark Mode
                     </span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
                       High contrast midnight luxury aesthetic
                     </span>
                   </div>
@@ -1415,18 +1415,18 @@ function AdminSettingsPage() {
                   }}
                   className={`p-4 rounded-2xl border-2 transition-all cursor-pointer space-y-2 text-center ${
                     settings.theme === "system"
-                      ? "border-[#D4AF37] bg-amber-50/40 shadow-sm"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-[#D4AF37] bg-amber-50/40 dark:bg-amber-950/30 shadow-sm"
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/50"
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mx-auto">
                     <Monitor className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="font-bold text-sm text-slate-900 block">
+                    <span className="font-bold text-sm text-slate-900 dark:text-slate-100 block">
                       System Default
                     </span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
                       Sync with OS dark/light mode preference
                     </span>
                   </div>
@@ -1435,12 +1435,12 @@ function AdminSettingsPage() {
             </div>
 
             {/* Logo Settings */}
-            <div className="pt-4 border-t border-slate-100 space-y-4">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 Resort Logo & Branding Asset
               </Label>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-                <div className="p-3 rounded-2xl border border-slate-200 bg-slate-50 shrink-0">
+                <div className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 shrink-0">
                   <img
                     src={settings.logo_url || "/logo.png"}
                     alt="Resort Logo"
@@ -1448,7 +1448,7 @@ function AdminSettingsPage() {
                   />
                 </div>
                 <div className="space-y-2 flex-1 w-full">
-                  <Label className="text-xs text-slate-600 font-semibold">
+                  <Label className="text-xs text-slate-600 dark:text-slate-300 font-semibold">
                     Logo Image URL or Local Asset Path
                   </Label>
                   <Input
@@ -1458,16 +1458,16 @@ function AdminSettingsPage() {
                       setSettings((prev) => ({ ...prev, logo_url: e.target.value }))
                     }
                     placeholder="/logo.png or https://..."
-                    className="rounded-xl border-slate-200 focus-visible:ring-[#D4AF37] h-10 text-xs"
+                    className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus-visible:ring-[#D4AF37] h-10 text-xs"
                   />
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
                     Displayed in the navbar, sidebar branding, email notifications, and printable invoices.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <Button
                 type="button"
                 onClick={() => handleSaveSettings("Appearance settings")}
@@ -1491,12 +1491,12 @@ function AdminSettingsPage() {
       {/* ============================================================ */}
       {activeTab === "security" && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <Card className="p-6 bg-white border-slate-200/90 rounded-2xl shadow-sm space-y-6">
-            <div className="pb-4 border-b border-slate-100">
-              <h3 className="text-lg font-bold font-display text-slate-900">
+          <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-6">
+            <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-lg font-bold font-display text-slate-900 dark:text-white">
                 Security & Authentication Credentials
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Update your administrator password and manage concurrent login sessions.
               </p>
             </div>
@@ -1504,7 +1504,7 @@ function AdminSettingsPage() {
             {/* Change Password Form */}
             <form onSubmit={handleSavePassword} className="space-y-4 max-w-xl">
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Current Password
                 </Label>
                 <div className="relative">
@@ -1514,12 +1514,12 @@ function AdminSettingsPage() {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Enter your current password"
-                    className="rounded-xl border-slate-200 pr-10 h-10"
+                    className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 pr-10 h-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none cursor-pointer"
                   >
                     {showCurrentPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -1531,7 +1531,7 @@ function AdminSettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   New Password
                 </Label>
                 <div className="relative">
@@ -1541,12 +1541,12 @@ function AdminSettingsPage() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="At least 6 characters"
-                    className="rounded-xl border-slate-200 pr-10 h-10"
+                    className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 pr-10 h-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none cursor-pointer"
                   >
                     {showNewPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -1558,7 +1558,7 @@ function AdminSettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Confirm New Password
                 </Label>
                 <div className="relative">
@@ -1568,12 +1568,12 @@ function AdminSettingsPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-type new password"
-                    className="rounded-xl border-slate-200 pr-10 h-10"
+                    className="rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 pr-10 h-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none cursor-pointer"
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -1588,12 +1588,12 @@ function AdminSettingsPage() {
                 <Button
                   type="submit"
                   disabled={savingPassword}
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold h-10 px-6 rounded-xl shadow-md cursor-pointer flex items-center gap-2"
+                  className="bg-slate-900 dark:bg-[#D4AF37] hover:bg-slate-800 dark:hover:bg-[#B38728] text-white dark:text-slate-950 font-bold h-10 px-6 rounded-xl shadow-md cursor-pointer flex items-center gap-2"
                 >
                   {savingPassword ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <KeyRound className="w-4 h-4 text-[#D4AF37]" />
+                    <KeyRound className="w-4 h-4 text-[#D4AF37] dark:text-slate-950" />
                   )}
                   Update Password
                 </Button>
@@ -1601,12 +1601,12 @@ function AdminSettingsPage() {
             </form>
 
             {/* Session Management */}
-            <div className="pt-6 border-t border-slate-100 space-y-3">
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
               <div>
-                <h4 className="text-sm font-bold text-slate-900">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                   Active Sessions & Browser Authentication
                 </h4>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Terminate concurrent logins on other devices or browsers to safeguard administrator privileges.
                 </p>
               </div>
@@ -1616,7 +1616,7 @@ function AdminSettingsPage() {
                 variant="outline"
                 onClick={handleLogoutOtherSessions}
                 disabled={loggingOutOthers}
-                className="border-rose-200 text-rose-600 hover:bg-rose-50 h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-2"
+                className="border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-2"
               >
                 {loggingOutOthers ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1637,15 +1637,15 @@ function AdminSettingsPage() {
         <div className="space-y-6 animate-in fade-in duration-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Action 1: Refresh / Sync Data */}
-            <Card className="p-6 bg-white border-slate-200/90 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between">
+            <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/60 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60 flex items-center justify-center">
                   <RefreshCw className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold font-display text-slate-900">
+                <h3 className="text-base font-bold font-display text-slate-900 dark:text-white">
                   Refresh & Synchronize System Data
                 </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Purge stale query caches and fetch live database records for all reservations, customer inquiries, room availability, and payments.
                 </p>
               </div>
@@ -1654,27 +1654,27 @@ function AdminSettingsPage() {
                 type="button"
                 onClick={handleSyncAllData}
                 disabled={syncingData}
-                className="bg-slate-900 hover:bg-slate-800 text-white font-bold h-10 rounded-xl shadow-sm cursor-pointer flex items-center gap-2"
+                className="bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold h-10 rounded-xl shadow-sm cursor-pointer flex items-center gap-2"
               >
                 {syncingData ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-4 h-4 text-[#D4AF37]" />
+                  <RefreshCw className="w-4 h-4 text-[#D4AF37] dark:text-[#FACC15]" />
                 )}
                 Sync System Data Now
               </Button>
             </Card>
 
             {/* Action 2: Clear Temporary / Cache Data */}
-            <Card className="p-6 bg-white border-slate-200/90 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between">
+            <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#B38728] border border-[#D4AF37]/30 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-[#B38728] dark:text-[#FACC15] border border-[#D4AF37]/30 dark:border-[#D4AF37]/40 flex items-center justify-center">
                   <Trash2 className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold font-display text-slate-900">
+                <h3 className="text-base font-bold font-display text-slate-900 dark:text-white">
                   Clear Temporary & Client Cache
                 </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Clear browser storage caches and temporary session filters. Useful when debugging UI display updates without signing out.
                 </p>
               </div>
@@ -1683,23 +1683,23 @@ function AdminSettingsPage() {
                 type="button"
                 variant="outline"
                 onClick={handleClearCache}
-                className="border-slate-200 hover:bg-slate-50 text-slate-700 font-bold h-10 rounded-xl shadow-sm cursor-pointer flex items-center gap-2"
+                className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold h-10 rounded-xl shadow-sm cursor-pointer flex items-center gap-2"
               >
-                <Trash2 className="w-4 h-4 text-amber-600" />
+                <Trash2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 Clear Temporary Cache
               </Button>
             </Card>
 
             {/* Action 3: Export System Data */}
-            <Card className="p-6 bg-white border-slate-200/90 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between">
+            <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-center">
                   <Download className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold font-display text-slate-900">
+                <h3 className="text-base font-bold font-display text-slate-900 dark:text-white">
                   Export System Records
                 </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Export operational system records including guest reservations, customer inquiries, and room catalogs to CSV or JSON.
                 </p>
               </div>
@@ -1710,9 +1710,9 @@ function AdminSettingsPage() {
                   variant="outline"
                   onClick={() => handleExportSystemData("csv")}
                   disabled={exportingData}
-                  className="flex-1 border-slate-200 hover:border-emerald-400 text-xs font-bold h-10 rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500 text-slate-700 dark:text-slate-200 text-xs font-bold h-10 rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   Export CSV Ledger
                 </Button>
                 <Button
@@ -1720,24 +1720,24 @@ function AdminSettingsPage() {
                   variant="outline"
                   onClick={() => handleExportSystemData("json")}
                   disabled={exportingData}
-                  className="flex-1 border-slate-200 hover:border-blue-400 text-xs font-bold h-10 rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold h-10 rounded-xl cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <FileCode className="w-4 h-4 text-blue-600" />
+                  <FileCode className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   Export JSON
                 </Button>
               </div>
             </Card>
 
             {/* Action 4: Backup Database */}
-            <Card className="p-6 bg-white border-slate-200/90 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between">
+            <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/60 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-center">
                   <Database className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold font-display text-slate-900">
+                <h3 className="text-base font-bold font-display text-slate-900 dark:text-white">
                   Full Database Snapshot Backup
                 </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Generate a complete, timestamped JSON archive of all tables: rooms, bookings, payments, inquiries, inquiry messages, feedbacks, and system settings.
                 </p>
               </div>
@@ -1758,16 +1758,16 @@ function AdminSettingsPage() {
             </Card>
 
             {/* Action 5: Restore Database Snapshot */}
-            <Card className="p-6 bg-white border-amber-200/60 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between relative overflow-hidden">
+            <Card className="p-6 bg-white dark:bg-[#151F2E] border-amber-200/60 dark:border-amber-700/60 rounded-2xl shadow-sm space-y-4 flex flex-col justify-between relative overflow-hidden">
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#B38728] border border-[#D4AF37]/30 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-[#B38728] dark:text-[#FACC15] border border-[#D4AF37]/30 dark:border-[#D4AF37]/50 flex items-center justify-center">
                   <Upload className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold font-display text-slate-900">
+                <h3 className="text-base font-bold font-display text-slate-900 dark:text-white">
                   Restore Database from Backup
                 </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Upload a previously saved <span className="font-semibold text-slate-700">punong-database-backup-*.json</span> snapshot archive to restore or synchronize rooms, reservations, payments, and settings.
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Upload a previously saved <span className="font-semibold text-slate-700 dark:text-slate-200">punong-database-backup-*.json</span> snapshot archive to restore or synchronize rooms, reservations, payments, and settings.
                 </p>
               </div>
 
@@ -1784,12 +1784,12 @@ function AdminSettingsPage() {
                   onClick={() => restoreFileInputRef.current?.click()}
                   disabled={restoring}
                   variant="outline"
-                  className="w-full border-amber-300 bg-amber-50/60 hover:bg-amber-100/70 text-slate-900 font-bold h-10 rounded-xl shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full border-amber-300 dark:border-amber-600 bg-amber-50/60 dark:bg-amber-950/40 hover:bg-amber-100/70 dark:hover:bg-amber-900/60 text-slate-900 dark:text-amber-200 font-bold h-10 rounded-xl shadow-sm cursor-pointer flex items-center justify-center gap-2"
                 >
                   {restoring ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-[#B38728]" />
+                    <Loader2 className="w-4 h-4 animate-spin text-[#B38728] dark:text-[#FACC15]" />
                   ) : (
-                    <Upload className="w-4 h-4 text-[#B38728]" />
+                    <Upload className="w-4 h-4 text-[#B38728] dark:text-[#FACC15]" />
                   )}
                   {restoring ? "Restoring Database..." : "Select & Restore Backup File"}
                 </Button>
@@ -1801,3 +1801,4 @@ function AdminSettingsPage() {
     </div>
   );
 }
+

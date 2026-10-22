@@ -659,20 +659,20 @@ function BookPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B111A]">
       <Navbar />
       <section className="container mx-auto grid gap-6 sm:gap-8 px-3 sm:px-4 py-6 sm:py-12 md:grid-cols-[1fr_360px] lg:grid-cols-[1fr_400px]">
-        <Card className="p-4 sm:p-6 md:p-8 rounded-xl bg-white shadow-sm border-slate-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <Card className="p-4 sm:p-6 md:p-8 rounded-xl bg-white dark:bg-[#151F2E] shadow-sm border-slate-200 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Reserve {room.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Reserve {room.name}</h1>
               <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{room.description}</p>
             </div>
-            <div className="flex sm:flex-col items-center sm:items-end justify-between gap-1 shrink-0 bg-slate-50 sm:bg-transparent p-2.5 sm:p-0 rounded-lg">
+            <div className="flex sm:flex-col items-center sm:items-end justify-between gap-1 shrink-0 bg-slate-50 dark:bg-slate-800/60 sm:bg-transparent sm:dark:bg-transparent p-2.5 sm:p-0 rounded-lg">
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                 rateType === "day"
-                  ? "bg-amber-100 text-amber-900 border border-amber-300"
-                  : "bg-blue-100 text-blue-900 border border-blue-300"
+                  ? "bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+                  : "bg-blue-100 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
               }`}>
                 {rateType === "day" ? "Day Rate" : "Nightly Rate"}
               </span>
@@ -687,8 +687,8 @@ function BookPage() {
             </div>
           </div>
 
-          <div className="mt-6 sm:mt-8 mb-6 sm:mb-8 border border-border/60 bg-slate-50/50 p-3 sm:p-6 rounded-xl shadow-xs overflow-hidden">
-            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-center text-slate-800">1. Select Your Dates</h2>
+          <div className="mt-6 sm:mt-8 mb-6 sm:mb-8 border border-border/60 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 p-3 sm:p-6 rounded-xl shadow-xs overflow-hidden">
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-center text-slate-800 dark:text-white">1. Select Your Dates</h2>
             <div className="flex flex-col items-center justify-center w-full">
               <div className="w-full max-w-full overflow-x-auto flex justify-center py-1">
                 <Calendar
@@ -759,47 +759,47 @@ function BookPage() {
                     }
                   }}
                   disabled={(date) => getDayStatus(date).status === "booked" || date < today}
-                  className="bg-white rounded-lg border shadow-xs p-2 sm:p-4 max-w-full"
+                  className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs p-2 sm:p-4 max-w-full text-slate-900 dark:text-white"
                   components={{ DayButton: CustomDayButton }}
                 />
               </div>
               
-              <div className="flex items-center justify-center gap-3 sm:gap-6 mt-4 sm:mt-6 text-xs sm:text-sm text-slate-700 flex-wrap font-medium">
+              <div className="flex items-center justify-center gap-3 sm:gap-6 mt-4 sm:mt-6 text-xs sm:text-sm text-slate-700 dark:text-slate-300 flex-wrap font-medium">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3.5 h-3.5 rounded bg-emerald-600 shadow-xs"></div>
                   <span>Available</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3.5 h-3.5 rounded bg-red-600 shadow-xs"></div>
-                  <span className="font-semibold text-red-600">Booked</span>
+                  <span className="font-semibold text-red-600 dark:text-red-400">Booked</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3.5 h-3.5 rounded bg-blue-600 shadow-xs"></div>
                   <span>Selected</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3.5 h-3.5 rounded bg-slate-200"></div>
-                  <span className="text-slate-400">Past Date</span>
+                  <div className="w-3.5 h-3.5 rounded bg-slate-200 dark:bg-slate-700"></div>
+                  <span className="text-slate-400 dark:text-slate-500">Past Date</span>
                 </div>
               </div>
 
               {conflictWarning && (
-                <div className="mt-4 w-full p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <div className="mt-4 w-full p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs sm:text-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
                   <span className="font-medium">{conflictWarning}</span>
                 </div>
               )}
             </div>
           </div>
 
-          <h2 className="text-xl font-semibold mb-4 border-t pt-6">2. Guest Details</h2>
+          <h2 className="text-xl font-semibold mb-4 border-t border-slate-100 dark:border-slate-800 pt-6 text-slate-900 dark:text-white">2. Guest Details</h2>
           <form id="booking-form" onSubmit={handleInitiateBooking} className="grid gap-6">
             {/* Stay Type: STRICTLY ONLY for Cottage category */}
             {isCottage && (
-              <div className="bg-slate-50/90 p-4 sm:p-5 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200 pb-2.5">
+              <div className="bg-slate-50/90 dark:bg-slate-800/60 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200 dark:border-slate-700 pb-2.5">
                   <div>
-                    <Label className="font-bold text-slate-900 text-sm uppercase tracking-wider block">
+                    <Label className="font-bold text-slate-900 dark:text-white text-sm uppercase tracking-wider block">
                       Stay Type <span className="text-red-500">*</span>
                     </Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -807,11 +807,11 @@ function BookPage() {
                     </p>
                   </div>
                   {stayType === "overnight" ? (
-                    <span className="text-xs bg-[#D4AF37]/15 text-[#8C6B1B] border border-[#D4AF37]/40 px-2.5 py-1 rounded-full font-bold inline-flex items-center gap-1 self-start sm:self-auto">
+                    <span className="text-xs bg-[#D4AF37]/15 text-[#8C6B1B] dark:text-[#D4AF37] border border-[#D4AF37]/40 px-2.5 py-1 rounded-full font-bold inline-flex items-center gap-1 self-start sm:self-auto">
                       +₱1,000 Overnight Cottage Fee
                     </span>
                   ) : (
-                    <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-semibold inline-flex items-center gap-1 self-start sm:self-auto">
+                    <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full font-semibold inline-flex items-center gap-1 self-start sm:self-auto">
                       ₱0 Additional Fee
                     </span>
                   )}
@@ -827,19 +827,19 @@ function BookPage() {
                     className={cn(
                       "flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all",
                       stayType === "day_use"
-                        ? "bg-white border-primary shadow-xs ring-1 ring-primary/20"
-                        : "bg-white border-slate-200 hover:border-slate-300"
+                        ? "bg-white dark:bg-slate-800 border-primary shadow-xs ring-1 ring-primary/20"
+                        : "bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
                     )}
                   >
                     <RadioGroupItem value="day_use" id="stay-type-day-use" className="mt-0.5" />
                     <div className="space-y-0.5">
-                      <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                      <div className="font-semibold text-slate-900 dark:text-white text-sm flex items-center gap-2">
                         Day Use
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded">
                           Regular Rate
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Daytime cottage use only (₱0 overnight fee)
                       </p>
                     </div>
@@ -850,19 +850,19 @@ function BookPage() {
                     className={cn(
                       "flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all",
                       stayType === "overnight"
-                        ? "bg-amber-50/70 border-[#D4AF37] shadow-xs ring-1 ring-[#D4AF37]/40"
-                        : "bg-white border-slate-200 hover:border-slate-300"
+                        ? "bg-amber-50/70 dark:bg-amber-950/30 border-[#D4AF37] shadow-xs ring-1 ring-[#D4AF37]/40"
+                        : "bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
                     )}
                   >
                     <RadioGroupItem value="overnight" id="stay-type-overnight" className="mt-0.5" />
                     <div className="space-y-0.5">
-                      <div className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                      <div className="font-semibold text-slate-900 dark:text-white text-sm flex items-center gap-2">
                         Overnight Stay
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#D4AF37]/20 text-[#8C6B1B] px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#D4AF37]/20 text-[#8C6B1B] dark:text-[#D4AF37] px-2 py-0.5 rounded">
                           +₱1,000 fee
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Includes overnight access. ₱1,000 charged once per cottage booking.
                       </p>
                     </div>
@@ -969,24 +969,24 @@ function BookPage() {
 
             {/* Extra Persons & Foam Beds Options - only show for room, hide for cottage and function hall */}
             {isRoomCategory && (
-              <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Guest Breakdown & Extra Beds</h4>
-                  <span className="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-semibold">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
+                  <h4 className="font-bold text-slate-800 dark:text-white text-sm uppercase tracking-wider">Guest Breakdown & Extra Beds</h4>
+                  <span className="text-xs bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full font-semibold">
                     Good for {regularGuestsIncluded} persons
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="bg-white p-3 rounded-lg border border-slate-200">
-                    <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider">Regular Guests Included</span>
-                    <span className="font-bold text-slate-800 text-base">{isUnlimited ? "Unlimited" : `${regularGuestsIncluded} persons`}</span>
+                  <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase tracking-wider">Regular Guests Included</span>
+                    <span className="font-bold text-slate-800 dark:text-white text-base">{isUnlimited ? "Unlimited" : `${regularGuestsIncluded} persons`}</span>
                   </div>
-                  <div className="bg-white p-3 rounded-lg border border-slate-200">
-                    <span className="text-slate-500 block text-xs font-semibold uppercase tracking-wider">Extra Persons</span>
+                  <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs font-semibold uppercase tracking-wider">Extra Persons</span>
                     <span className={cn(
                       "font-bold text-base",
-                      extraPersons > 0 ? "text-amber-700" : "text-slate-600"
+                      extraPersons > 0 ? "text-amber-700 dark:text-amber-400" : "text-slate-600 dark:text-slate-400"
                     )}>
                       {isUnlimited ? "N/A" : `${extraPersons} person(s)`}
                     </span>
@@ -998,12 +998,12 @@ function BookPage() {
                   <div className={cn(
                     "p-3 rounded-xl border text-xs flex items-start gap-2.5 transition-colors",
                     isMissingRequiredBeds
-                      ? "bg-amber-50 border-amber-300 text-amber-900"
-                      : "bg-emerald-50 border-emerald-200 text-emerald-900"
+                      ? "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200"
+                      : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200"
                   )}>
                     <AlertCircle className={cn(
                       "w-4 h-4 shrink-0 mt-0.5",
-                      isMissingRequiredBeds ? "text-amber-600" : "text-emerald-600"
+                      isMissingRequiredBeds ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
                     )} />
                     <div className="flex-1">
                       {isMissingRequiredBeds ? (
@@ -1023,51 +1023,51 @@ function BookPage() {
 
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
-                    <Label className="font-bold text-slate-800 text-sm block">Extra Bed Type:</Label>
+                    <Label className="font-bold text-slate-800 dark:text-white text-sm block">Extra Bed Type:</Label>
                     {extraPersons > 0 && (
-                      <span className="text-xs text-slate-500">
-                        Bed capacity: <strong className={extraBedCapacity >= extraPersons ? "text-emerald-700" : "text-amber-700"}>{extraBedCapacity} / {extraPersons}</strong> persons
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        Bed capacity: <strong className={extraBedCapacity >= extraPersons ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}>{extraBedCapacity} / {extraPersons}</strong> persons
                       </span>
                     )}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className={cn(
-                      "p-4 bg-white rounded-xl border space-y-3 transition-colors",
-                      isMissingRequiredBeds ? "border-amber-300 bg-amber-50/20" : "border-slate-200"
+                      "p-4 bg-white dark:bg-slate-800 rounded-xl border space-y-3 transition-colors",
+                      isMissingRequiredBeds ? "border-amber-300 dark:border-amber-700 bg-amber-50/20 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-700"
                     )}>
                       <div>
-                        <span className="font-bold text-slate-800 block text-sm">○ Single Foam Bed — ₱300/person</span>
-                        <span className="text-[11px] text-slate-500">Accommodates 1 person per bed</span>
+                        <span className="font-bold text-slate-800 dark:text-white block text-sm">○ Single Foam Bed — ₱300/person</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">Accommodates 1 person per bed</span>
                       </div>
                       <div>
-                        <Label className="text-xs text-slate-600 mb-1.5 block font-medium">Number of Single Foam Beds</Label>
+                        <Label className="text-xs text-slate-600 dark:text-slate-300 mb-1.5 block font-medium">Number of Single Foam Beds</Label>
                         <Input
                           type="number"
                           min={0}
                           value={singleFoamBeds}
                           onChange={(e) => setSingleFoamBeds(Math.max(0, parseInt(e.target.value) || 0))}
-                          className="h-9 border-slate-300"
+                          className="h-9 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                           placeholder="0"
                         />
                       </div>
                     </div>
 
                     <div className={cn(
-                      "p-4 bg-white rounded-xl border space-y-3 transition-colors",
-                      isMissingRequiredBeds ? "border-amber-300 bg-amber-50/20" : "border-slate-200"
+                      "p-4 bg-white dark:bg-slate-800 rounded-xl border space-y-3 transition-colors",
+                      isMissingRequiredBeds ? "border-amber-300 dark:border-amber-700 bg-amber-50/20 dark:bg-amber-950/20" : "border-slate-200 dark:border-slate-700"
                     )}>
                       <div>
-                        <span className="font-bold text-slate-800 block text-sm">○ Double Foam Bed — ₱600/bed</span>
-                        <span className="text-[11px] text-slate-500">Accommodates 2 persons per bed</span>
+                        <span className="font-bold text-slate-800 dark:text-white block text-sm">○ Double Foam Bed — ₱600/bed</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">Accommodates 2 persons per bed</span>
                       </div>
                       <div>
-                        <Label className="text-xs text-slate-600 mb-1.5 block font-medium">Number of Double Foam Beds</Label>
+                        <Label className="text-xs text-slate-600 dark:text-slate-300 mb-1.5 block font-medium">Number of Double Foam Beds</Label>
                         <Input
                           type="number"
                           min={0}
                           value={doubleFoamBeds}
                           onChange={(e) => setDoubleFoamBeds(Math.max(0, parseInt(e.target.value) || 0))}
-                          className="h-9 border-slate-300"
+                          className="h-9 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                           placeholder="0"
                         />
                       </div>
@@ -1075,9 +1075,9 @@ function BookPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center bg-white p-3.5 rounded-xl border border-slate-200 text-sm">
-                  <span className="font-medium text-slate-700">Additional Fee</span>
-                  <span className="font-bold text-slate-900 text-base">₱{additionalFee.toLocaleString()}</span>
+                <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm">
+                  <span className="font-medium text-slate-700 dark:text-slate-300">Additional Fee</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-base">₱{additionalFee.toLocaleString()}</span>
                 </div>
               </div>
             )}
@@ -1089,17 +1089,17 @@ function BookPage() {
               </div>
             )}
 
-            <h2 className="text-xl font-semibold mb-2 border-t pt-6">3. Payment Details</h2>
-            <div className="bg-amber-50/50 p-6 rounded-xl border border-amber-100">
-              <div className="flex items-center gap-2 text-amber-900">
+            <h2 className="text-xl font-semibold mb-2 border-t border-slate-100 dark:border-slate-800 pt-6 text-slate-900 dark:text-white">3. Payment Details</h2>
+            <div className="bg-amber-50/50 dark:bg-amber-950/30 p-6 rounded-xl border border-amber-100 dark:border-amber-900/40">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300">
                 <Banknote className="w-6 h-6" />
                 <h3 className="font-bold text-lg">Pay at the Resort</h3>
               </div>
             </div>
 
-            <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-200 mt-6 text-sm text-slate-600">
-              <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" /> Resort Policies
+            <div className="bg-slate-50/50 dark:bg-slate-800/40 p-6 rounded-xl border border-slate-200 dark:border-slate-700 mt-6 text-sm text-slate-600 dark:text-slate-300">
+              <h4 className="font-semibold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-[#B38728]" /> Resort Policies
               </h4>
               <p>
                 Reservations may be cancelled up to 5 hours before the scheduled check-in date. Failure to arrive without prior cancellation may result in the reservation being marked as a No-Show, and the accommodation will automatically be made available for other guests.
@@ -1107,14 +1107,14 @@ function BookPage() {
             </div>
 
             {(!form.fullname.trim() || !form.email.trim() || !isValidPhilippineMobileNumber(form.phone) || !String(form.age).trim() || !form.address.trim() || !form.guests) && (
-              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 flex items-center gap-2">
+              <div className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-3 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
                 <span>Please complete all required guest details (Full Name, Email, Phone, Age, Address, and Number of Guests) to proceed with your booking.</span>
               </div>
             )}
 
             {isNonRoomCapacityExceeded && (
-              <div className="mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-800 flex items-center gap-2">
+              <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 p-3 text-xs text-red-800 dark:text-red-300 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                 <span>
                   Guest capacity exceeded: This accommodation allows a maximum of {maxCapacity} {maxCapacity === 1 ? "guest" : "guests"}. Please reduce the number of guests to {maxCapacity} or fewer to complete your booking.
@@ -1123,27 +1123,27 @@ function BookPage() {
             )}
 
             {isMissingRequiredBeds && (
-              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-300 p-3 text-xs text-amber-900 flex items-center gap-2">
+              <div className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
                 <span>{extraBedValidationMessage}</span>
               </div>
             )}
 
             {/* Mobile Booking Summary (Shown above Confirm Reservation when customer opens on cellphone) */}
-            <div className="block md:hidden border-t border-slate-200 pt-6 mt-4">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">
+            <div className="block md:hidden border-t border-slate-200 dark:border-slate-700 pt-6 mt-4">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-3">
                 Booking Summary
               </h3>
-              <Card className="h-fit p-5 border-slate-200 shadow-sm bg-white">
+              <Card className="h-fit p-5 border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-[#151F2E]">
                 {room.image_url && (
                   <img src={room.image_url} alt={room.name} className="mb-4 aspect-[4/3] w-full rounded-lg object-cover" />
                 )}
-                <h3 className="font-semibold text-slate-900">{room.name}</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-white">{room.name}</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground capitalize">{room.type === "villa" ? "Function Hall" : room.type} · up to {room.capacity} guests</p>
                 <div className="mt-4 space-y-2 border-t border-border pt-4 text-xs sm:text-sm">
                   <div className="flex justify-between">
                     <span>{rateType === "day" ? "Day Rate" : "Nightly Rate"}</span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-slate-900 dark:text-white">
                       ₱{Number(room.price).toLocaleString()} {rateType === "day" ? "/ day" : "/ night"}
                     </span>
                   </div>
@@ -1167,11 +1167,11 @@ function BookPage() {
                   {/* ONLY for Cottage category: Subtotal, Stay Type, and Overnight Cottage Fee */}
                   {isCottage && (
                     <>
-                      <div className="flex justify-between text-slate-600">
+                      <div className="flex justify-between text-slate-600 dark:text-slate-400">
                         <span>Accommodation Subtotal</span>
                         <span>₱{baseTotal.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between text-slate-600">
+                      <div className="flex justify-between text-slate-600 dark:text-slate-400">
                         <span>Stay Type</span>
                         <span className="font-medium capitalize">{stayType === "overnight" ? "Overnight Stay" : "Day Use"}</span>
                       </div>
@@ -1186,7 +1186,7 @@ function BookPage() {
 
                   {/* ONLY for Room category: Foam Bed Additional Fee */}
                   {room?.type === "room" && additionalFee > 0 && (
-                    <div className="flex justify-between text-emerald-700 font-medium">
+                    <div className="flex justify-between text-emerald-700 dark:text-emerald-400 font-medium">
                       <span>Additional Fee</span>
                       <span>+₱{additionalFee.toLocaleString()}</span>
                     </div>
@@ -1242,16 +1242,16 @@ function BookPage() {
 
         {/* Desktop Sidebar Summary (Hidden on cellphone, visible on md screens and above) */}
         <div className="hidden md:flex flex-col gap-6">
-          <Card className="h-fit p-6 sticky top-24">
+          <Card className="h-fit p-6 sticky top-24 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#151F2E]">
             {room.image_url && (
               <img src={room.image_url} alt={room.name} className="mb-4 aspect-[4/3] w-full rounded-lg object-cover" />
             )}
-            <h3 className="font-semibold">{room.name}</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-white">{room.name}</h3>
             <p className="text-sm text-muted-foreground capitalize">{room.type === "villa" ? "Function Hall" : room.type} · up to {room.capacity} guests</p>
             <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between">
                 <span>{rateType === "day" ? "Day Rate" : "Nightly Rate"}</span>
-                <span className="font-semibold text-slate-900">
+                <span className="font-semibold text-slate-900 dark:text-white">
                   ₱{Number(room.price).toLocaleString()} {rateType === "day" ? "/ day" : "/ night"}
                 </span>
               </div>
@@ -1311,7 +1311,7 @@ function BookPage() {
 
       {/* Before You Submit Your Reservation - Reminder Modal */}
       <Dialog open={showReminderModal} onOpenChange={(open) => !submitting && setShowReminderModal(open)}>
-        <DialogContent className="w-[95vw] max-w-lg sm:max-w-xl p-0 overflow-hidden border-slate-200 rounded-2xl sm:rounded-3xl shadow-2xl bg-white max-h-[90vh] flex flex-col my-auto">
+        <DialogContent className="w-[95vw] max-w-lg sm:max-w-xl p-0 overflow-hidden border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl bg-white dark:bg-[#151F2E] max-h-[90vh] flex flex-col my-auto">
           {/* Header */}
           <DialogHeader className="shrink-0 p-4 sm:p-6 bg-slate-900 text-white border-b border-slate-800 text-left">
             <div className="flex items-center gap-2 mb-1 text-[11px] font-bold tracking-wider text-[#D4AF37] uppercase">
@@ -1328,40 +1328,40 @@ function BookPage() {
           {/* Scrollable Content Body */}
           <div className="overflow-y-auto flex-1 p-4 sm:p-6 space-y-4">
             {/* Reminder Callout Box */}
-            <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-slate-800 space-y-2.5">
-              <div className="font-bold text-amber-950 text-sm flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-slate-800 dark:text-slate-200 space-y-2.5">
+              <div className="font-bold text-amber-950 dark:text-amber-300 text-sm flex items-center gap-1.5">
                 <span>📌 Reservation & Payment Reminder</span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                 Before completing your reservation, please review your booking details carefully.
               </p>
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                After your reservation is successfully submitted, please make sure to <strong className="text-slate-900 font-semibold">download and save your booking receipt</strong>.
+              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                After your reservation is successfully submitted, please make sure to <strong className="text-slate-900 dark:text-white font-semibold">download and save your booking receipt</strong>.
               </p>
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                The downloaded receipt must be <strong className="text-slate-900 font-semibold">presented upon payment/check-in</strong> as proof of your reservation and payment transaction.
+              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                The downloaded receipt must be <strong className="text-slate-900 dark:text-white font-semibold">presented upon payment/check-in</strong> as proof of your reservation and payment transaction.
               </p>
-              <p className="text-xs sm:text-sm font-semibold text-amber-900 leading-relaxed">
+              <p className="text-xs sm:text-sm font-semibold text-amber-900 dark:text-amber-300 leading-relaxed">
                 Please keep your receipt safe and accessible on your phone.
               </p>
             </div>
 
             {/* Quick Booking Recap Box */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2.5">
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs space-y-2.5">
+              <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Booking Recap
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
-                <span className="text-slate-500">Accommodation:</span>
-                <strong className="text-slate-900 text-left sm:text-right break-words">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700 dark:text-slate-300">
+                <span className="text-slate-500 dark:text-slate-400">Accommodation:</span>
+                <strong className="text-slate-900 dark:text-white text-left sm:text-right break-words">
                   {room.name} ({room.type === "villa" ? "Function Hall" : room.type})
                 </strong>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
-                <span className="text-slate-500">Stay Dates:</span>
-                <strong className="text-slate-900 text-left sm:text-right font-mono text-[11px] sm:text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700 dark:text-slate-300">
+                <span className="text-slate-500 dark:text-slate-400">Stay Dates:</span>
+                <strong className="text-slate-900 dark:text-white text-left sm:text-right font-mono text-[11px] sm:text-xs">
                   {form.check_in} → {form.check_out} ({durationCount}{" "}
                   {rateType === "day"
                     ? durationCount > 1
@@ -1373,23 +1373,23 @@ function BookPage() {
                 </strong>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
-                <span className="text-slate-500">Guest Name:</span>
-                <strong className="text-slate-900 text-left sm:text-right break-words">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700 dark:text-slate-300">
+                <span className="text-slate-500 dark:text-slate-400">Guest Name:</span>
+                <strong className="text-slate-900 dark:text-white text-left sm:text-right break-words">
                   {form.fullname}
                 </strong>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
-                <span className="text-slate-500">Contact:</span>
-                <span className="text-slate-800 text-left sm:text-right break-all">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700 dark:text-slate-300">
+                <span className="text-slate-500 dark:text-slate-400">Contact:</span>
+                <span className="text-slate-800 dark:text-slate-200 text-left sm:text-right break-all">
                   {form.email} • {form.phone}
                 </span>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
-                <span className="text-slate-500">Number of Guests:</span>
-                <strong className="text-slate-900 text-left sm:text-right">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700 dark:text-slate-300">
+                <span className="text-slate-500 dark:text-slate-400">Number of Guests:</span>
+                <strong className="text-slate-900 dark:text-white text-left sm:text-right">
                   {form.guests} {Number(form.guests) === 1 ? "guest" : "guests"} {!isUnlimited && maxCapacity ? `(Capacity: ${maxCapacity})` : ""}
                 </strong>
               </div>
@@ -1397,21 +1397,21 @@ function BookPage() {
               {/* ONLY for Cottage reservations: Stay Type and Overnight Fee Breakdown */}
               {isCottage && (
                 <>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
-                    <span className="text-slate-500">Stay Type:</span>
-                    <strong className="text-slate-900 text-left sm:text-right">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700 dark:text-slate-300">
+                    <span className="text-slate-500 dark:text-slate-400">Stay Type:</span>
+                    <strong className="text-slate-900 dark:text-white text-left sm:text-right">
                       {stayType === "overnight" ? "Overnight Stay" : "Day Use"}
                     </strong>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
-                    <span className="text-slate-500">Accommodation Subtotal:</span>
-                    <strong className="text-slate-900 text-left sm:text-right">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700 dark:text-slate-300">
+                    <span className="text-slate-500 dark:text-slate-400">Accommodation Subtotal:</span>
+                    <strong className="text-slate-900 dark:text-white text-left sm:text-right">
                       ₱{baseTotal.toLocaleString()}
                     </strong>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
-                    <span className="text-slate-500">Overnight Cottage Fee:</span>
-                    <strong className={cn("text-left sm:text-right", stayType === "overnight" ? "text-[#B38728] font-bold" : "text-slate-900")}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700 dark:text-slate-300">
+                    <span className="text-slate-500 dark:text-slate-400">Overnight Cottage Fee:</span>
+                    <strong className={cn("text-left sm:text-right", stayType === "overnight" ? "text-[#B38728] font-bold" : "text-slate-900 dark:text-white")}>
                       ₱{cottageOvernightFee.toLocaleString()}
                     </strong>
                   </div>
@@ -1419,9 +1419,9 @@ function BookPage() {
               )}
               {/* Room category extra foam beds recap */}
               {isRoomCategory && (singleFoamBeds > 0 || doubleFoamBeds > 0) && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700">
-                  <span className="text-slate-500">Extra Beds:</span>
-                  <span className="text-slate-900 text-left sm:text-right font-medium">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-slate-700 dark:text-slate-300">
+                  <span className="text-slate-500 dark:text-slate-400">Extra Beds:</span>
+                  <span className="text-slate-900 dark:text-white text-left sm:text-right font-medium">
                     {[
                       singleFoamBeds > 0 ? `${singleFoamBeds} Single Foam Bed${singleFoamBeds > 1 ? "s" : ""}` : null,
                       doubleFoamBeds > 0 ? `${doubleFoamBeds} Double Foam Bed${doubleFoamBeds > 1 ? "s" : ""}` : null,
@@ -1430,8 +1430,8 @@ function BookPage() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                <span className="font-semibold text-slate-700">Total Price:</span>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Total Price:</span>
                 <strong className="text-base text-[#B38728] font-bold">
                   ₱{totalAmount.toLocaleString()}
                 </strong>
@@ -1440,13 +1440,13 @@ function BookPage() {
           </div>
 
           {/* Sticky Footer */}
-          <DialogFooter className="shrink-0 p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
+          <DialogFooter className="shrink-0 p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
             <Button
               type="button"
               variant="outline"
               onClick={() => setShowReminderModal(false)}
               disabled={submitting}
-              className="w-full sm:w-auto h-11 px-5 rounded-xl font-semibold border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+              className="w-full sm:w-auto h-11 px-5 rounded-xl font-semibold border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 mr-1.5" /> Go Back / Review Booking
             </Button>

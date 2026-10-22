@@ -23,25 +23,25 @@ import { useAdminStats } from "@/hooks/use-admin-stats";
 import { AdminStatsRow } from "@/components/AdminStatsRow";
 
 export const Route = createFileRoute("/admin/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Admin | Punong Spring Resort" }] }),
+  head: () => ({ meta: [{ title: "Dashboard â€” Admin | Punong Spring Resort" }] }),
   component: AdminDashboard,
 });
 
-// ─── Helper ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
-    approved: "bg-emerald-100 text-emerald-800 border-emerald-300",
-    pending: "bg-amber-100 text-amber-800 border-amber-300",
-    completed: "bg-blue-100 text-blue-800 border-blue-300",
-    cancelled: "bg-rose-100 text-rose-800 border-rose-200",
-    rejected: "bg-rose-100 text-rose-800 border-rose-200",
-    "no-show": "bg-slate-100 text-slate-600 border-slate-300",
+    approved: "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/60",
+    pending: "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/60",
+    completed: "bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700/60",
+    cancelled: "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-700/60",
+    rejected: "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-700/60",
+    "no-show": "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700",
   };
-  return map[status] ?? "bg-slate-100 text-slate-600 border-slate-200";
+  return map[status] ?? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700";
 }
 
-// ─── Main Component ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function AdminDashboard() {
   const todayStr = new Date().toISOString().split("T")[0];
@@ -81,12 +81,12 @@ function AdminDashboard() {
   const avgRating =
     feedbacks && feedbacks.length > 0
       ? (feedbacks.reduce((s: number, f: any) => s + Number(f.rating), 0) / feedbacks.length).toFixed(1)
-      : "—";
+      : "â€”";
 
   // Recent 8 bookings
   const recentBookings = allBookings.slice(0, 8);
 
-  // ── Booking Status Breakdown ───────────────────────────────────────────
+  // â”€â”€ Booking Status Breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const statusBreakdown = [
     { label: "Confirmed / Active", count: stats.approvedCount, icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
@@ -94,7 +94,7 @@ function AdminDashboard() {
     { label: "Awaiting Payments", count: pendingPayments ?? 0, icon: AlertCircle, color: "text-orange-600 bg-orange-50 border-orange-200" },
   ];
 
-  // ── Quick-Action Links ─────────────────────────────────────────────────
+  // â”€â”€ Quick-Action Links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const quickLinks = [
     { label: "View Calendar", to: "/admin/calendar", icon: CalendarDays, desc: "Monthly booking overview" },
@@ -108,8 +108,8 @@ function AdminDashboard() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-      {/* ── Page Title ─────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
+      {/* â”€â”€ Page Title â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38728] font-bold text-[10px] uppercase tracking-wider border border-[#D4AF37]/30">
@@ -119,40 +119,40 @@ function AdminDashboard() {
               {format(new Date(), "EEEE, MMMM d, yyyy")}
             </span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 font-display tracking-tight">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-display tracking-tight">
             Resort Performance Dashboard
           </h2>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             At-a-glance overview of bookings, revenue, occupancy, and operations.
           </p>
         </div>
 
         {/* Today's activity pills */}
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/60 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
             <Activity className="w-3.5 h-3.5" />
             {stats.todayCheckIns} Check-in{stats.todayCheckIns !== 1 ? "s" : ""} Today
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-700/60 text-xs font-semibold text-blue-700 dark:text-blue-300">
             <TrendingUp className="w-3.5 h-3.5" />
             {stats.todayCheckOuts} Check-out{stats.todayCheckOuts !== 1 ? "s" : ""} Today
           </div>
         </div>
       </div>
 
-      {/* ── KPI Cards (Unified Across Admin) ────────────────────────── */}
+      {/* â”€â”€ KPI Cards (Unified Across Admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <AdminStatsRow showSubtitles={true} />
 
-      {/* ── Status Breakdown + Quick Actions ───────────────────────── */}
+      {/* â”€â”€ Status Breakdown + Quick Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="grid gap-6 lg:grid-cols-5">
 
         {/* Status Breakdown (2 cols wide) */}
-        <div className="lg:col-span-2 rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-6">
+        <div className="lg:col-span-2 rounded-2xl bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] p-6">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-base font-bold text-slate-900 font-display">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white font-display">
               Booking Status
             </h3>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Live Counts
             </span>
           </div>
@@ -174,7 +174,7 @@ function AdminDashboard() {
             })}
 
             {/* Rating row */}
-            <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-yellow-200 bg-yellow-50 text-yellow-700">
+            <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-yellow-200 dark:border-yellow-700/60 bg-yellow-50 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300">
               <div className="flex items-center gap-2.5">
                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 <span className="text-sm font-semibold">Avg. Guest Rating</span>
@@ -185,12 +185,12 @@ function AdminDashboard() {
         </div>
 
         {/* Quick Actions (3 cols wide) */}
-        <div className="lg:col-span-3 rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-6">
+        <div className="lg:col-span-3 rounded-2xl bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] p-6">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-base font-bold text-slate-900 font-display">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white font-display">
               Quick Navigation
             </h3>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Shortcuts
             </span>
           </div>
@@ -201,18 +201,18 @@ function AdminDashboard() {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="group flex items-center gap-3 p-4 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-gradient-to-r hover:from-[#D4AF37]/10 hover:to-amber-50/30 hover:border-[#D4AF37]/40 transition-all duration-200 hover:shadow-sm"
+                  className="group flex items-center gap-3 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-gradient-to-r hover:from-[#D4AF37]/10 hover:to-amber-50/30 dark:hover:from-[#D4AF37]/10 dark:hover:to-amber-950/20 hover:border-[#D4AF37]/40 dark:hover:border-[#D4AF37]/40 transition-all duration-200 hover:shadow-sm"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-white shadow-sm border border-slate-200/80 flex items-center justify-center shrink-0 group-hover:bg-[#D4AF37]/15 group-hover:border-[#D4AF37]/30 transition-all">
-                    <Icon className="w-4 h-4 text-slate-600 group-hover:text-[#B38728]" />
+                  <div className="w-9 h-9 rounded-lg bg-white dark:bg-slate-700 shadow-sm border border-slate-200/80 dark:border-slate-600 flex items-center justify-center shrink-0 group-hover:bg-[#D4AF37]/15 group-hover:border-[#D4AF37]/30 transition-all">
+                    <Icon className="w-4 h-4 text-slate-600 dark:text-slate-300 group-hover:text-[#B38728] dark:group-hover:text-[#FACC15]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-800 group-hover:text-slate-900 truncate">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white truncate">
                       {link.label}
                     </p>
-                    <p className="text-[10px] text-slate-400 font-medium truncate">{link.desc}</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium truncate">{link.desc}</p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#D4AF37] shrink-0 -translate-x-1 group-hover:translate-x-0 transition-transform" />
+                  <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-[#D4AF37] shrink-0 -translate-x-1 group-hover:translate-x-0 transition-transform" />
                 </Link>
               );
             })}
@@ -220,11 +220,11 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Occupancy Overview ─────────────────────────────────────── */}
-      <div className="rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-6">
+      {/* â”€â”€ Occupancy Overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <div className="rounded-2xl bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="text-base font-bold text-slate-900 font-display">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white font-display">
               Room & Cottage Availability
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">Current occupancy status as of today</p>
@@ -277,15 +277,15 @@ function AdminDashboard() {
               return (
                 <div
                   key={room.id}
-                  className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60"
+                  className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40"
                 >
                   <div className={cn(
                     "w-2.5 h-2.5 rounded-full shrink-0",
                     inMaintenance ? "bg-orange-400" : occupied ? "bg-rose-500" : "bg-emerald-500"
                   )} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-slate-800 truncate">{room.name}</p>
-                    <p className="text-[10px] uppercase text-slate-400 font-semibold tracking-wide">{room.type}</p>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{room.name}</p>
+                    <p className="text-[10px] uppercase text-slate-400 dark:text-slate-500 font-semibold tracking-wide">{room.type}</p>
                   </div>
                   <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border", badge.cls)}>
                     {badge.label}
@@ -297,12 +297,12 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Recent Bookings ────────────────────────────────────────── */}
-      <div className="rounded-2xl bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      {/* â”€â”€ Recent Bookings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <div className="rounded-2xl bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h3 className="text-base font-bold text-slate-900 font-display">Recent Reservations</h3>
-            <p className="text-xs text-slate-400 mt-0.5">Latest 8 booking entries</p>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white font-display">Recent Reservations</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Latest 8 booking entries</p>
           </div>
           <Button
             asChild
@@ -316,7 +316,7 @@ function AdminDashboard() {
           </Button>
         </div>
 
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {recentBookings.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-sm">
               No bookings yet.
@@ -325,7 +325,7 @@ function AdminDashboard() {
             recentBookings.map((b: any) => (
               <div
                 key={b.id}
-                className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/80 transition-colors"
+                className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
               >
                 {/* Avatar */}
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#081216] to-[#1a2e3a] text-[#D4AF37] font-bold text-sm flex items-center justify-center shrink-0 border border-[#D4AF37]/30">
@@ -334,16 +334,16 @@ function AdminDashboard() {
 
                 {/* Guest + Room */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-900 truncate">{b.guest_name}</p>
-                  <p className="text-xs text-slate-400 truncate">
-                    {(b as any).room?.name ?? "—"} &bull; {b.check_in} → {b.check_out}
+                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{b.guest_name}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                    {(b as any).room?.name ?? "â€”"} &bull; {b.check_in} â†’ {b.check_out}
                   </p>
                 </div>
 
                 {/* Amount */}
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-extrabold text-[#B38728] font-display">
-                    ₱{Number(b.total_amount).toLocaleString()}
+                    â‚±{Number(b.total_amount).toLocaleString()}
                   </p>
                   <p className="text-[10px] text-slate-400">
                     {format(parseISO(b.created_at), "MMM d, yyyy")}
@@ -368,3 +368,5 @@ function AdminDashboard() {
     </div>
   );
 }
+
+

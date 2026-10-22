@@ -51,7 +51,7 @@ export function AdminStatsRow({ showSubtitles = false, className = "" }: AdminSt
         return (
           <div
             key={c.label}
-            className="relative overflow-hidden rounded-2xl bg-white p-5 border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] transition-all duration-300 group"
+            className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#151F2E] p-5 border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.3)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_10px_35px_rgba(0,0,0,0.45)] transition-all duration-300 group"
           >
             <div
               className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl ${c.color} rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none`}
@@ -63,14 +63,14 @@ export function AdminStatsRow({ showSubtitles = false, className = "" }: AdminSt
                 <Icon className="h-6 w-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] uppercase tracking-wider font-bold text-slate-600 truncate">
+                <p className="text-[11px] uppercase tracking-wider font-bold text-slate-600 dark:text-slate-400 truncate">
                   {c.label}
                 </p>
-                <p className="text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5 font-sans">
+                <p className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-0.5 font-sans">
                   {c.value}
                 </p>
                 {showSubtitles && (
-                  <p className="text-[10px] text-slate-400 mt-0.5 font-medium truncate">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-0.5 font-medium truncate">
                     {c.sub}
                   </p>
                 )}

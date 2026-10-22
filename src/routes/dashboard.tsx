@@ -497,7 +497,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/60 font-sans">
+    <div className="min-h-screen bg-slate-50/60 dark:bg-[#0B111A] font-sans">
       <Navbar />
       
       <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl space-y-8">
@@ -585,7 +585,7 @@ function Dashboard() {
         </div>
 
         {/* Primary Dashboard Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/80 pb-1">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-1">
           <button
             type="button"
             onClick={() => {
@@ -595,8 +595,8 @@ function Dashboard() {
             className={cn(
               "flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
               activeTab === "bookings" && statusFilter !== "cancelled"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                ? "bg-slate-900 dark:bg-slate-800 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/80"
             )}
           >
             <Calendar className="w-4 h-4 text-[#D4AF37]" />
@@ -614,7 +614,7 @@ function Dashboard() {
               "flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer",
               activeTab === "bookings" && statusFilter === "cancelled"
                 ? "bg-rose-900 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/80"
             )}
           >
             <XCircle className="w-4 h-4 text-rose-500" />
@@ -628,8 +628,8 @@ function Dashboard() {
             className={cn(
               "flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer relative",
               activeTab === "messages"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                ? "bg-slate-900 dark:bg-slate-800 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/80"
             )}
           >
             <MessageSquareQuote className="w-4 h-4 text-[#D4AF37]" />
@@ -645,18 +645,18 @@ function Dashboard() {
         {activeTab === "bookings" ? (
           <>
             {/* Status Filter Tabs & Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 font-display">My Reservations Ledger</h2>
-                <p className="text-xs text-slate-500">Filtered view of your historical and upcoming bookings.</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white font-display">My Reservations Ledger</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Filtered view of your historical and upcoming bookings.</p>
               </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-200/60 p-1.5 rounded-2xl border border-slate-200">
+          <div className="flex items-center gap-1.5 bg-slate-200/60 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setStatusFilter("all")}
               className={cn(
                 "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer",
-                statusFilter === "all" ? "bg-white text-slate-900 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
+                statusFilter === "all" ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-bold" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               All ({bookings.length})
@@ -665,7 +665,7 @@ function Dashboard() {
               onClick={() => setStatusFilter("approved")}
               className={cn(
                 "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer",
-                statusFilter === "approved" ? "bg-white text-emerald-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
+                statusFilter === "approved" ? "bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               Active ({activeCount})
@@ -674,7 +674,7 @@ function Dashboard() {
               onClick={() => setStatusFilter("completed")}
               className={cn(
                 "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer",
-                statusFilter === "completed" ? "bg-white text-blue-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
+                statusFilter === "completed" ? "bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm font-bold" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               Completed ({completedCount})
@@ -683,7 +683,7 @@ function Dashboard() {
               onClick={() => setStatusFilter("cancelled")}
               className={cn(
                 "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
-                statusFilter === "cancelled" ? "bg-white text-rose-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
+                statusFilter === "cancelled" ? "bg-white dark:bg-slate-700 text-rose-700 dark:text-rose-300 shadow-sm font-bold" : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               <XCircle className="w-3.5 h-3.5 text-rose-500" />
@@ -694,15 +694,15 @@ function Dashboard() {
 
         {/* Bookings Card List */}
         {filteredBookings.length === 0 ? (
-          <div className="p-12 text-center border border-slate-200 rounded-3xl bg-white shadow-sm space-y-4">
-            <div className="w-16 h-16 rounded-full bg-amber-50 text-[#D4AF37] flex items-center justify-center mx-auto border border-[#D4AF37]/30">
+          <div className="p-12 text-center border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-[#151F2E] shadow-sm space-y-4">
+            <div className="w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-950/40 text-[#D4AF37] flex items-center justify-center mx-auto border border-[#D4AF37]/30">
               <Calendar className="w-8 h-8" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900 font-display">No Reservations Found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">You don't have any bookings matching this status filter yet.</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white font-display">No Reservations Found</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">You don't have any bookings matching this status filter yet.</p>
             </div>
-            <Button asChild className="bg-slate-900 hover:bg-slate-800 text-white font-bold h-10 px-6 rounded-xl">
+            <Button asChild className="bg-slate-900 dark:bg-[#D4AF37] hover:bg-slate-800 dark:hover:bg-[#B38728] text-white dark:text-slate-950 font-bold h-10 px-6 rounded-xl">
               <Link to="/rooms">Browse Accommodations</Link>
             </Button>
           </div>
@@ -719,7 +719,7 @@ function Dashboard() {
               return (
                 <div 
                   key={b.id} 
-                  className="rounded-2xl border border-slate-200/90 shadow-[0_4px_25px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_35px_rgba(212,175,55,0.08)] transition-all duration-300 overflow-hidden bg-white group flex flex-col md:flex-row"
+                  className="rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-[0_4px_25px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_35px_rgba(212,175,55,0.08)] transition-all duration-300 overflow-hidden bg-white dark:bg-[#151F2E] group flex flex-col md:flex-row"
                 >
                   {/* Left Room Thumbnail Cover */}
                   <div className="relative md:w-72 h-48 md:h-auto bg-slate-900 shrink-0 overflow-hidden">
@@ -744,13 +744,13 @@ function Dashboard() {
                     <div>
                       <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
                         <div>
-                          <h3 className="text-xl font-bold font-display text-slate-900">{b.room?.name}</h3>
+                          <h3 className="text-xl font-bold font-display text-slate-900 dark:text-white">{b.room?.name}</h3>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
                               <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
                               {b.check_in} → {b.check_out}
                             </span>
-                            <span className="text-xs font-semibold text-slate-500 flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-full">
+                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200/50 dark:border-slate-700">
                               <Users className="w-3.5 h-3.5 text-slate-400" />
                               {b.guests} guest{b.guests === 1 ? '' : 's'}
                             </span>
@@ -761,10 +761,10 @@ function Dashboard() {
                         <div>
                           <Badge className={cn(
                             "px-3 py-1 rounded-full font-bold text-xs capitalize shadow-sm flex items-center gap-1",
-                            b.status === "approved" ? "bg-emerald-100 text-emerald-800 border border-emerald-300" :
-                            b.status === "completed" ? "bg-blue-100 text-blue-800 border border-blue-300" :
-                            b.status === "pending" ? "bg-amber-100 text-amber-800 border border-amber-300 animate-pulse" :
-                            "bg-rose-100 text-rose-800 border border-rose-300"
+                            b.status === "approved" ? "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60" :
+                            b.status === "completed" ? "bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60" :
+                            b.status === "pending" ? "bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 animate-pulse" :
+                            "bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60"
                           )}>
                             {b.status === "approved" && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mr-0.5" />}
                             {b.status === "completed" && <Check className="w-3.5 h-3.5 text-blue-600 mr-0.5" />}
@@ -776,11 +776,11 @@ function Dashboard() {
                       </div>
 
                       {/* Guest Details Container */}
-                      <div className="mt-4 p-3.5 rounded-xl bg-slate-50/90 border-l-4 border-[#D4AF37] border-y border-r border-slate-200/80 text-xs text-slate-600 space-y-1">
-                        <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">Guest & Reservation Details</div>
-                        <div className="flex flex-wrap items-center gap-4 text-slate-700 font-medium">
-                          <span>Name: <strong className="text-slate-900">{b.guest_name}</strong></span>
-                          <span>Ref ID: <strong className="font-mono bg-slate-200/80 px-1.5 py-0.5 rounded text-[10px] text-slate-800">{formatBookingReference(b)}</strong></span>
+                      <div className="mt-4 p-3.5 rounded-xl bg-slate-50/90 dark:bg-slate-800/60 border-l-4 border-[#D4AF37] border-y border-r border-slate-200/80 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                        <div className="font-bold text-slate-800 dark:text-slate-200 text-[11px] uppercase tracking-wider">Guest & Reservation Details</div>
+                        <div className="flex flex-wrap items-center gap-4 text-slate-700 dark:text-slate-300 font-medium">
+                          <span>Name: <strong className="text-slate-900 dark:text-white">{b.guest_name}</strong></span>
+                          <span>Ref ID: <strong className="font-mono bg-slate-200/80 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[10px] text-slate-800 dark:text-slate-200">{formatBookingReference(b)}</strong></span>
                           <span>Contact: <strong>{b.guest_email}</strong> • <strong>{b.guest_phone}</strong></span>
                           {b.room?.type === "cottage" && (
                             <span className="flex items-center gap-1.5">
@@ -788,8 +788,8 @@ function Dashboard() {
                               <strong className={cn(
                                 "px-2 py-0.5 rounded font-semibold text-[11px]",
                                 (b.stay_type === "overnight" || Number(b.overnight_fee) > 0 || b.special_requests?.toLowerCase().includes("overnight"))
-                                  ? "bg-amber-100 text-amber-900 border border-amber-300"
-                                  : "bg-slate-200/70 text-slate-800"
+                                  ? "bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+                                  : "bg-slate-200/70 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                               )}>
                                 {(b.stay_type === "overnight" || Number(b.overnight_fee) > 0 || b.special_requests?.toLowerCase().includes("overnight"))
                                   ? "Overnight Stay (+₱1,000 Fee)"
@@ -802,29 +802,29 @@ function Dashboard() {
 
                       {/* Cancelled Booking Record Banner */}
                       {(b.status === "cancelled" || b.status === "rejected") && (
-                        <div className="mt-3 p-3.5 rounded-xl bg-rose-50/90 border-l-4 border-rose-500 border-y border-r border-rose-200 text-xs text-rose-900 space-y-1.5">
+                        <div className="mt-3 p-3.5 rounded-xl bg-rose-50/90 dark:bg-rose-950/30 border-l-4 border-rose-500 border-y border-r border-rose-200 dark:border-rose-900/50 text-xs text-rose-900 dark:text-rose-200 space-y-1.5">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="font-bold flex items-center gap-1.5 text-rose-800 text-[11px] uppercase tracking-wider">
+                            <div className="font-bold flex items-center gap-1.5 text-rose-800 dark:text-rose-300 text-[11px] uppercase tracking-wider">
                               <XCircle className="w-3.5 h-3.5 text-rose-600" />
                               Cancelled Booking Record
                             </div>
                             {notes.cancellation_date && (
-                              <span className="text-[11px] text-rose-700 font-medium">
+                              <span className="text-[11px] text-rose-700 dark:text-rose-300 font-medium">
                                 Cancelled: {new Date(notes.cancellation_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                               </span>
                             )}
                           </div>
-                          <div className="text-slate-700">
-                            Reason: <strong className="text-rose-950 font-semibold">{notes.cancellation_reason || "Requested by guest"}</strong>
+                          <div className="text-slate-700 dark:text-slate-300">
+                            Reason: <strong className="text-rose-950 dark:text-rose-200 font-semibold">{notes.cancellation_reason || "Requested by guest"}</strong>
                           </div>
                           {isGcash && (
-                            <div className="text-[11px] text-amber-900 bg-amber-50/90 p-2.5 rounded-lg border border-amber-200/90 font-medium flex items-center gap-2 mt-1">
+                            <div className="text-[11px] text-amber-900 dark:text-amber-200 bg-amber-50/90 dark:bg-amber-950/40 p-2.5 rounded-lg border border-amber-200/90 dark:border-amber-800/60 font-medium flex items-center gap-2 mt-1">
                               <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                               <span>GCash refund request logged. Resort administration will review and process your refund.</span>
                             </div>
                           )}
                           {isResort && (
-                            <div className="text-[11px] text-slate-600 bg-white/80 p-2 rounded-lg border border-rose-100 font-medium">
+                            <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 p-2 rounded-lg border border-rose-100 dark:border-rose-900/50 font-medium">
                               Pay at resort reservation cancelled. No charge was incurred.
                             </div>
                           )}
@@ -833,14 +833,14 @@ function Dashboard() {
                     </div>
 
                     {/* Footer Row: Total Amount & Payment & Actions */}
-                    <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
-                        <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 block">Total Stay Price</span>
-                        <span className="text-2xl font-extrabold text-[#B38728] font-display">
+                        <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-400 dark:text-slate-500 block">Total Stay Price</span>
+                        <span className="text-2xl font-extrabold text-[#B38728] dark:text-[#D4AF37] font-display">
                           ₱{Number(b.total_amount).toLocaleString()}
                         </span>
                         {b.room?.type === "cottage" && (b.stay_type === "overnight" || Number(b.overnight_fee) > 0 || b.special_requests?.toLowerCase().includes("overnight")) && (
-                          <span className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded block mt-0.5 font-medium">
+                          <span className="text-[10px] text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 px-1.5 py-0.5 rounded block mt-0.5 font-medium">
                             Includes ₱1,000 Overnight Cottage Fee
                           </span>
                         )}
@@ -854,7 +854,7 @@ function Dashboard() {
                           <Button 
                             variant="default" 
                             size="sm" 
-                            className="bg-slate-900 hover:bg-slate-800 text-white font-bold h-9 px-4 rounded-xl text-xs shadow-sm cursor-pointer disabled:opacity-75 flex items-center"
+                            className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold h-9 px-4 rounded-xl text-xs shadow-sm cursor-pointer disabled:opacity-75 flex items-center border border-transparent dark:border-slate-700"
                             disabled={downloadingReceiptId === b.id}
                             onClick={() => handleDownloadReceipt(b)}
                           >
@@ -873,10 +873,10 @@ function Dashboard() {
                             asChild
                             variant="outline"
                             size="sm"
-                            className="border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+                            className="border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
                           >
                             <Link to="/receipt/$bookingId" params={{ bookingId: b.id }}>
-                              <Eye className="w-3.5 h-3.5 text-slate-600" /> View Receipt
+                              <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" /> View Receipt
                             </Link>
                           </Button>
 
@@ -885,7 +885,7 @@ function Dashboard() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border-[#D4AF37] bg-amber-50/60 hover:bg-[#D4AF37]/20 text-[#B38728] font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
+                              className="border-[#D4AF37] bg-amber-50/60 dark:bg-amber-950/30 hover:bg-[#D4AF37]/20 text-[#B38728] dark:text-[#D4AF37] font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
                               onClick={() => setFeedbackData({ id: b.id, booking: b })}
                             >
                               <Star className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" /> Leave Feedback
@@ -893,7 +893,7 @@ function Dashboard() {
                           )}
 
                           {b.feedbacks && b.feedbacks.length > 0 && (
-                            <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-900 border border-[#D4AF37]/40 rounded-xl text-xs font-semibold">
+                            <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border border-[#D4AF37]/40 rounded-xl text-xs font-semibold">
                               <Star className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
                               <span>Feedback Left ({b.feedbacks[0].rating}/5 ★)</span>
                             </div>
@@ -903,7 +903,7 @@ function Dashboard() {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="border-rose-300 bg-rose-50/70 hover:bg-rose-100 text-rose-700 hover:text-rose-800 font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                              className="border-rose-300 dark:border-rose-800 bg-rose-50/70 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 hover:text-rose-800 dark:hover:text-rose-200 font-bold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
                               onClick={() => handleOpenCancelModal(b)}
                             >
                               <XCircle className="w-3.5 h-3.5 text-rose-600" />
@@ -937,31 +937,31 @@ function Dashboard() {
 
           {/* Selected Booking Details (Exact Reservation Only - No Dropdown) */}
           {cancelData?.booking && (
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2.5">
-              <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/70">
-                <span className="font-bold text-slate-900 text-sm">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs space-y-2.5">
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/70 dark:border-slate-700">
+                <span className="font-bold text-slate-900 dark:text-white text-sm">
                   {cancelData.booking.room?.name || "Accommodation"}
                 </span>
-                <span className="font-mono bg-slate-200/80 px-2 py-0.5 rounded text-[11px] font-bold text-slate-800">
+                <span className="font-mono bg-slate-200/80 dark:bg-slate-700 px-2 py-0.5 rounded text-[11px] font-bold text-slate-800 dark:text-slate-200">
                   Ref: {formatBookingReference(cancelData.booking)}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2.5 text-slate-600">
+              <div className="grid grid-cols-2 gap-2.5 text-slate-600 dark:text-slate-300">
                 <div>
                   <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Check-in Date</span>
-                  <strong className="text-slate-800 text-xs">{cancelData.booking.check_in}</strong>
+                  <strong className="text-slate-800 dark:text-white text-xs">{cancelData.booking.check_in}</strong>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Check-out Date</span>
-                  <strong className="text-slate-800 text-xs">{cancelData.booking.check_out}</strong>
+                  <strong className="text-slate-800 dark:text-white text-xs">{cancelData.booking.check_out}</strong>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Total Amount</span>
-                  <strong className="text-[#B38728] text-sm">₱{Number(cancelData.booking.total_amount).toLocaleString()}</strong>
+                  <strong className="text-[#B38728] dark:text-[#D4AF37] text-sm">₱{Number(cancelData.booking.total_amount).toLocaleString()}</strong>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Booking ID</span>
-                  <span className="font-mono text-[11px] text-slate-700 font-semibold block truncate" title={cancelData.booking.id}>
+                  <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300 font-semibold block truncate" title={cancelData.booking.id}>
                     {cancelData.booking.id}
                   </span>
                 </div>
@@ -971,9 +971,9 @@ function Dashboard() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-600">Select Cancellation Reason *</Label>
+              <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Select Cancellation Reason *</Label>
               <Select value={cancelReason} onValueChange={setCancelReason}>
-                <SelectTrigger className="rounded-xl border-slate-200 h-10">
+                <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white h-10">
                   <SelectValue placeholder="Select a reason for cancellation" />
                 </SelectTrigger>
                 <SelectContent>
@@ -990,17 +990,17 @@ function Dashboard() {
 
             {cancelReason === "Other" && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-600">Please specify reason *</Label>
+                <Label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Please specify reason *</Label>
                 <Input
                   placeholder="Tell us why you need to cancel..."
                   value={otherReasonText}
                   onChange={(e) => setOtherReasonText(e.target.value)}
-                  className="rounded-xl border-slate-200 text-xs h-10"
+                  className="rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-xs h-10"
                 />
               </div>
             )}
 
-            <div className="bg-rose-50 border border-rose-200 p-3.5 rounded-xl text-xs text-rose-800 leading-relaxed font-medium">
+            <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 p-3.5 rounded-xl text-xs text-rose-800 dark:text-rose-200 leading-relaxed font-medium">
               Are you sure you want to cancel this booking? Once confirmed, this reservation will be released and marked as <strong>Cancelled Booked</strong>.
               {cancelData?.payment?.notes?.includes("gcash") && " For GCash payments, refund requests are recorded and reviewed by resort administration."}
             </div>
@@ -1036,33 +1036,33 @@ function Dashboard() {
       <Dialog open={editingName} onOpenChange={setEditingName}>
         <DialogContent className="rounded-2xl max-w-md p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold font-display text-slate-900 flex items-center gap-2">
+            <DialogTitle className="text-lg font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
               <User className="w-5 h-5 text-[#D4AF37]" />
               Update Profile & Contact
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-600">
+            <DialogDescription className="text-xs text-slate-600 dark:text-slate-400">
               Please enter your complete full name and mobile number as you would like them to appear on your reservations and receipts.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleUpdateName} className="space-y-4 py-2">
             <div>
-              <Label className="text-xs font-semibold uppercase text-slate-600">Full Name *</Label>
+              <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Full Name *</Label>
               <Input
                 required
                 placeholder="e.g. Gavreel Gomez"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
-                className="mt-1 rounded-xl border-slate-200"
+                className="mt-1 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 autoFocus
               />
             </div>
             <PhoneInputField
-              label={<span className="text-xs font-semibold uppercase text-slate-600">Mobile Number (Optional)</span>}
+              label={<span className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Mobile Number (Optional)</span>}
               required={false}
               value={phoneInput}
               onChange={setPhoneInput}
-              inputClassName="mt-1 rounded-xl border-slate-200"
+              inputClassName="mt-1 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               helperText="Must be an 11-digit Philippine mobile number starting with 09."
             />
             <DialogFooter className="flex justify-end gap-2 pt-2">
@@ -1101,23 +1101,23 @@ function Dashboard() {
       <Dialog open={!!feedbackData} onOpenChange={(o) => !o && setFeedbackData(null)}>
         <DialogContent className="rounded-2xl max-w-md p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold font-display flex items-center gap-2">
+            <DialogTitle className="text-lg font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
               <Star className="w-5 h-5 text-[#D4AF37] fill-[#D4AF37]" />
               Share Your Resort Experience
             </DialogTitle>
           </DialogHeader>
 
           {feedbackData && (
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs space-y-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Reservation</span>
-              <div className="font-semibold text-slate-800">
+              <div className="font-semibold text-slate-800 dark:text-white">
                 {bookings.find((b: any) => b.id === feedbackData.id)?.room?.name || feedbackData.booking?.room?.name || "Punong Spring Resort Stay"}
               </div>
             </div>
           )}
           <form onSubmit={handleFeedbackSubmit} className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-600">Star Rating</Label>
+              <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Star Rating</Label>
               <div className="flex items-center gap-2 pt-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -1146,14 +1146,14 @@ function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase text-slate-600">Your Comments & Review</Label>
+              <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Your Comments & Review</Label>
               <textarea
                 required
                 rows={4}
                 value={feedbackComment}
                 onChange={(e) => setFeedbackComment(e.target.value)}
                 placeholder="Tell us what you loved about your stay..."
-                className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+                className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
               />
             </div>
 
@@ -1258,29 +1258,29 @@ function PaymentSection({ booking, onChange }: { booking: any; onChange: () => v
     <div className="flex flex-col items-start sm:items-end gap-1.5 text-right">
       <div className="flex flex-wrap items-center gap-2">
         {isResort && (
-          <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 font-semibold px-2.5 py-0.5 rounded-full text-xs">
+          <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700 font-semibold px-2.5 py-0.5 rounded-full text-xs">
             <Banknote className="w-3.5 h-3.5 mr-1 text-amber-600" /> Pay at Resort
           </Badge>
         )}
         {isGcash && (
-          <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 font-semibold px-2.5 py-0.5 rounded-full text-xs">
+          <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700 font-semibold px-2.5 py-0.5 rounded-full text-xs">
             <CreditCard className="w-3.5 h-3.5 mr-1 text-blue-600" /> GCash Transfer
           </Badge>
         )}
         
         {isResort && payment.status !== "verified" && (
-          <Badge className="bg-amber-100 text-amber-800 border border-amber-300 font-semibold px-2.5 py-0.5 rounded-full text-xs">Unpaid</Badge>
+          <Badge className="bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 font-semibold px-2.5 py-0.5 rounded-full text-xs">Unpaid</Badge>
         )}
         {isResort && payment.status === "verified" && (
-          <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold px-2.5 py-0.5 rounded-full text-xs">Paid</Badge>
+          <Badge className="bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 font-semibold px-2.5 py-0.5 rounded-full text-xs">Paid</Badge>
         )}
         
         {isGcash && (
           <Badge className={cn(
             "px-2.5 py-0.5 rounded-full font-semibold text-xs",
-            payment.status === "verified" ? "bg-emerald-100 text-emerald-800 border border-emerald-300" :
-            payment.status === "rejected" ? "bg-rose-100 text-rose-800 border border-rose-200" :
-            "bg-amber-100 text-amber-800 border border-amber-300 animate-pulse"
+            payment.status === "verified" ? "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700" :
+            payment.status === "rejected" ? "bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800" :
+            "bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 animate-pulse"
           )}>
             Payment: {payment.status === "pending" ? "Awaiting Verification" : payment.status === "rejected" ? "Declined" : payment.status}
           </Badge>
@@ -1288,7 +1288,7 @@ function PaymentSection({ booking, onChange }: { booking: any; onChange: () => v
       </div>
 
       {isGcash && payment.status === "rejected" && parsedNotes.remarks && (
-        <div className="text-xs text-rose-700 flex items-center gap-1 mt-1 bg-rose-50 border border-rose-200 px-3 py-1 rounded-xl">
+        <div className="text-xs text-rose-700 dark:text-rose-300 flex items-center gap-1 mt-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 px-3 py-1 rounded-xl">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           Reason: {parsedNotes.remarks}
         </div>
@@ -1296,9 +1296,9 @@ function PaymentSection({ booking, onChange }: { booking: any; onChange: () => v
 
       <div className="flex items-center gap-2 mt-1">
         {payment.receipt_url && (
-          <Button size="sm" variant="outline" asChild className="h-8 text-xs font-semibold rounded-xl">
+          <Button size="sm" variant="outline" asChild className="h-8 text-xs font-semibold rounded-xl border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200">
             <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer">
-              <Eye className="mr-1.5 h-3.5 w-3.5 text-slate-600" /> View Payment Proof
+              <Eye className="mr-1.5 h-3.5 w-3.5 text-slate-600 dark:text-slate-300" /> View Payment Proof
             </a>
           </Button>
         )}
@@ -1312,11 +1312,11 @@ function PaymentSection({ booking, onChange }: { booking: any; onChange: () => v
             </DialogTrigger>
             <DialogContent className="rounded-2xl max-w-md p-6">
               <DialogHeader>
-                <DialogTitle className="text-lg font-bold font-display">Re-upload GCash Receipt</DialogTitle>
+                <DialogTitle className="text-lg font-bold font-display text-slate-900 dark:text-white">Re-upload GCash Receipt</DialogTitle>
               </DialogHeader>
               <form onSubmit={upload} className="space-y-4 py-2">
                 <div>
-                  <Label className="text-xs font-semibold uppercase text-slate-600">GCash Reference Number</Label>
+                  <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">GCash Reference Number</Label>
                   <Input
                     required
                     placeholder="e.g. 100234958"
@@ -1326,7 +1326,7 @@ function PaymentSection({ booking, onChange }: { booking: any; onChange: () => v
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold uppercase text-slate-600">Amount Paid (₱)</Label>
+                  <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Amount Paid (₱)</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -1338,7 +1338,7 @@ function PaymentSection({ booking, onChange }: { booking: any; onChange: () => v
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold uppercase text-slate-600">Receipt Image (JPG/PNG)</Label>
+                  <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Receipt Image (JPG/PNG)</Label>
                   <Input
                     type="file"
                     accept="image/jpeg, image/jpg, image/png"

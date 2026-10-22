@@ -327,18 +327,18 @@ function BookingsTab() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Top Header & Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38728] font-bold text-[10px] uppercase tracking-wider border border-[#D4AF37]/30">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38728] dark:text-[#FACC15] font-bold text-[10px] uppercase tracking-wider border border-[#D4AF37]/30">
               Reservation Control
             </span>
-            <span className="text-xs text-slate-400 font-medium">({filteredBookings.length} Active Booking{filteredBookings.length === 1 ? '' : 's'})</span>
+            <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">({filteredBookings.length} Active Booking{filteredBookings.length === 1 ? '' : 's'})</span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 font-display tracking-tight mt-1">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-display tracking-tight mt-1">
             Bookings & Payment Ledger
           </h2>
-          <p className="text-sm text-slate-500">Verify GCash receipts, update stay statuses, and manage guest reservations.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Verify GCash receipts, update stay statuses, and manage guest reservations.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -346,16 +346,16 @@ function BookingsTab() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search Name, ID, or Ref No..."
-              className="pl-9 h-10 border-slate-200 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] bg-slate-50/50 rounded-xl transition-all"
+              className="pl-9 h-10 border-slate-200 dark:border-slate-700 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] bg-slate-50/50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 rounded-xl transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-52 h-10 rounded-xl border-slate-200 bg-slate-50/50">
+            <SelectTrigger className="w-full md:w-52 h-10 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100">
               <SelectValue placeholder="Status Filter" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-[#1E293B] dark:border-slate-700 dark:text-slate-100">
               <SelectItem value="all">All Bookings</SelectItem>
               <SelectItem value="approved">Confirmed Bookings</SelectItem>
               <SelectItem value="completed">Completed Bookings</SelectItem>
@@ -367,16 +367,16 @@ function BookingsTab() {
       </div>
       
       {/* Table Container */}
-      <div className="overflow-hidden rounded-xl border border-slate-200/80 shadow-sm bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm bg-white dark:bg-[#151F2E]">
         <Table>
-          <TableHeader className="bg-slate-50/80">
-            <TableRow className="border-b border-slate-200/80">
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Guest & Booking ID</TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Room & Dates</TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Total Amount</TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Payment Method</TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">Statuses</TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4 text-right pr-6">Quick Actions</TableHead>
+          <TableHeader className="bg-slate-50/80 dark:bg-slate-800/60">
+            <TableRow className="border-b border-slate-200/80 dark:border-slate-800">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Guest & Booking ID</TableHead>
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Room & Dates</TableHead>
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Total Amount</TableHead>
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Payment Method</TableHead>
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Statuses</TableHead>
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4 text-right pr-6">Quick Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -385,7 +385,7 @@ function BookingsTab() {
                 <TableCell colSpan={6} className="h-40 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
-                    <p className="text-xs uppercase tracking-widest font-semibold text-slate-500">
+                    <p className="text-xs uppercase tracking-widest font-semibold text-slate-500 dark:text-slate-400">
                       Loading reservations ledger...
                     </p>
                   </div>
@@ -395,8 +395,8 @@ function BookingsTab() {
               <TableRow>
                 <TableCell colSpan={6} className="h-40 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <CalendarClock className="h-8 w-8 text-slate-300" />
-                    <p className="text-sm font-medium">No bookings found matching your search or status filter.</p>
+                    <CalendarClock className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No bookings found matching your search or status filter.</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -424,45 +424,45 @@ function BookingsTab() {
               const accommodationSubtotal = isCottage ? Math.max(0, totalAmount - cottageOvernightFee) : totalAmount;
 
               return (
-                <TableRow key={b.id} className="hover:bg-slate-50/80 transition-colors border-b border-slate-100">
+                <TableRow key={b.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-slate-800">
                   <TableCell className="py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-slate-900 to-slate-800 text-[#D4AF37] flex items-center justify-center font-bold text-sm shrink-0 ring-2 ring-[#D4AF37]/30 shadow-md">
                         {initial}
                       </div>
                       <div>
-                        <div className="font-semibold text-slate-900 text-sm">{b.guest_name}</div>
+                        <div className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{b.guest_name}</div>
                         <div className="text-xs text-slate-400 font-mono flex items-center gap-1">
-                          ID: <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] text-slate-600 font-semibold">{b.id.split("-")[0]}</span>
+                          ID: <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300 font-semibold">{b.id.split("-")[0]}</span>
                         </div>
-                        <div className="text-xs text-slate-500">{b.guest_email}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{b.guest_email}</div>
                       </div>
                     </div>
                   </TableCell>
 
                   <TableCell className="py-4">
-                    <div className="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                    <div className="font-semibold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
                       {b.room?.name || "Room"}
                       {b.room?.type && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                           {b.room.type === "villa" ? "Function Hall" : b.room.type}
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-                      <span className="font-medium text-slate-700">{b.check_in}</span> 
-                      <span className="text-slate-300">→</span> 
-                      <span className="font-medium text-slate-700">{b.check_out}</span>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{b.check_in}</span> 
+                      <span className="text-slate-300 dark:text-slate-600">→</span> 
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{b.check_out}</span>
                     </div>
                     {/* ONLY for Cottage: show Stay Type badge */}
                     {isCottage && (
                       <div className="mt-1 flex items-center gap-1.5">
-                        <span className="text-[11px] text-slate-500">Stay Type:</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">Stay Type:</span>
                         <span className={cn(
                           "text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider",
                           isOvernightCottage 
-                            ? "bg-amber-100 text-amber-900 border border-amber-300"
-                            : "bg-slate-100 text-slate-700 border border-slate-200"
+                            ? "bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                         )}>
                           {stayTypeLabel}
                         </span>
@@ -471,19 +471,19 @@ function BookingsTab() {
                   </TableCell>
 
                   <TableCell className="py-4">
-                    <div className="font-display font-extrabold text-[#B38728] text-base">
+                    <div className="font-display font-extrabold text-[#B38728] dark:text-[#FACC15] text-base">
                       ₱{totalAmount.toLocaleString()}
                     </div>
                     {/* ONLY for Cottage: show breakdown of Subtotal and Overnight Cottage Fee */}
                     {isCottage ? (
-                      <div className="text-[11px] text-slate-500 mt-1 space-y-0.5 border-t border-slate-100 pt-1">
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 space-y-0.5 border-t border-slate-100 dark:border-slate-800 pt-1">
                         <div className="flex justify-between gap-2">
                           <span>Subtotal:</span>
-                          <span className="font-medium text-slate-700">₱{accommodationSubtotal.toLocaleString()}</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300">₱{accommodationSubtotal.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between gap-2">
                           <span>Overnight Fee:</span>
-                          <span className={isOvernightCottage ? "font-bold text-[#B38728]" : "text-slate-600"}>
+                          <span className={isOvernightCottage ? "font-bold text-[#B38728] dark:text-[#FACC15]" : "text-slate-600 dark:text-slate-400"}>
                             ₱{cottageOvernightFee.toLocaleString()}
                           </span>
                         </div>
@@ -495,15 +495,15 @@ function BookingsTab() {
 
                   <TableCell className="py-4">
                     {isResort ? (
-                      <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 font-semibold px-2.5 py-1">
-                        <Banknote className="w-3.5 h-3.5 mr-1.5 text-amber-600" /> Pay at Resort
+                      <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700/60 font-semibold px-2.5 py-1">
+                        <Banknote className="w-3.5 h-3.5 mr-1.5 text-amber-600 dark:text-amber-400" /> Pay at Resort
                       </Badge>
                     ) : isGcash ? (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 font-semibold px-2.5 py-1">
-                        <CreditCard className="w-3.5 h-3.5 mr-1.5 text-blue-600" /> GCash Transfer
+                      <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700/60 font-semibold px-2.5 py-1">
+                        <CreditCard className="w-3.5 h-3.5 mr-1.5 text-blue-600 dark:text-blue-400" /> GCash Transfer
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-slate-500">Standard Payment</Badge>
+                      <Badge variant="outline" className="text-slate-500 dark:text-slate-400 dark:border-slate-700">Standard Payment</Badge>
                     )}
                   </TableCell>
 
@@ -513,9 +513,9 @@ function BookingsTab() {
                       <Badge 
                         className={cn(
                           "px-2.5 py-0.5 rounded-full font-semibold text-[11px]",
-                          p?.status === "verified" ? "bg-emerald-100 text-emerald-800 border border-emerald-300" :
-                          p?.status === "rejected" ? "bg-rose-100 text-rose-800 border border-rose-200" :
-                          "bg-amber-100 text-amber-800 border border-amber-300 animate-pulse"
+                          p?.status === "verified" ? "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700" :
+                          p?.status === "rejected" ? "bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-700" :
+                          "bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 animate-pulse"
                         )}
                       >
                         {p?.status === "pending" ? "Awaiting Verification" : p?.status === "rejected" ? "Declined" : (p?.status || "Unpaid")}
@@ -523,7 +523,7 @@ function BookingsTab() {
                     </div>
                     <div className="flex flex-col gap-1 items-start">
                       <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Booking Status</span>
-                      <Badge variant={b.status === "approved" || b.status === "completed" ? "default" : "secondary"} className="capitalize px-2.5 py-0.5 font-semibold text-[11px]">
+                      <Badge variant={b.status === "approved" || b.status === "completed" ? "default" : "secondary"} className="capitalize px-2.5 py-0.5 font-semibold text-[11px] dark:bg-slate-700 dark:text-slate-200">
                         {b.status === "approved" ? "Confirmed" : b.status === "pending" ? "Reserved" : b.status === "rejected" ? "Cancelled" : b.status}
                       </Badge>
                     </div>
@@ -532,8 +532,8 @@ function BookingsTab() {
                   <TableCell className="py-4 text-right pr-6">
                     <div className="flex flex-col items-end gap-1.5 min-w-[130px]">
                       {p?.receipt_url && (
-                        <Button size="sm" variant="outline" onClick={() => viewReceipt(p.receipt_url)} className="w-full h-8 text-xs font-semibold border-slate-200 hover:bg-slate-100">
-                          <Eye className="w-3.5 h-3.5 mr-1.5 text-slate-600" /> View Receipt
+                        <Button size="sm" variant="outline" onClick={() => viewReceipt(p.receipt_url)} className="w-full h-8 text-xs font-semibold border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">
+                          <Eye className="w-3.5 h-3.5 mr-1.5 text-slate-600 dark:text-slate-300" /> View Receipt
                         </Button>
                       )}
                       
@@ -574,7 +574,7 @@ function BookingsTab() {
                               size="sm"
                               variant="outline"
                               onClick={() => undoPaymentStatus(b.id, p.id, p.status)}
-                              className="h-8 text-xs border-amber-400 text-amber-700 hover:bg-amber-50 font-semibold w-full"
+                              className="h-8 text-xs border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 font-semibold w-full"
                             >
                               <RotateCcw className="w-3.5 h-3.5 mr-1.5" /> Undo Payment
                             </Button>
@@ -586,7 +586,7 @@ function BookingsTab() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => updateBookingStatus(b.id, "completed")}
-                                className="h-7 text-[11px] border-emerald-500 text-emerald-700 hover:bg-emerald-50 font-medium flex-1"
+                                className="h-7 text-[11px] border-emerald-500 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-medium flex-1"
                               >
                                 Complete
                               </Button>
@@ -594,7 +594,7 @@ function BookingsTab() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => markNoShow(b.id, p?.id, isResort)}
-                                className="h-7 text-[11px] border-amber-500 text-amber-700 hover:bg-amber-50 font-medium flex-1"
+                                className="h-7 text-[11px] border-amber-500 dark:border-amber-600 text-amber-700 dark:text-amber-300 bg-white dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-amber-950/40 font-medium flex-1"
                               >
                                 No-Show
                               </Button>
@@ -603,7 +603,7 @@ function BookingsTab() {
                         </>
                       )}
                       
-                      <Button size="icon" variant="ghost" onClick={() => deleteBooking(b.id)} className="h-7 w-7 text-slate-400 hover:text-rose-600 hover:bg-rose-50 self-end mt-1">
+                      <Button size="icon" variant="ghost" onClick={() => deleteBooking(b.id)} className="h-7 w-7 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 self-end mt-1">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>

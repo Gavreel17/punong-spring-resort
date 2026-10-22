@@ -13,6 +13,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { useAutoBookingStatus } from "@/hooks/use-auto-booking-status";
+import { useSystemSettings } from "@/hooks/use-system-settings";
 
 function NotFoundComponent() {
   return (
@@ -103,9 +104,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('punong-theme');
+                  if (!theme) {
+                    var cached = localStorage.getItem('punong-system-settings');
+                    if (cached) {
+                      var parsed = JSON.parse(cached);
+                      if (parsed && parsed.theme) theme = parsed.theme;
+                    }
+                  }
+                  var isDark = theme === 'dark' || ((!theme || theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
         {children}
@@ -113,6 +138,45 @@ function RootShell({ children }: { children: ReactNode }) {
       </body>
     </html>
   );
+}
+
+function GlobalThemeSync() {
+  const { settings } = useSystemSettings();
+
+  useEffect(() => {
+    function applyTheme(themeValue: string) {
+      const root = document.documentElement;
+      let shouldBeDark = false;
+      if (themeValue === "dark") {
+        shouldBeDark = true;
+      } else if (themeValue === "light") {
+        shouldBeDark = false;
+      } else {
+        shouldBeDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      }
+
+      if (shouldBeDark) {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+    }
+
+    applyTheme(settings.theme || "system");
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleMediaChange = () => {
+      const currentTheme = localStorage.getItem("punong-theme") || settings.theme || "system";
+      if (currentTheme === "system") {
+        applyTheme("system");
+      }
+    };
+
+    mediaQuery.addEventListener("change", handleMediaChange);
+    return () => mediaQuery.removeEventListener("change", handleMediaChange);
+  }, [settings.theme]);
+
+  return null;
 }
 
 function AutoStatusWatcher() {
@@ -125,6 +189,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <GlobalThemeSync />
         <AutoStatusWatcher />
         <Outlet />
         <Toaster richColors position="top-right" />

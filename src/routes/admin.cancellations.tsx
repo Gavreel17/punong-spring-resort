@@ -150,20 +150,20 @@ function CancellationsTab() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Header & Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold text-[10px] uppercase tracking-wider border border-rose-200">
+            <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold text-[10px] uppercase tracking-wider border border-rose-200 dark:border-rose-800/60">
               Audit & Cancellation Log
             </span>
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">
               ({filteredBookings.length} Record{filteredBookings.length === 1 ? "" : "s"})
             </span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 font-display tracking-tight mt-1">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-display tracking-tight mt-1">
             Cancelled Bookings & Customers
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             View customer details for cancelled reservations and review stated cancellation reasons.
           </p>
         </div>
@@ -173,7 +173,7 @@ function CancellationsTab() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search Customer, Email, Phone, Reason..."
-              className="pl-9 h-10 border-slate-200 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] bg-slate-50/50 rounded-xl transition-all text-sm"
+              className="pl-9 h-10 border-slate-200 dark:border-slate-700 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] bg-slate-50/50 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 rounded-xl transition-all text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -183,48 +183,48 @@ function CancellationsTab() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="p-4 bg-white border-slate-200/80 shadow-xs rounded-xl flex items-center justify-between">
+        <Card className="p-4 bg-white dark:bg-[#151F2E] border-slate-200/80 dark:border-slate-800 shadow-xs rounded-xl flex items-center justify-between">
           <div>
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Total Cancelled
             </div>
-            <div className="text-2xl font-bold text-slate-900 mt-1">{stats.total}</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.total}</div>
             <div className="text-xs text-slate-400 mt-0.5">Historical cancellations</div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-800/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
             <XCircle className="w-5 h-5" />
           </div>
         </Card>
 
-        <Card className="p-4 bg-white border-slate-200/80 shadow-xs rounded-xl flex items-center justify-between">
+        <Card className="p-4 bg-white dark:bg-[#151F2E] border-slate-200/80 dark:border-slate-800 shadow-xs rounded-xl flex items-center justify-between">
           <div>
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Customer Self-Cancelled
             </div>
-            <div className="text-2xl font-bold text-amber-700 mt-1">{stats.customerWithReason}</div>
+            <div className="text-2xl font-bold text-amber-700 dark:text-amber-400 mt-1">{stats.customerWithReason}</div>
             <div className="text-xs text-slate-400 mt-0.5">With customer stated reason</div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400">
             <User className="w-5 h-5" />
           </div>
         </Card>
       </div>
 
       {/* Table Container */}
-      <div className="overflow-hidden rounded-xl border border-slate-200/80 shadow-sm bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm bg-white dark:bg-[#151F2E]">
         <Table>
-          <TableHeader className="bg-slate-50/80">
-            <TableRow className="border-b border-slate-200/80">
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">
+          <TableHeader className="bg-slate-50/80 dark:bg-slate-800/60">
+            <TableRow className="border-b border-slate-200/80 dark:border-slate-800">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">
                 Customer Who Cancelled
               </TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">
                 Room & Reservation
               </TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">
                 Cancellation Reason & Details
               </TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-4 text-right">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4 text-right">
                 Action
               </TableHead>
             </TableRow>
@@ -235,7 +235,7 @@ function CancellationsTab() {
                 <TableCell colSpan={4} className="h-40 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#D4AF37]"></div>
-                    <p className="text-sm font-medium">Loading cancelled bookings log...</p>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Loading cancelled bookings log...</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -243,9 +243,9 @@ function CancellationsTab() {
               <TableRow>
                 <TableCell colSpan={4} className="h-40 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <XCircle className="h-8 w-8 text-slate-300" />
-                    <p className="text-sm font-medium">No cancelled reservations found.</p>
-                    <p className="text-xs text-slate-400">
+                    <XCircle className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">No cancelled reservations found.</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
                       {searchTerm ? "Try searching with a different term." : "Any cancellations made by guests will appear here."}
                     </p>
                   </div>
@@ -271,32 +271,32 @@ function CancellationsTab() {
                 return (
                   <TableRow
                     key={b.id}
-                    className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 cursor-pointer"
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-slate-800 cursor-pointer"
                     onClick={() => setSelectedBooking(b)}
                   >
                     {/* Customer Column */}
                     <TableCell className="py-4">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-300 flex items-center justify-center font-bold text-slate-700 text-sm shrink-0 shadow-inner">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 border border-slate-300 dark:border-slate-600 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 text-sm shrink-0 shadow-inner">
                           {initial}
                         </div>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900 text-sm hover:text-[#D4AF37] transition-colors">
+                            <span className="font-bold text-slate-900 dark:text-slate-100 text-sm hover:text-[#D4AF37] dark:hover:text-[#FACC15] transition-colors">
                               {customerName}
                             </span>
                             {isCustomerSelfCancel ? (
-                              <Badge className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 text-[10px] px-1.5 py-0">
+                              <Badge className="bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/60 hover:bg-amber-100 text-[10px] px-1.5 py-0">
                                 Customer Cancelled
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-slate-500 text-[10px] px-1.5 py-0">
+                              <Badge variant="outline" className="text-slate-500 dark:text-slate-400 dark:border-slate-700 text-[10px] px-1.5 py-0">
                                 {b.status === "rejected" ? "Admin Rejected" : "Cancelled"}
                               </Badge>
                             )}
                           </div>
 
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-slate-500">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-slate-500 dark:text-slate-400">
                             <span className="flex items-center gap-1">
                               <Mail className="w-3 h-3 text-slate-400" />
                               {customerEmail}
@@ -313,12 +313,12 @@ function CancellationsTab() {
                             <span className="text-[11px] text-slate-400 font-mono">ID:</span>
                             <button
                               onClick={(e) => handleCopyId(b.id, e)}
-                              className="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono text-[10px] px-1.5 py-0.5 rounded font-semibold transition-colors"
+                              className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono text-[10px] px-1.5 py-0.5 rounded font-semibold transition-colors"
                               title="Click to copy full ID"
                             >
                               {b.id.slice(0, 8)}...
                               {copiedId === b.id ? (
-                                <Check className="w-3 h-3 text-emerald-600" />
+                                <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                               ) : (
                                 <Copy className="w-3 h-3 text-slate-400" />
                               )}
@@ -334,36 +334,36 @@ function CancellationsTab() {
                     {/* Room & Stay Dates Column */}
                     <TableCell className="py-4">
                       <div className="space-y-1">
-                        <div className="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
                           <BedDouble className="w-4 h-4 text-slate-400 shrink-0" />
                           <span>{b.room?.name || "Unassigned Room"}</span>
                           {b.room?.type && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                               {b.room.type}
                             </span>
                           )}
                         </div>
 
-                        <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                           <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="font-medium text-slate-700">{b.check_in}</span>
-                          <span className="text-slate-300">→</span>
-                          <span className="font-medium text-slate-700">{b.check_out}</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300">{b.check_in}</span>
+                          <span className="text-slate-300 dark:text-slate-600">→</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300">{b.check_out}</span>
                           <span className="text-slate-400">({b.guests} guest{b.guests > 1 ? "s" : ""})</span>
                         </div>
 
                         {p && (
-                          <div className="text-[11px] text-slate-500 flex items-center gap-2 pt-0.5">
-                            <span className="uppercase font-semibold text-slate-600">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 pt-0.5">
+                            <span className="uppercase font-semibold text-slate-600 dark:text-slate-400">
                               Payment: {notes.method === "gcash" ? "GCash" : "Pay at Resort"}
                             </span>
                             {p.status === "refund_pending" && (
-                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] px-1.5 py-0">
+                              <Badge className="bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700/60 text-[10px] px-1.5 py-0">
                                 Refund Pending
                               </Badge>
                             )}
                             {p.status === "refunded" && (
-                              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] px-1.5 py-0">
+                              <Badge className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 text-[10px] px-1.5 py-0">
                                 Refunded
                               </Badge>
                             )}
@@ -375,23 +375,23 @@ function CancellationsTab() {
                     {/* Cancellation Reason & Date */}
                     <TableCell className="py-4">
                       <div className="space-y-1.5">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-800 text-xs font-medium max-w-md">
-                          <Info className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                          <span className="font-semibold text-rose-900">Reason:</span>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/60 text-rose-800 dark:text-rose-300 text-xs font-medium max-w-md">
+                          <Info className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                          <span className="font-semibold text-rose-900 dark:text-rose-200">Reason:</span>
                           <span className="truncate">{notes.cancellation_reason || (b.status === "rejected" ? "Booking rejected by admin" : "No reason specified")}</span>
                         </div>
 
                         <div className="text-[11px] text-slate-400 flex items-center gap-1.5 pl-1">
                           <Clock className="w-3 h-3 text-slate-400" />
                           <span>Cancelled:</span>
-                          <span className="font-medium text-slate-600">
+                          <span className="font-medium text-slate-600 dark:text-slate-300">
                             {cancelDate ? new Date(cancelDate).toLocaleString() : "Date unavailable"}
                           </span>
                         </div>
 
                         {notes.cancelled_by_name && (
-                          <div className="text-[11px] text-slate-500 pl-1">
-                            Initiated by: <span className="font-medium text-slate-700">{notes.cancelled_by_name}</span>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 pl-1">
+                            Initiated by: <span className="font-medium text-slate-700 dark:text-slate-300">{notes.cancelled_by_name}</span>
                           </div>
                         )}
                       </div>
@@ -402,7 +402,7 @@ function CancellationsTab() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                        className="rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedBooking(b);
@@ -421,7 +421,7 @@ function CancellationsTab() {
 
       {/* Booking Details Modal Dialog */}
       <Dialog open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
-        <DialogContent className="max-w-2xl bg-white rounded-2xl p-6 shadow-2xl">
+        <DialogContent className="max-w-2xl bg-white dark:bg-[#151F2E] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl p-6 shadow-2xl">
           {selectedBooking && (() => {
             const b = selectedBooking;
             const p = b.payments?.[0];
@@ -437,13 +437,13 @@ function CancellationsTab() {
 
             return (
               <>
-                <DialogHeader className="border-b border-slate-100 pb-4">
+                <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold text-[10px] uppercase tracking-wider border border-rose-200">
+                      <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold text-[10px] uppercase tracking-wider border border-rose-200 dark:border-rose-800/60">
                         Cancelled Reservation Audit
                       </span>
-                      <DialogTitle className="text-xl font-bold text-slate-900 font-display mt-1">
+                      <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white font-display mt-1">
                         Cancellation Breakdown
                       </DialogTitle>
                     </div>
@@ -455,7 +455,7 @@ function CancellationsTab() {
                     <span>Reference ID: {b.id}</span>
                     <button
                       onClick={() => handleCopyId(b.id)}
-                      className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400"
                       title="Copy ID"
                     >
                       <Copy className="w-3 h-3" />
@@ -465,27 +465,27 @@ function CancellationsTab() {
 
                 <div className="space-y-5 py-3 text-sm">
                   {/* Customer Information Card */}
-                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      <User className="w-4 h-4 text-[#D4AF37]" />
+                  <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      <User className="w-4 h-4 text-[#D4AF37] dark:text-[#FACC15]" />
                       Customer Information
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div>
                         <span className="text-slate-400 block">Full Name</span>
-                        <span className="font-bold text-slate-900 text-sm">{customerName}</span>
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">{customerName}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 block">Email Address</span>
-                        <span className="font-semibold text-slate-800">{customerEmail}</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{customerEmail}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 block">Contact Number</span>
-                        <span className="font-semibold text-slate-800">{customerPhone}</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">{customerPhone}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 block">User Account ID</span>
-                        <span className="font-mono text-slate-600 text-[11px]">
+                        <span className="font-mono text-slate-600 dark:text-slate-400 text-[11px]">
                           {b.user_id ? b.user_id : "Guest (Non-registered)"}
                         </span>
                       </div>
@@ -493,17 +493,17 @@ function CancellationsTab() {
                   </div>
 
                   {/* Cancellation Reason Details Card */}
-                  <div className="bg-rose-50/60 border border-rose-200/70 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-800">
-                      <AlertCircle className="w-4 h-4 text-rose-600" />
+                  <div className="bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200/70 dark:border-rose-800/60 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-800 dark:text-rose-300">
+                      <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                       Cancellation Stated Reason & Date
                     </div>
                     <div className="space-y-2">
-                      <div className="bg-white p-3 rounded-lg border border-rose-200 text-xs">
+                      <div className="bg-white dark:bg-slate-800/70 p-3 rounded-lg border border-rose-200 dark:border-rose-800/60 text-xs">
                         <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-1">
                           Guest Reason
                         </span>
-                        <p className="font-semibold text-slate-900 text-sm">
+                        <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                           {notes.cancellation_reason || (b.status === "rejected" ? "Booking rejected by resort admin" : "No specific reason was provided")}
                         </p>
                       </div>
@@ -511,13 +511,13 @@ function CancellationsTab() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
                         <div>
                           <span className="text-slate-400 block">Cancelled Timestamp</span>
-                          <span className="font-medium text-slate-700">
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
                             {cancelDate ? new Date(cancelDate).toLocaleString() : "Unknown"}
                           </span>
                         </div>
                         <div>
                           <span className="text-slate-400 block">Cancellation Action By</span>
-                          <span className="font-medium text-slate-700">
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
                             {notes.cancelled_by_name || (notes.cancellation_reason ? customerName : "System/Admin")}
                           </span>
                         </div>
@@ -526,43 +526,43 @@ function CancellationsTab() {
                   </div>
 
                   {/* Room & Stay Details Card */}
-                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      <BedDouble className="w-4 h-4 text-[#D4AF37]" />
+                  <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      <BedDouble className="w-4 h-4 text-[#D4AF37] dark:text-[#FACC15]" />
                       Stay & Room Details
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                       <div>
                         <span className="text-slate-400 block">Room</span>
-                        <span className="font-bold text-slate-900">{b.room?.name || "Room"}</span>
-                        {b.room?.type && <span className="text-slate-500 block text-[11px]">Type: {b.room.type}</span>}
+                        <span className="font-bold text-slate-900 dark:text-white">{b.room?.name || "Room"}</span>
+                        {b.room?.type && <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Type: {b.room.type}</span>}
                       </div>
                       <div>
                         <span className="text-slate-400 block">Check-in / Check-out</span>
-                        <span className="font-semibold text-slate-800">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
                           {b.check_in} → {b.check_out}
                         </span>
                       </div>
                       <div>
                         <span className="text-slate-400 block">Guests</span>
-                        <span className="font-semibold text-slate-800">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
                           {b.guests} Guest{b.guests > 1 ? "s" : ""}
                         </span>
                       </div>
                     </div>
                     {b.special_requests && (
-                      <div className="text-xs pt-1 border-t border-slate-200">
+                      <div className="text-xs pt-1 border-t border-slate-200 dark:border-slate-700">
                         <span className="text-slate-400 block">Special Requests</span>
-                        <span className="text-slate-700 italic">"{b.special_requests}"</span>
+                        <span className="text-slate-700 dark:text-slate-300 italic">"{b.special_requests}"</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <DialogFooter className="border-t border-slate-100 pt-4">
+                <DialogFooter className="border-t border-slate-100 dark:border-slate-800 pt-4">
                   <Button
                     variant="outline"
-                    className="rounded-xl text-xs font-bold"
+                    className="rounded-xl text-xs font-bold dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                     onClick={() => setSelectedBooking(null)}
                   >
                     Close

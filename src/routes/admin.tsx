@@ -129,7 +129,7 @@ function AdminLayout() {
   const currentLink = links.find((link) => location.pathname === link.to) || links[0];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-900/5 text-slate-900 w-full font-sans print:h-auto print:overflow-visible print:bg-white print:block">
+    <div className="flex h-screen overflow-hidden bg-slate-100 dark:bg-[#0B1220] text-slate-900 dark:text-[#F8FAFC] w-full font-sans print:h-auto print:overflow-visible print:bg-white print:block">
       {/* Desktop Luxury Sidebar */}
       <aside className="hidden md:flex md:w-72 md:flex-col bg-gradient-to-b from-[#081216] via-[#0D1C24] to-[#0A141A] text-slate-100 border-r border-[#D4AF37]/20 shadow-2xl z-20 print:hidden">
         {/* Brand Header */}
@@ -280,23 +280,23 @@ function AdminLayout() {
       {/* Main Content Pane */}
       <div className="flex flex-col flex-1 overflow-hidden print:h-auto print:overflow-visible print:block">
         {/* Luxury Top Header */}
-        <header className="flex h-20 items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md px-6 md:px-8 shadow-sm z-10 shrink-0 print:hidden">
+        <header className="flex h-20 items-center justify-between border-b border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-[#151F2E]/95 backdrop-blur-md px-6 md:px-8 shadow-sm z-10 shrink-0 print:hidden">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-slate-600 hover:text-slate-900 focus:outline-none md:hidden p-1.5 rounded-lg bg-slate-100"
+              className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white focus:outline-none md:hidden p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800"
             >
               <Menu className="h-6 w-6" />
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold tracking-widest uppercase text-[#B38728]">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-[#B38728] dark:text-[#FACC15]">
                   Management Suite
                 </span>
-                <span className="text-slate-300">•</span>
-                <span className="text-[10px] font-semibold text-slate-400">Resort Live</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400">Resort Live</span>
               </div>
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 font-display capitalize">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white font-display capitalize">
                 {currentLink.label} Control Panel
               </h2>
             </div>
@@ -305,25 +305,25 @@ function AdminLayout() {
           <div className="flex items-center gap-4">
             {/* Live Clock Widget */}
             {timeStr && (
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/5 border border-slate-200/80 text-xs font-mono text-slate-700 shadow-inner">
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/5 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-xs font-mono text-slate-700 dark:text-slate-200 shadow-inner">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                 <span className="font-semibold">{timeStr} PHT</span>
               </div>
             )}
 
             {/* Admin Active Pill */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-700">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 dark:bg-emerald-950/60 border border-emerald-500/20 dark:border-emerald-700/60 text-xs font-medium text-emerald-700 dark:text-emerald-300">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               Admin Active
             </div>
 
             {/* User Profile Avatar Pill */}
-            <div className="flex items-center gap-3 pl-2 border-l border-slate-200">
+            <div className="flex items-center gap-3 pl-2 border-l border-slate-200 dark:border-slate-800">
               <div className="hidden md:flex flex-col text-right">
-                <span className="text-sm font-semibold text-slate-900">
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">
                   {user?.email?.split("@")[0]}
                 </span>
-                <span className="text-[10px] text-slate-500 font-medium">Administrator</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Administrator</span>
               </div>
               <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#081216] to-[#0D1C24] text-[#D4AF37] flex items-center justify-center font-bold text-sm border-2 border-[#D4AF37]/50 shadow-md ring-2 ring-[#D4AF37]/20">
                 {user?.email?.[0].toUpperCase() || "A"}
@@ -333,7 +333,7 @@ function AdminLayout() {
         </header>
 
         {/* Scrollable Dashboard Canvas */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/60 print:p-0 print:m-0 print:bg-white print:overflow-visible print:block">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/60 dark:bg-[#0B1220] print:p-0 print:m-0 print:bg-white print:overflow-visible print:block">
           <div className="max-w-7xl mx-auto space-y-6 print:max-w-none print:w-full print:m-0 print:p-0 print:space-y-0">
             {/* Display Stats Row only when Calendar or Bookings tabs are active */}
             {["/admin/calendar", "/admin/bookings"].includes(location.pathname) && (
@@ -343,7 +343,7 @@ function AdminLayout() {
             )}
 
             {/* Subpage Container */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_10px_35px_rgba(0,0,0,0.03)] p-6 md:p-8 min-h-[550px] relative print:border-none print:shadow-none print:p-0 print:m-0 print:min-h-0 print:rounded-none print:bg-white">
+            <div className="bg-white dark:bg-[#151F2E] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-[0_10px_35px_rgba(0,0,0,0.03)] dark:shadow-[0_10px_35px_rgba(0,0,0,0.35)] p-6 md:p-8 min-h-[550px] relative text-slate-900 dark:text-[#F8FAFC] print:border-none print:shadow-none print:p-0 print:m-0 print:min-h-0 print:rounded-none print:bg-white">
               <Outlet />
             </div>
           </div>

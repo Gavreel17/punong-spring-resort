@@ -69,7 +69,7 @@ export function Navbar() {
         </div>
 
         <button 
-          className="flex items-center justify-center h-10 w-10 rounded-lg text-slate-700 hover:bg-slate-100 focus:outline-none md:hidden" 
+          className="flex items-center justify-center h-10 w-10 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none md:hidden" 
           onClick={() => setOpen(!open)} 
           aria-label="Toggle navigation menu"
         >
@@ -84,13 +84,13 @@ export function Navbar() {
               <Link
                 key={l.to}
                 to={l.to}
-                className="py-3 px-3 text-base font-semibold rounded-lg hover:bg-slate-100 text-slate-800 transition-colors"
+                className="py-3 px-3 text-base font-semibold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition-colors"
                 onClick={() => setOpen(false)}
               >
                 {l.label}
               </Link>
             ))}
-            <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 mt-2">
+            <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
               {user ? (
                 <>
                   <Button
@@ -105,7 +105,7 @@ export function Navbar() {
                   </Button>
                   <Button
                     variant="ghost"
-                    className="w-full h-11 text-base text-red-600 hover:bg-red-50 justify-center"
+                    className="w-full h-11 text-base text-red-600 dark:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/40 justify-center"
                     onClick={() => {
                       signOut();
                       setOpen(false);

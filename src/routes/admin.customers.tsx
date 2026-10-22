@@ -227,20 +227,20 @@ export function CustomersTab() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Header & Search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38728] font-bold text-[10px] uppercase tracking-wider border border-[#D4AF37]/30 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38728] dark:text-[#FACC15] font-bold text-[10px] uppercase tracking-wider border border-[#D4AF37]/30 flex items-center gap-1">
               <Sparkles className="w-3 h-3" /> Guest Directory
             </span>
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">
               ({filteredCustomers.length} Profile{filteredCustomers.length === 1 ? "" : "s"})
             </span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 font-display tracking-tight mt-1">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-display tracking-tight mt-1">
             Registered Customers & CRM
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Complete guest profiles with Full Name, Email, Phone, Age, Address, and Guest Party Records.
           </p>
         </div>
@@ -250,7 +250,7 @@ export function CustomersTab() {
           <Input
             type="search"
             placeholder="Search by name, email, phone, age, address..."
-            className="pl-9 h-10 border-slate-200 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] bg-slate-50/60 rounded-xl text-xs transition-all"
+            className="pl-9 h-10 border-slate-200 dark:border-slate-700 focus-visible:ring-[#D4AF37] focus-visible:border-[#D4AF37] bg-slate-50/60 dark:bg-slate-800/70 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 rounded-xl text-xs transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -258,29 +258,29 @@ export function CustomersTab() {
       </div>
 
       {/* Table Container */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-sm bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm bg-white dark:bg-[#151F2E]">
         <Table className="min-w-[950px]">
-          <TableHeader className="bg-slate-50/90">
-            <TableRow className="border-b border-slate-200">
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-3.5">
+          <TableHeader className="bg-slate-50/90 dark:bg-slate-800/60">
+            <TableRow className="border-b border-slate-200 dark:border-slate-800">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-3.5">
                 Guest Name
               </TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-3.5">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-3.5">
                 Contact Details
               </TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-3.5">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-3.5">
                 Age
               </TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-3.5">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-3.5">
                 Address
               </TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-3.5">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-3.5">
                 Guests
               </TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-3.5">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-3.5">
                 Bookings & Stays
               </TableHead>
-              <TableHead className="font-bold text-slate-700 uppercase tracking-wider text-[11px] py-3.5 text-right pr-6">
+              <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-3.5 text-right pr-6">
                 Actions
               </TableHead>
             </TableRow>
@@ -290,11 +290,11 @@ export function CustomersTab() {
               <TableRow>
                 <TableCell colSpan={7} className="h-44 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <Users className="h-9 w-9 text-slate-300" />
-                    <p className="text-sm font-semibold text-slate-600">
+                    <Users className="h-9 w-9 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
                       No guest profiles found matching your search.
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
                       Try searching with a different name, email, phone number, or address.
                     </p>
                   </div>
@@ -310,7 +310,7 @@ export function CustomersTab() {
                 return (
                   <TableRow
                     key={c.email || c.id}
-                    className="hover:bg-slate-50/60 transition-colors border-b border-slate-100"
+                    className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-slate-800"
                   >
                     {/* Guest Name & Avatar */}
                     <TableCell className="py-3.5">
@@ -319,7 +319,7 @@ export function CustomersTab() {
                           {initial}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900 text-sm font-display flex items-center gap-1.5">
+                          <div className="font-bold text-slate-900 dark:text-slate-100 text-sm font-display flex items-center gap-1.5">
                             {c.fullname}
                           </div>
                           <div className="flex items-center gap-1 text-[11px] text-slate-400">
@@ -334,12 +334,12 @@ export function CustomersTab() {
                     {/* Email & Phone */}
                     <TableCell className="py-3.5">
                       <div className="space-y-1">
-                        <div className="text-xs text-slate-700 flex items-center gap-1.5 font-medium">
+                        <div className="text-xs text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-medium">
                           <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span className="truncate max-w-[180px]">{c.email}</span>
                         </div>
                         {c.phone ? (
-                          <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                             <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                             {c.phone}
                           </div>
@@ -354,7 +354,7 @@ export function CustomersTab() {
                       {c.age ? (
                         <Badge
                           variant="outline"
-                          className="font-bold text-xs bg-slate-50 border-slate-300 text-slate-800 px-2.5 py-0.5"
+                          className="font-bold text-xs bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 px-2.5 py-0.5"
                         >
                           {c.age} yrs
                         </Badge>
@@ -366,7 +366,7 @@ export function CustomersTab() {
                     {/* Address */}
                     <TableCell className="py-3.5 max-w-[220px]">
                       {c.address ? (
-                        <div className="flex items-start gap-1.5 text-xs text-slate-700" title={c.address}>
+                        <div className="flex items-start gap-1.5 text-xs text-slate-700 dark:text-slate-300" title={c.address}>
                           <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
                           <span className="truncate font-medium">{c.address}</span>
                         </div>
@@ -378,7 +378,7 @@ export function CustomersTab() {
                     {/* Number of Guests */}
                     <TableCell className="py-3.5">
                       <Badge
-                        className="bg-emerald-50 text-emerald-800 border-emerald-200 font-bold text-xs"
+                        className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 font-bold text-xs"
                       >
                         <Users className="w-3 h-3 mr-1" />
                         {c.guests} Guest{c.guests === 1 ? "" : "s"}
@@ -388,17 +388,17 @@ export function CustomersTab() {
                     {/* Bookings & Stays */}
                     <TableCell className="py-3.5">
                       <div className="space-y-1">
-                        <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                          <CalendarCheck className="w-3.5 h-3.5 text-[#B38728] shrink-0" />
+                        <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <CalendarCheck className="w-3.5 h-3.5 text-[#B38728] dark:text-[#FACC15] shrink-0" />
                           {totalBookingsCount} Stay{totalBookingsCount === 1 ? "" : "s"}
                         </div>
                         {noShowCount > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full bg-amber-50 border border-amber-200 text-amber-800 font-bold text-[10px]">
-                            <AlertTriangle className="w-3 h-3 text-amber-600" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300 font-bold text-[10px]">
+                            <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                             {noShowCount} No-Show{noShowCount > 1 ? "s" : ""}
                           </span>
                         ) : (
-                          <span className="text-[10px] text-emerald-600 font-semibold block">
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">
                             ✓ Good Record
                           </span>
                         )}
@@ -412,9 +412,9 @@ export function CustomersTab() {
                           size="sm"
                           variant="ghost"
                           onClick={() => setSelectedCustomer(c)}
-                          className="h-8 px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-1"
+                          className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg flex items-center gap-1"
                         >
-                          <Eye className="w-3.5 h-3.5 text-[#B38728]" /> View Details
+                          <Eye className="w-3.5 h-3.5 text-[#B38728] dark:text-[#FACC15]" /> View Details
                         </Button>
 
                         {c.profileId && (
@@ -422,7 +422,7 @@ export function CustomersTab() {
                             size="sm"
                             variant="ghost"
                             onClick={() => deleteCustomer(c)}
-                            className="h-8 px-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                            className="h-8 px-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg"
                             title="Delete customer account"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -443,25 +443,25 @@ export function CustomersTab() {
         open={!!selectedCustomer}
         onOpenChange={(open) => !open && setSelectedCustomer(null)}
       >
-        <DialogContent className="rounded-2xl max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="rounded-2xl max-w-lg p-6 max-h-[90vh] overflow-y-auto bg-white dark:bg-[#151F2E] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold font-display flex items-center gap-2">
-              <User className="w-5 h-5 text-[#B38728]" /> Complete Guest Details
+            <DialogTitle className="text-xl font-bold font-display flex items-center gap-2 text-slate-900 dark:text-white">
+              <User className="w-5 h-5 text-[#B38728] dark:text-[#FACC15]" /> Complete Guest Details
             </DialogTitle>
           </DialogHeader>
 
           {selectedCustomer && (
             <div className="space-y-5 py-2">
               {/* Profile Card Header */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-slate-900 to-slate-800 text-[#D4AF37] flex items-center justify-center font-bold text-lg ring-2 ring-[#D4AF37]/40 shadow-sm shrink-0">
                   {selectedCustomer.fullname ? selectedCustomer.fullname[0].toUpperCase() : "G"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-slate-900 truncate font-display">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white truncate font-display">
                     {selectedCustomer.fullname}
                   </h3>
-                  <div className="text-xs text-slate-500 flex items-center gap-2">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
                     <span>
                       {selectedCustomer.isRegistered ? "Registered Customer" : "Direct Guest"}
                     </span>
@@ -483,13 +483,13 @@ export function CustomersTab() {
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Information & Identification
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-4 rounded-xl border border-slate-200 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
                   {/* Full Name */}
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
                       Full Name
                     </span>
-                    <span className="font-bold text-slate-900 text-sm">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                       {selectedCustomer.fullname}
                     </span>
                   </div>
@@ -499,7 +499,7 @@ export function CustomersTab() {
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
                       Email Address
                     </span>
-                    <span className="font-semibold text-slate-800 break-all">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 break-all">
                       {selectedCustomer.email}
                     </span>
                   </div>
@@ -509,7 +509,7 @@ export function CustomersTab() {
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
                       Phone Number
                     </span>
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
                       {selectedCustomer.phone || "None provided"}
                     </span>
                   </div>
@@ -519,24 +519,24 @@ export function CustomersTab() {
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
                       Age
                     </span>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">
                       {selectedCustomer.age ? `${selectedCustomer.age} years old` : "Not specified"}
                     </span>
                   </div>
 
                   {/* Complete Address */}
-                  <div className="sm:col-span-2 pt-2 border-t border-slate-100">
+                  <div className="sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-700">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
                       Address
                     </span>
-                    <div className="flex items-start gap-1.5 font-medium text-slate-800">
+                    <div className="flex items-start gap-1.5 font-medium text-slate-800 dark:text-slate-200">
                       <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
                       <span>{selectedCustomer.address || "No address recorded on file"}</span>
                     </div>
                   </div>
 
                   {/* Number of Guests */}
-                  <div className="sm:col-span-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <div className="sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                       Typical Number of Guests
                     </span>
@@ -555,14 +555,14 @@ export function CustomersTab() {
                   </h4>
                   <Link
                     to="/admin/bookings"
-                    className="text-xs font-bold text-[#B38728] hover:underline flex items-center gap-1"
+                    className="text-xs font-bold text-[#B38728] dark:text-[#FACC15] hover:underline flex items-center gap-1"
                   >
                     View All in Ledger <ExternalLink className="w-3 h-3" />
                   </Link>
                 </div>
 
                 {selectedCustomer.bookings.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl">
+                  <p className="text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                     No bookings found for this customer profile.
                   </p>
                 ) : (
@@ -570,13 +570,13 @@ export function CustomersTab() {
                     {selectedCustomer.bookings.map((b: any) => (
                       <div
                         key={b.id}
-                        className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors"
+                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50 flex items-center justify-between text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                       >
                         <div>
-                          <span className="font-bold text-slate-900 block">
+                          <span className="font-bold text-slate-900 dark:text-slate-100 block">
                             {b.room?.name || "Accommodation"}
                           </span>
-                          <span className="text-[11px] text-slate-500">
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
                             {b.check_in} → {b.check_out} ({b.guests} Guests)
                           </span>
                           {b.special_requests && (
@@ -591,15 +591,15 @@ export function CustomersTab() {
                             className={cn(
                               "capitalize text-[10px] font-bold mb-1",
                               b.status === "approved"
-                                ? "border-emerald-500 text-emerald-800 bg-emerald-50"
+                                ? "border-emerald-500 text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40"
                                 : b.status === "completed"
-                                ? "border-blue-500 text-blue-800 bg-blue-50"
-                                : "border-slate-300 text-slate-700"
+                                ? "border-blue-500 text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40"
+                                : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
                             )}
                           >
                             {b.status}
                           </Badge>
-                          <div className="font-black text-[#B38728] text-xs">
+                          <div className="font-black text-[#B38728] dark:text-[#FACC15] text-xs">
                             ₱{Number(b.total_amount).toLocaleString()}
                           </div>
                         </div>

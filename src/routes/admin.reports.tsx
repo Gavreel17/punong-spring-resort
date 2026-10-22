@@ -504,33 +504,33 @@ function ReportsDashboard() {
               </span>
               <span className="text-xs text-slate-400 font-medium">Financial & Occupancy Intelligence</span>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 font-display tracking-tight mt-1 flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white font-display tracking-tight mt-1 flex items-center gap-2">
               Reports & Performance Intelligence
             </h2>
-            <p className="text-sm text-slate-500">Analyze revenue streams, room occupancy rates, guest payment trends, and historical logs.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Analyze revenue streams, room occupancy rates, guest payment trends, and historical logs.</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-200/80">
+          <div className="flex flex-wrap items-center gap-2.5 bg-slate-50/80 dark:bg-slate-800/60 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-700">
             <div className="flex items-center gap-2">
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-36 h-9 rounded-xl border-slate-200 bg-white text-xs"
+                className="w-36 h-9 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
               />
-              <span className="text-xs text-slate-400 font-semibold">to</span>
+              <span className="text-xs text-slate-400 dark:text-slate-400 font-semibold">to</span>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-36 h-9 rounded-xl border-slate-200 bg-white text-xs"
+                className="w-36 h-9 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
               />
             </div>
             <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 px-3 rounded-xl text-xs font-semibold hover:bg-white"
+                className="h-9 px-3 rounded-xl text-xs font-semibold border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                 onClick={() => {
                   setStartDate(format(startOfMonth(new Date()), "yyyy-MM-dd"));
                   setEndDate(format(endOfDay(new Date()), "yyyy-MM-dd"));
@@ -541,7 +541,7 @@ function ReportsDashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 px-3 rounded-xl text-xs font-semibold hover:bg-white"
+                className="h-9 px-3 rounded-xl text-xs font-semibold border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                 onClick={() => {
                   setStartDate(format(startOfYear(new Date()), "yyyy-MM-dd"));
                   setEndDate(format(endOfDay(new Date()), "yyyy-MM-dd"));
@@ -550,24 +550,24 @@ function ReportsDashboard() {
                 This Year
               </Button>
             </div>
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
               <Button
                 variant="default"
                 size="sm"
                 onClick={handlePrint}
-                className="h-9 px-3.5 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 shadow-sm transition-all"
+                className="h-9 px-3.5 rounded-xl bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-950 font-bold hover:bg-slate-800 dark:hover:bg-amber-600 shadow-sm transition-all"
                 title="Print official Executive Management Report"
               >
-                <Printer className="mr-1.5 h-4 w-4 text-[#D4AF37]" /> Print Report
+                <Printer className="mr-1.5 h-4 w-4 text-[#D4AF37] dark:text-slate-950" /> Print Report
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={exportExecutiveCSV}
-                className="h-9 px-3 rounded-xl border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 shadow-2xs transition-all"
+                className="h-9 px-3 rounded-xl border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs transition-all"
                 title="Export executive metrics and KPIs to CSV"
               >
-                <FileText className="mr-1.5 h-4 w-4 text-emerald-600" /> Export CSV
+                <FileText className="mr-1.5 h-4 w-4 text-emerald-600 dark:text-emerald-400" /> Export CSV
               </Button>
             </div>
           </div>
@@ -575,28 +575,28 @@ function ReportsDashboard() {
 
       {/* Top Luxury Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-2xl p-5 bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] relative overflow-hidden group">
+        <div className="rounded-2xl p-5 bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.3)] relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-bl-full pointer-events-none"></div>
-          <p className="text-[10px] uppercase tracking-wider font-extrabold text-blue-600 mb-1">Total Bookings</p>
-          <p className="text-3xl font-black text-slate-900 font-display">{stats.total}</p>
+          <p className="text-[10px] uppercase tracking-wider font-extrabold text-blue-600 dark:text-blue-400 mb-1">Total Bookings</p>
+          <p className="text-3xl font-black text-slate-900 dark:text-white font-display">{stats.total}</p>
         </div>
 
-        <div className="rounded-2xl p-5 bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] relative overflow-hidden group">
+        <div className="rounded-2xl p-5 bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.3)] relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-bl-full pointer-events-none"></div>
-          <p className="text-[10px] uppercase tracking-wider font-extrabold text-emerald-600 mb-1">Confirmed Stays</p>
-          <p className="text-3xl font-black text-slate-900 font-display">{stats.confirmed}</p>
+          <p className="text-[10px] uppercase tracking-wider font-extrabold text-emerald-600 dark:text-emerald-400 mb-1">Confirmed Stays</p>
+          <p className="text-3xl font-black text-slate-900 dark:text-white font-display">{stats.confirmed}</p>
         </div>
 
-        <div className="rounded-2xl p-5 bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] relative overflow-hidden group">
+        <div className="rounded-2xl p-5 bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.3)] relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-bl-full pointer-events-none"></div>
-          <p className="text-[10px] uppercase tracking-wider font-extrabold text-rose-600 mb-1">Cancelled</p>
-          <p className="text-3xl font-black text-slate-900 font-display">{stats.cancelled}</p>
+          <p className="text-[10px] uppercase tracking-wider font-extrabold text-rose-600 dark:text-rose-400 mb-1">Cancelled</p>
+          <p className="text-3xl font-black text-slate-900 dark:text-white font-display">{stats.cancelled}</p>
         </div>
 
-        <div className="rounded-2xl p-5 bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] relative overflow-hidden group">
+        <div className="rounded-2xl p-5 bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.3)] relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-bl-full pointer-events-none"></div>
-          <p className="text-[10px] uppercase tracking-wider font-extrabold text-amber-600 mb-1">No-Show Guests</p>
-          <p className="text-3xl font-black text-slate-900 font-display">{stats.noShow}</p>
+          <p className="text-[10px] uppercase tracking-wider font-extrabold text-amber-600 dark:text-amber-400 mb-1">No-Show Guests</p>
+          <p className="text-3xl font-black text-slate-900 dark:text-white font-display">{stats.noShow}</p>
         </div>
 
         <div className="rounded-2xl p-5 bg-gradient-to-br from-slate-900 to-slate-950 text-white border border-[#D4AF37]/30 shadow-lg relative overflow-hidden group">
@@ -604,35 +604,35 @@ function ReportsDashboard() {
             <BarChart3 className="w-24 h-24 -mb-4 -mr-4 text-[#D4AF37]" />
           </div>
           <p className="text-[10px] uppercase tracking-widest font-extrabold text-amber-300 mb-1">Total Period Revenue</p>
-          <p className="text-3xl font-black text-white font-display">₱{stats.revenue.toLocaleString()}</p>
+          <p className="text-3xl font-black text-white font-display">â‚±{stats.revenue.toLocaleString()}</p>
         </div>
       </div>
 
 
       {/* Secondary Stats Cards for Payments */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-        <Card className="p-4 bg-white border-slate-200 shadow-sm">
-          <p className="text-xs uppercase tracking-wider text-amber-600 font-bold mb-1">Awaiting Payments</p>
-          <p className="text-2xl font-black text-slate-800">{stats.pendingPayments}</p>
+        <Card className="p-4 bg-white dark:bg-[#151F2E] border-slate-200 dark:border-slate-800 shadow-sm">
+          <p className="text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold mb-1">Awaiting Payments</p>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.pendingPayments}</p>
         </Card>
-        <Card className="p-4 bg-white border-slate-200 shadow-sm">
-          <p className="text-xs uppercase tracking-wider text-slate-600 font-bold mb-1">Pay at Resort</p>
-          <p className="text-2xl font-black text-slate-800">{stats.resortCount}</p>
+        <Card className="p-4 bg-white dark:bg-[#151F2E] border-slate-200 dark:border-slate-800 shadow-sm">
+          <p className="text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 font-bold mb-1">Pay at Resort</p>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{stats.resortCount}</p>
         </Card>
       </div>
 
       {/* Charts Section */}
       <div className="grid gap-6 lg:grid-cols-4 print:break-inside-avoid">
-        <Card className="p-6 lg:col-span-2 shadow-sm border-slate-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Revenue Trend</h3>
+        <Card className="p-6 lg:col-span-2 shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-[#151F2E]">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Revenue Trend</h3>
           <div className="h-64 w-full">
             {dailyRevenueData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dailyRevenueData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} tickFormatter={(val) => `₱${val}`} />
-                  <RechartsTooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} tickFormatter={(val) => `â‚±${val}`} />
+                  <RechartsTooltip cursor={{ fill: 'rgba(51, 65, 85, 0.2)' }} contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)' }} />
                   <Bar dataKey="amount" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={50} />
                 </BarChart>
               </ResponsiveContainer>
@@ -642,8 +642,8 @@ function ReportsDashboard() {
           </div>
         </Card>
 
-        <Card className="p-6 shadow-sm border-slate-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Booking Status</h3>
+        <Card className="p-6 shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-[#151F2E]">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Booking Status</h3>
           <div className="h-64 w-full">
             {statusPieData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -653,7 +653,7 @@ function ReportsDashboard() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)' }} />
                   <Legend verticalAlign="bottom" height={36} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
@@ -663,8 +663,8 @@ function ReportsDashboard() {
           </div>
         </Card>
 
-        <Card className="p-6 shadow-sm border-slate-200">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Payment Methods</h3>
+        <Card className="p-6 shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-[#151F2E]">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Payment Methods</h3>
           <div className="h-64 w-full">
             {paymentMethodData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -673,7 +673,7 @@ function ReportsDashboard() {
                     <Cell fill="#3b82f6" /> {/* GCash */}
                     <Cell fill="#f59e0b" /> {/* Resort */}
                   </Pie>
-                  <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <RechartsTooltip contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)' }} />
                   <Legend verticalAlign="bottom" height={36} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
@@ -682,24 +682,24 @@ function ReportsDashboard() {
             )}
           </div>
         </Card>
-        <Card className="p-6 shadow-sm border-slate-200 lg:col-span-2 flex flex-col justify-between">
+        <Card className="p-6 shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-[#151F2E] lg:col-span-2 flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-slate-800 font-display">Cancellation Reasons</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white font-display">Cancellation Reasons</h3>
                 {stats.cancelled > 0 && (
-                  <Badge variant="outline" className="text-rose-700 bg-rose-50 border-rose-200 font-bold text-xs">
+                  <Badge variant="outline" className="text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-700/60 font-bold text-xs">
                     {stats.cancelled} Total
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Stated customer reasons and administrative cancellation audits.
               </p>
             </div>
             <Link
               to="/admin/cancellations"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#B38728] hover:text-[#8c671b] hover:underline transition-colors shrink-0"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#B38728] dark:text-[#FACC15] hover:text-[#8c671b] hover:underline transition-colors shrink-0"
             >
               Cancellations Log <ExternalLink className="w-3.5 h-3.5" />
             </Link>
@@ -747,8 +747,8 @@ function ReportsDashboard() {
                     const pct = Math.round((item.value / stats.cancelled) * 100);
                     const color = REASON_COLORS[idx % REASON_COLORS.length];
                     return (
-                      <div key={item.name} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1.5">
-                        <div className="flex items-center justify-between font-semibold text-slate-800">
+                      <div key={item.name} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between font-semibold text-slate-800 dark:text-slate-100">
                           <span className="flex items-center gap-1.5 truncate max-w-[170px]" title={item.name}>
                             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                             <span className="truncate">{item.name}</span>
@@ -757,7 +757,7 @@ function ReportsDashboard() {
                             {item.value} ({pct}%)
                           </span>
                         </div>
-                        <div className="w-full bg-slate-200/80 rounded-full h-1.5 overflow-hidden">
+                        <div className="w-full bg-slate-200/80 dark:bg-slate-700/60 rounded-full h-1.5 overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{ width: `${pct}%`, backgroundColor: color }}
@@ -769,11 +769,11 @@ function ReportsDashboard() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-56 text-center p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50">
+              <div className="flex flex-col items-center justify-center h-56 text-center p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30">
                 {allTimeCancellations.length > 0 ? (
                   <>
                     <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
-                    <p className="text-sm font-semibold text-slate-700">No cancellations in selected date range</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No cancellations in selected date range</p>
                     <p className="text-xs text-slate-500 max-w-xs mt-1">
                       There are {allTimeCancellations.length} cancellations recorded in other reporting periods.
                     </p>
@@ -781,7 +781,7 @@ function ReportsDashboard() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 text-xs font-semibold rounded-lg bg-white shadow-2xs hover:bg-slate-100"
+                        className="h-8 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-100 dark:hover:bg-slate-700"
                         onClick={() => {
                           setStartDate("2020-01-01");
                           setEndDate(format(endOfDay(new Date()), "yyyy-MM-dd"));
@@ -800,7 +800,7 @@ function ReportsDashboard() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-8 h-8 text-emerald-500 mb-2" />
-                    <p className="text-sm font-semibold text-slate-700">Zero Cancellations Recorded</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Zero Cancellations Recorded</p>
                     <p className="text-xs text-slate-400 max-w-xs mt-1">
                       All reservations in the resort inventory are active, confirmed, or completed.
                     </p>
@@ -813,20 +813,20 @@ function ReportsDashboard() {
       </div>
 
       {/* Data Tables Tabs */}
-      <Card className="shadow-sm border-slate-200 overflow-hidden print:shadow-none print:border-none">
+      <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-[#151F2E] overflow-hidden print:shadow-none print:border-none">
         <Tabs defaultValue="bookings" className="w-full">
-          <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 print:hidden">
+          <div className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 px-4 py-2 print:hidden">
             <TabsList className="bg-transparent space-x-2">
-              <TabsTrigger value="bookings" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="bookings" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-300 data-[state=active]:shadow-sm">
                 <FileText className="w-4 h-4 mr-2" /> Booking Reports
               </TabsTrigger>
-              <TabsTrigger value="occupancy" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="occupancy" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-300 data-[state=active]:shadow-sm">
                 <BedDouble className="w-4 h-4 mr-2" /> Room Occupancy
               </TabsTrigger>
-              <TabsTrigger value="customers" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="customers" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:text-slate-900 dark:data-[state=active]:text-white text-slate-600 dark:text-slate-300 data-[state=active]:shadow-sm">
                 <Users className="w-4 h-4 mr-2" /> Customer Reports
               </TabsTrigger>
-              <TabsTrigger value="deleted" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-red-600 data-[state=active]:text-red-700 font-medium">
+              <TabsTrigger value="deleted" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 text-rose-600 dark:text-rose-400 data-[state=active]:text-rose-700 dark:data-[state=active]:text-rose-300 font-medium">
                 <History className="w-4 h-4 mr-2" /> Recently Deleted {allTrashItems.length > 0 && `(${allTrashItems.length})`}
               </TabsTrigger>
             </TabsList>
@@ -835,11 +835,12 @@ function ReportsDashboard() {
           <div className="p-0">
             {/* BOOKINGS TABLE */}
             <TabsContent value="bookings" className="m-0 focus-visible:ring-0">
-              <div className="p-4 flex items-center justify-between print:hidden bg-white border-b">
-                <h3 className="font-semibold text-lg">Reservation Records</h3>
+              <div className="p-4 flex items-center justify-between print:hidden bg-white dark:bg-[#151F2E] border-b border-slate-200 dark:border-slate-800">
+                <h3 className="font-semibold text-lg text-slate-900 dark:text-white">Reservation Records</h3>
                 <Button
                   size="sm"
                   variant="outline"
+                  className="border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                   onClick={() => {
                     const exportData = filteredBookings.map((b: any) => {
                       const p = b.payments?.[0];
@@ -872,14 +873,14 @@ function ReportsDashboard() {
               </div>
               <div className="overflow-x-auto print:overflow-visible">
                 <Table className="min-w-[1000px] print:w-full print:min-w-0">
-                  <TableHeader className="bg-slate-50">
-                    <TableRow>
-                      <TableHead className="font-bold text-slate-700">Customer</TableHead>
-                      <TableHead className="font-bold text-slate-700">Room</TableHead>
-                      <TableHead className="font-bold text-slate-700">Dates</TableHead>
-                      <TableHead className="font-bold text-slate-700">Method</TableHead>
-                      <TableHead className="font-bold text-slate-700">Payment</TableHead>
-                      <TableHead className="font-bold text-slate-700">Status</TableHead>
+                  <TableHeader className="bg-slate-50 dark:bg-slate-800/80">
+                    <TableRow className="border-b border-slate-200 dark:border-slate-700">
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Customer</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Room</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Dates</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Method</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Payment</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -896,26 +897,26 @@ function ReportsDashboard() {
                         } catch(e){}
 
                         return (
-                          <TableRow key={b.id}>
+                          <TableRow key={b.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                             <TableCell>
-                              <div className="font-medium text-slate-900">{b.guest_name}</div>
-                              <div className="text-xs text-slate-500">{b.id.split("-")[0]}</div>
+                              <div className="font-medium text-slate-900 dark:text-white">{b.guest_name}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">{b.id.split("-")[0]}</div>
                             </TableCell>
                             <TableCell>
-                              <div className="font-medium">{b.room?.name}</div>
-                              <div className="text-xs text-slate-500 uppercase">{b.room?.type}</div>
+                              <div className="font-medium text-slate-900 dark:text-white">{b.room?.name}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400 uppercase">{b.room?.type}</div>
                             </TableCell>
                             <TableCell>
-                              <div className="text-sm">{b.check_in}</div>
-                              <div className="text-sm text-slate-500">to {b.check_out}</div>
+                              <div className="text-sm text-slate-800 dark:text-slate-200">{b.check_in}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">to {b.check_out}</div>
                             </TableCell>
                             <TableCell>
-                              <span className="capitalize font-medium text-slate-600">
-                                {method === "gcash" ? "GCash" : method === "resort" ? "At Resort" : "—"}
+                              <span className="capitalize font-medium text-slate-700 dark:text-slate-300">
+                                {method === "gcash" ? "GCash" : method === "resort" ? "At Resort" : "â€”"}
                               </span>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className="capitalize bg-slate-50">
+                              <Badge variant="outline" className="capitalize bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
                                 {p?.status || "Unpaid"}
                               </Badge>
                             </TableCell>
@@ -935,11 +936,12 @@ function ReportsDashboard() {
 
             {/* OCCUPANCY TABLE */}
             <TabsContent value="occupancy" className="m-0 focus-visible:ring-0 print:hidden">
-               <div className="p-4 flex items-center justify-between bg-white border-b">
-                <h3 className="font-semibold text-lg">Room & Cottage Occupancy</h3>
+               <div className="p-4 flex items-center justify-between bg-white dark:bg-[#151F2E] border-b border-slate-200 dark:border-slate-800">
+                <h3 className="font-semibold text-lg text-slate-900 dark:text-white">Room & Cottage Occupancy</h3>
                 <Button
                   size="sm"
                   variant="outline"
+                  className="border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                   onClick={() => {
                     exportCSV(roomOccupancyData, `Occupancy_Report_${startDate}_${endDate}.csv`);
                   }}
@@ -949,23 +951,23 @@ function ReportsDashboard() {
               </div>
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-slate-50">
-                    <TableRow>
-                      <TableHead className="font-bold text-slate-700">Room / Cottage</TableHead>
-                      <TableHead className="font-bold text-slate-700">Type</TableHead>
-                      <TableHead className="font-bold text-slate-700">Times Booked</TableHead>
-                      <TableHead className="font-bold text-slate-700">Generated Revenue</TableHead>
+                  <TableHeader className="bg-slate-50 dark:bg-slate-800/80">
+                    <TableRow className="border-b border-slate-200 dark:border-slate-700">
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Room / Cottage</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Type</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Times Booked</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Generated Revenue</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {roomOccupancyData.map((r: any, i: number) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium text-slate-900">{r.name}</TableCell>
-                        <TableCell className="uppercase text-xs font-semibold text-slate-500">{r.type}</TableCell>
+                      <TableRow key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                        <TableCell className="font-medium text-slate-900 dark:text-white">{r.name}</TableCell>
+                        <TableCell className="uppercase text-xs font-semibold text-slate-500 dark:text-slate-400">{r.type}</TableCell>
                         <TableCell>
                           <Badge variant="secondary">{r.timesBooked} bookings</Badge>
                         </TableCell>
-                        <TableCell className="font-bold text-primary">₱{r.revenue.toLocaleString()}</TableCell>
+                        <TableCell className="font-bold text-primary">â‚±{r.revenue.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -975,11 +977,12 @@ function ReportsDashboard() {
 
             {/* CUSTOMERS TABLE */}
             <TabsContent value="customers" className="m-0 focus-visible:ring-0 print:hidden">
-              <div className="p-4 flex items-center justify-between bg-white border-b">
-                <h3 className="font-semibold text-lg">Customer Reports</h3>
+              <div className="p-4 flex items-center justify-between bg-white dark:bg-[#151F2E] border-b border-slate-200 dark:border-slate-800">
+                <h3 className="font-semibold text-lg text-slate-900 dark:text-white">Customer Reports</h3>
                 <Button
                   size="sm"
                   variant="outline"
+                  className="border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                   onClick={() => {
                     exportCSV(customerData, `Customers_Report_${startDate}_${endDate}.csv`);
                   }}
@@ -989,23 +992,23 @@ function ReportsDashboard() {
               </div>
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-slate-50">
-                    <TableRow>
-                      <TableHead className="font-bold text-slate-700">Customer Name</TableHead>
-                      <TableHead className="font-bold text-slate-700">Contact Email</TableHead>
-                      <TableHead className="font-bold text-slate-700">Phone</TableHead>
-                      <TableHead className="font-bold text-slate-700">Total Bookings</TableHead>
-                      <TableHead className="font-bold text-slate-700">Total Spent</TableHead>
+                  <TableHeader className="bg-slate-50 dark:bg-slate-800/80">
+                    <TableRow className="border-b border-slate-200 dark:border-slate-700">
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Customer Name</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Contact Email</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Phone</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Total Bookings</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Total Spent</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {customerData.map((c, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium text-slate-900">{c.name}</TableCell>
-                        <TableCell>{c.email}</TableCell>
-                        <TableCell>{c.phone}</TableCell>
-                        <TableCell>{c.bookingsCount}</TableCell>
-                        <TableCell className="font-bold text-primary">₱{c.totalSpent.toLocaleString()}</TableCell>
+                      <TableRow key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                        <TableCell className="font-medium text-slate-900 dark:text-white">{c.name}</TableCell>
+                        <TableCell className="text-slate-700 dark:text-slate-300">{c.email}</TableCell>
+                        <TableCell className="text-slate-700 dark:text-slate-300">{c.phone}</TableCell>
+                        <TableCell className="text-slate-800 dark:text-slate-200">{c.bookingsCount}</TableCell>
+                        <TableCell className="font-bold text-primary">â‚±{c.totalSpent.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -1015,35 +1018,35 @@ function ReportsDashboard() {
 
             {/* RECENTLY DELETED TABLE */}
             <TabsContent value="deleted" className="m-0 focus-visible:ring-0 print:hidden">
-              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border-b">
+              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#151F2E] border-b border-slate-200 dark:border-slate-800">
                 <div>
-                  <h3 className="font-semibold text-lg text-rose-700">Recently Deleted Records ({allTrashItems.length})</h3>
-                  <p className="text-xs text-slate-500">Deleted bookings, accommodations, customer profiles, and inquiries that can be reviewed, restored, or permanently deleted.</p>
+                  <h3 className="font-semibold text-lg text-rose-700 dark:text-rose-400">Recently Deleted Records ({allTrashItems.length})</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Deleted bookings, accommodations, customer profiles, and inquiries that can be reviewed, restored, or permanently deleted.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="border-slate-300 text-slate-700 hover:bg-slate-100 font-medium cursor-pointer"
+                    className="border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium cursor-pointer"
                     disabled={isRefreshingDeleted || isTrashLoading}
                     onClick={handleRefreshDeleted}
                     title="Reload latest deleted records from the database"
                   >
-                    <RefreshCcw className={cn("w-3.5 h-3.5 mr-1.5 text-slate-500", (isRefreshingDeleted || isTrashLoading) && "animate-spin text-slate-700")} />
+                    <RefreshCcw className={cn("w-3.5 h-3.5 mr-1.5 text-slate-500 dark:text-slate-400", (isRefreshingDeleted || isTrashLoading) && "animate-spin text-slate-700 dark:text-slate-200")} />
                     {isRefreshingDeleted || isTrashLoading ? "Refreshing..." : "Refresh"}
                   </Button>
                 </div>
               </div>
               <div className="overflow-x-auto">
                 <Table className="min-w-[1000px]">
-                  <TableHeader className="bg-slate-50">
-                    <TableRow>
-                      <TableHead className="font-bold text-slate-700">Type</TableHead>
-                      <TableHead className="font-bold text-slate-700">Record Info</TableHead>
-                      <TableHead className="font-bold text-slate-700">Details / Dates</TableHead>
-                      <TableHead className="font-bold text-slate-700">Amount / Rate</TableHead>
-                      <TableHead className="font-bold text-slate-700">Deleted At</TableHead>
-                      <TableHead className="font-bold text-slate-700 text-right">Actions</TableHead>
+                  <TableHeader className="bg-slate-50 dark:bg-slate-800/80">
+                    <TableRow className="border-b border-slate-200 dark:border-slate-700">
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Type</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Record Info</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Details / Dates</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Amount / Rate</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300">Deleted At</TableHead>
+                      <TableHead className="font-bold text-slate-700 dark:text-slate-300 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1051,9 +1054,9 @@ function ReportsDashboard() {
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                           <div className="flex flex-col items-center justify-center gap-2">
-                            <History className="w-8 h-8 text-slate-300" />
-                            <p className="text-sm font-semibold text-slate-600">No recently deleted records.</p>
-                            <p className="text-xs text-slate-400 max-w-sm">
+                            <History className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">No recently deleted records.</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-400 max-w-sm">
                               When you delete bookings, accommodations, profiles, or inquiries, they will appear here safely for restoration.
                             </p>
                           </div>
@@ -1061,22 +1064,22 @@ function ReportsDashboard() {
                       </TableRow>
                     ) : (
                       allTrashItems.map((item) => (
-                        <TableRow key={`${item.type}-${item.id}`}>
+                        <TableRow key={`${item.type}-${item.id}`} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                           <TableCell>
                             {item.type === "booking" ? (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-bold text-[10px] uppercase">
+                              <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/60 font-bold text-[10px] uppercase">
                                 Booking
                               </Badge>
                             ) : item.type === "room" ? (
-                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-[10px] uppercase">
+                              <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 font-bold text-[10px] uppercase">
                                 Accommodation
                               </Badge>
                             ) : item.type === "customer" ? (
-                              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 font-bold text-[10px] uppercase">
+                              <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700/60 font-bold text-[10px] uppercase">
                                 Customer Profile
                               </Badge>
                             ) : item.type === "inquiry" ? (
-                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-bold text-[10px] uppercase">
+                              <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/60 font-bold text-[10px] uppercase">
                                 Customer Inquiry
                               </Badge>
                             ) : (
@@ -1086,27 +1089,27 @@ function ReportsDashboard() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <div className="font-medium text-slate-900">{item.title}</div>
-                            {item.subtitle && <div className="text-xs text-slate-500">{item.subtitle}</div>}
+                            <div className="font-medium text-slate-900 dark:text-white">{item.title}</div>
+                            {item.subtitle && <div className="text-xs text-slate-500 dark:text-slate-400">{item.subtitle}</div>}
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm">{item.dates || "—"}</div>
-                            {item.description && <div className="text-xs text-slate-500 line-clamp-1">{item.description}</div>}
+                            <div className="text-sm text-slate-800 dark:text-slate-200">{item.dates || "â€”"}</div>
+                            {item.description && <div className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{item.description}</div>}
                           </TableCell>
                           <TableCell>
                             {item.amount !== undefined && item.amount > 0 ? (
-                              <span className="font-medium text-slate-700">₱{item.amount.toLocaleString()}</span>
+                              <span className="font-medium text-slate-700 dark:text-slate-200">â‚±{item.amount.toLocaleString()}</span>
                             ) : (
-                              <span className="text-slate-400">—</span>
+                              <span className="text-slate-400">â€”</span>
                             )}
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm">
+                            <div className="text-sm text-slate-800 dark:text-slate-200">
                               {item.deleted_at ? format(parseISO(item.deleted_at), "MMM d, yyyy") : ""}
                             </div>
-                            <div className="text-xs text-slate-500">
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
                               {item.deleted_at ? format(parseISO(item.deleted_at), "h:mm a") : ""}
-                              {item.deleted_by_name ? ` • by ${item.deleted_by_name}` : ""}
+                              {item.deleted_by_name ? ` â€¢ by ${item.deleted_by_name}` : ""}
                             </div>
                           </TableCell>
                           <TableCell className="text-right whitespace-nowrap">
@@ -1114,20 +1117,20 @@ function ReportsDashboard() {
                               <Button 
                                 size="sm" 
                                 variant="outline" 
-                                className="text-emerald-700 bg-emerald-50/60 border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800 font-semibold cursor-pointer h-8 px-2.5 rounded-lg shadow-2xs"
+                                className="text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 hover:text-emerald-800 dark:hover:text-emerald-200 font-semibold cursor-pointer h-8 px-2.5 rounded-lg shadow-2xs transition-colors"
                                 onClick={() => restoreTrashItem(item)}
                                 title="Restore this record back to its original module"
                               >
-                                <RotateCcw className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Restore
+                                <RotateCcw className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" /> Restore
                               </Button>
                               <Button 
                                 size="sm" 
                                 variant="outline" 
-                                className="text-rose-700 bg-rose-50/60 border-rose-300 hover:bg-rose-100 hover:text-rose-800 font-semibold cursor-pointer h-8 px-2.5 rounded-lg shadow-2xs"
+                                className="text-rose-700 dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/60 border-rose-300 dark:border-rose-700/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 hover:text-rose-800 dark:hover:text-rose-200 font-semibold cursor-pointer h-8 px-2.5 rounded-lg shadow-2xs transition-colors"
                                 onClick={() => permanentlyDeleteTrashItem(item)}
                                 title="Permanently remove this record from the database"
                               >
-                                <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-600" /> Delete
+                                <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-600 dark:text-rose-400" /> Delete
                               </Button>
                             </div>
                           </TableCell>
@@ -1158,3 +1161,5 @@ function ReportsDashboard() {
     </>
   );
 }
+
+

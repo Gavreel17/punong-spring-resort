@@ -278,7 +278,7 @@ export function AvailabilityCalendarTab() {
             color: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm",
             type: "booking",
             booking: b,
-            text: isCheckInDay ? `→ ${guestFirst}` : guestFirst,
+            text: isCheckInDay ? `â†’ ${guestFirst}` : guestFirst,
             dateStr,
           };
         }
@@ -287,7 +287,7 @@ export function AvailabilityCalendarTab() {
             color: "bg-amber-500 text-white hover:bg-amber-600 shadow-sm",
             type: "booking",
             booking: b,
-            text: isCheckInDay ? `⏳ ${guestFirst}` : guestFirst,
+            text: isCheckInDay ? `â³ ${guestFirst}` : guestFirst,
             dateStr,
           };
         }
@@ -314,7 +314,7 @@ export function AvailabilityCalendarTab() {
     }
 
     return {
-      color: "bg-slate-50 hover:bg-emerald-50 text-slate-400 hover:text-emerald-700 border border-dashed border-slate-200 hover:border-emerald-300",
+      color: "bg-slate-50 dark:bg-slate-800/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-400 dark:text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-400 border border-dashed border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700",
       type: "free",
       text: "+",
       dateStr,
@@ -797,17 +797,17 @@ export function AvailabilityCalendarTab() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* 1. Header & Live Stats Overview */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38728] font-bold text-[11px] uppercase tracking-wider border border-[#D4AF37]/30 flex items-center gap-1">
               <Sparkles className="w-3 h-3" /> Resort Calendar Suite
             </span>
-            <span className="text-xs text-slate-500 font-medium">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Live Room Occupancy & Operational Control
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 font-display tracking-tight mt-1 flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white font-display tracking-tight mt-1 flex items-center gap-3">
             {currentMonth.toLocaleString("default", { month: "long", year: "numeric" })}
           </h1>
         </div>
@@ -815,12 +815,12 @@ export function AvailabilityCalendarTab() {
         {/* View Switcher & Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           {/* Navigation Controls */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
             <Button
               size="sm"
               variant="ghost"
               onClick={prevMonth}
-              className="h-8 px-2.5 text-xs font-bold text-slate-700 hover:bg-white rounded-lg transition-all"
+              className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all"
               title="Previous Month"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -829,7 +829,7 @@ export function AvailabilityCalendarTab() {
               size="sm"
               variant="ghost"
               onClick={jumpToToday}
-              className="h-8 px-3 text-xs font-bold text-slate-900 hover:bg-white rounded-lg transition-all"
+              className="h-8 px-3 text-xs font-bold text-slate-900 dark:text-white hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all"
             >
               Today
             </Button>
@@ -837,7 +837,7 @@ export function AvailabilityCalendarTab() {
               size="sm"
               variant="ghost"
               onClick={nextMonth}
-              className="h-8 px-2.5 text-xs font-bold text-slate-700 hover:bg-white rounded-lg transition-all"
+              className="h-8 px-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all"
               title="Next Month"
             >
               <ChevronRight className="w-4 h-4" />
@@ -845,14 +845,14 @@ export function AvailabilityCalendarTab() {
           </div>
 
           {/* View Modes */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setViewMode("matrix")}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                 viewMode === "matrix"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               Room Matrix
@@ -862,8 +862,8 @@ export function AvailabilityCalendarTab() {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                 viewMode === "month"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               Month View
@@ -873,8 +873,8 @@ export function AvailabilityCalendarTab() {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                 viewMode === "agenda"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               )}
             >
               Day Agenda
@@ -894,7 +894,7 @@ export function AvailabilityCalendarTab() {
             onClick={() => setMaintenanceModalOpen(true)}
             size="sm"
             variant="outline"
-            className="h-9 px-3 rounded-xl font-bold border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
+            className="h-9 px-3 rounded-xl font-bold border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5"
           >
             <Wrench className="w-3.5 h-3.5 text-slate-500" /> Maintenance
           </Button>
@@ -912,29 +912,29 @@ export function AvailabilityCalendarTab() {
 
       {/* 2. Occupancy Metrics Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-xs flex items-center gap-3">
+        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
             <BedDouble className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Total Accommodations
             </div>
-            <div className="text-lg font-extrabold text-slate-900">
+            <div className="text-lg font-extrabold text-slate-900 dark:text-white">
               {summaryMetrics.totalRoomsCount} Units
             </div>
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-xs flex items-center gap-3">
+        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
             <Clock className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Today's Occupancy
             </div>
-            <div className="text-lg font-extrabold text-slate-900">
+            <div className="text-lg font-extrabold text-slate-900 dark:text-white">
               {summaryMetrics.todayOccupied} / {summaryMetrics.totalRoomsCount}{" "}
               <span className="text-xs font-semibold text-amber-600">
                 ({summaryMetrics.occupancyRate}%)
@@ -943,21 +943,21 @@ export function AvailabilityCalendarTab() {
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-xs flex items-center gap-3">
+        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
             <ArrowRight className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Arrivals Today
             </div>
-            <div className="text-lg font-extrabold text-slate-900">
+            <div className="text-lg font-extrabold text-slate-900 dark:text-white">
               {summaryMetrics.todayCheckIns} Check-in(s)
             </div>
           </div>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-xs flex items-center gap-3">
+        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
             <ArrowLeft className="w-5 h-5" />
           </div>
@@ -965,13 +965,13 @@ export function AvailabilityCalendarTab() {
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Departures Today
             </div>
-            <div className="text-lg font-extrabold text-slate-900">
+            <div className="text-lg font-extrabold text-slate-900 dark:text-white">
               {summaryMetrics.todayCheckOuts} Check-out(s)
             </div>
           </div>
         </div>
 
-        <div className="col-span-2 sm:col-span-1 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-xs flex items-center gap-3">
+        <div className="col-span-2 sm:col-span-1 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold">
             <CalendarCheck className="w-5 h-5" />
           </div>
@@ -979,7 +979,7 @@ export function AvailabilityCalendarTab() {
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Month Reservations
             </div>
-            <div className="text-lg font-extrabold text-slate-900">
+            <div className="text-lg font-extrabold text-slate-900 dark:text-white">
               {summaryMetrics.activeMonthBookings} Stays
             </div>
           </div>
@@ -987,7 +987,7 @@ export function AvailabilityCalendarTab() {
       </div>
 
       {/* 3. Search & Filter Toolbars */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50/80 rounded-xl border border-slate-200">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50/80 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700">
         <div className="flex flex-wrap items-center gap-3 flex-1">
           <div className="relative min-w-[220px] max-w-xs">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -995,14 +995,14 @@ export function AvailabilityCalendarTab() {
               placeholder="Search guest or room..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 h-9 text-xs rounded-lg bg-white border-slate-300"
+              className="pl-9 h-9 text-xs rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white"
             />
           </div>
 
           <div className="flex items-center gap-1.5">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="h-9 text-xs rounded-lg bg-white w-40 border-slate-300">
+              <SelectTrigger className="h-9 text-xs rounded-lg bg-white dark:bg-slate-800 w-40 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
@@ -1018,7 +1018,7 @@ export function AvailabilityCalendarTab() {
         </div>
 
         {/* Quick legend inline */}
-        <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
+        <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 dark:text-slate-300">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-emerald-600"></span> Confirmed
           </span>
@@ -1036,11 +1036,11 @@ export function AvailabilityCalendarTab() {
       {/* VIEW A: INTERACTIVE ROOM MATRIX */}
       {viewMode === "matrix" && (
         <div className="space-y-3">
-          <div className="overflow-x-auto pb-4 rounded-2xl border border-slate-200/90 shadow-sm bg-white">
+          <div className="overflow-x-auto pb-4 rounded-2xl border border-slate-200/90 dark:border-slate-700 shadow-sm bg-white dark:bg-[#151F2E]">
             <table className="w-full border-collapse min-w-[950px] text-sm select-none">
               <thead>
-                <tr className="bg-slate-50/90 border-b border-slate-200 text-xs">
-                  <th className="p-3 text-left sticky left-0 z-30 bg-slate-100 backdrop-blur-md w-56 font-bold text-slate-700 uppercase tracking-wider border-r border-slate-200 shadow-sm">
+                <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-xs">
+                  <th className="p-3 text-left sticky left-0 z-30 bg-slate-100 dark:bg-slate-800 backdrop-blur-md w-56 font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider border-r border-slate-200 dark:border-slate-700 shadow-sm">
                     Accommodation
                   </th>
                   {days.map((d) => {
@@ -1070,8 +1070,8 @@ export function AvailabilityCalendarTab() {
                 </tr>
 
                 {/* Overall Occupancy Indicator Row */}
-                <tr className="bg-amber-50/40 border-b border-slate-200 text-xs">
-                  <td className="p-3 font-bold text-slate-800 uppercase tracking-wider sticky left-0 bg-amber-50/90 backdrop-blur-md z-30 border-r border-slate-200 shadow-sm">
+                <tr className="bg-amber-50/40 dark:bg-amber-950/20 border-b border-slate-200 dark:border-slate-800 text-xs">
+                  <td className="p-3 font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider sticky left-0 bg-amber-50/90 dark:bg-[#18202F] backdrop-blur-md z-30 border-r border-slate-200 dark:border-slate-800 shadow-sm">
                     Resort Capacity
                   </td>
                   {days.map((d) => {
@@ -1080,7 +1080,7 @@ export function AvailabilityCalendarTab() {
                     return (
                       <td
                         key={d}
-                        className="p-1 border-r border-slate-200/40 text-center cursor-pointer"
+                        className="p-1 border-r border-slate-200/40 dark:border-slate-800/40 text-center cursor-pointer"
                         title={`${dateStr}: ${cell.tooltip}`}
                         onClick={() => setDayAgendaModalDate(dateStr)}
                       >
@@ -1112,13 +1112,13 @@ export function AvailabilityCalendarTab() {
                   filteredRooms.map((r: any) => (
                     <tr
                       key={r.id}
-                      className="border-b border-slate-100 hover:bg-slate-50/40 transition-colors"
+                      className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/40 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       {/* Room Column */}
-                      <td className="p-3 sticky left-0 bg-white z-20 border-r border-slate-200 shadow-sm">
+                      <td className="p-3 sticky left-0 bg-white dark:bg-[#151F2E] z-20 border-r border-slate-200 dark:border-slate-800 shadow-sm">
                         <div className="flex flex-col">
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                            <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate">
                               {r.name}
                             </span>
                             {r.status === "maintenance" && (
@@ -1132,8 +1132,8 @@ export function AvailabilityCalendarTab() {
                           </div>
                           <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                             <span>{r.type === "villa" ? "Function Hall" : r.type || "ROOM"}</span>
-                            <span>•</span>
-                            <span>₱{Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}</span>
+                            <span>â€¢</span>
+                            <span>â‚±{Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}</span>
                           </div>
                         </div>
                       </td>
@@ -1199,7 +1199,7 @@ export function AvailabilityCalendarTab() {
           </div>
 
           <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-            <span>💡 Tip: Click any day number to view the Day Agenda, or click any available cell to create a walk-in booking.</span>
+            <span>ðŸ’¡ Tip: Click any day number to view the Day Agenda, or click any available cell to create a walk-in booking.</span>
             <span>Current Month: {currentMonth.toLocaleString("default", { month: "long", year: "numeric" })}</span>
           </div>
         </div>
@@ -1208,25 +1208,25 @@ export function AvailabilityCalendarTab() {
       {/* VIEW B: FULL MONTH CALENDAR GRID */}
       {viewMode === "month" && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-[#151F2E] shadow-sm">
             {/* Weekday Header */}
-            <div className="grid grid-cols-7 bg-slate-100 border-b border-slate-200 text-center font-bold text-xs uppercase tracking-wider text-slate-700 py-2.5">
-              <div className="text-rose-600">Sun</div>
+            <div className="grid grid-cols-7 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-center font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 py-2.5">
+              <div className="text-rose-600 dark:text-rose-400">Sun</div>
               <div>Mon</div>
               <div>Tue</div>
               <div>Wed</div>
               <div>Thu</div>
               <div>Fri</div>
-              <div className="text-blue-600">Sat</div>
+              <div className="text-blue-600 dark:text-blue-400">Sat</div>
             </div>
 
             {/* Weeks Matrix */}
-            <div className="divide-y divide-slate-200">
+            <div className="divide-y divide-slate-200 dark:divide-slate-800">
               {monthCalendarWeeks.map((week, wIdx) => (
-                <div key={wIdx} className="grid grid-cols-7 divide-x divide-slate-100 min-h-[110px]">
+                <div key={wIdx} className="grid grid-cols-7 divide-x divide-slate-100 dark:divide-slate-800 min-h-[110px]">
                   {week.map((day, dIdx) => {
                     if (!day) {
-                      return <div key={dIdx} className="bg-slate-50/50 p-2" />;
+                      return <div key={dIdx} className="bg-slate-50/50 dark:bg-slate-900/30 p-2" />;
                     }
 
                     const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -1251,9 +1251,9 @@ export function AvailabilityCalendarTab() {
                         key={dIdx}
                         onClick={() => setDayAgendaModalDate(dateStr)}
                         className={cn(
-                          "p-2 flex flex-col justify-between transition-colors hover:bg-slate-50/80 cursor-pointer group relative",
-                          isToday && "bg-amber-50/50 ring-1 ring-amber-400 inset-0",
-                          isBlocked && "bg-rose-50/40"
+                          "p-2 flex flex-col justify-between transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/80 cursor-pointer group relative",
+                          isToday && "bg-amber-50/50 dark:bg-amber-950/30 ring-1 ring-amber-400 inset-0",
+                          isBlocked && "bg-rose-50/40 dark:bg-rose-950/40"
                         )}
                       >
                         {/* Day Number Header */}
@@ -1263,7 +1263,7 @@ export function AvailabilityCalendarTab() {
                               "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
                               isToday
                                 ? "bg-amber-500 text-white shadow-sm"
-                                : "text-slate-700 group-hover:text-slate-900"
+                                : "text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
                             )}
                           >
                             {day}
@@ -1334,16 +1334,16 @@ export function AvailabilityCalendarTab() {
       {/* VIEW C: DAILY OPERATIONAL AGENDA VIEW */}
       {viewMode === "agenda" && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-3">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Select Operational Date:
               </Label>
               <Input
                 type="date"
                 value={selectedAgendaDate}
                 onChange={(e) => setSelectedAgendaDate(e.target.value)}
-                className="h-9 w-44 rounded-lg bg-white text-xs border-slate-300"
+                className="h-9 w-44 rounded-lg bg-white dark:bg-slate-800 text-xs border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white"
               />
               <Button
                 size="sm"
@@ -1370,12 +1370,12 @@ export function AvailabilityCalendarTab() {
             return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* 1. Check-ins Card */}
-                <Card className="rounded-2xl border-slate-200 shadow-xs">
-                  <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
-                    <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-700 bg-white dark:bg-[#151F2E] shadow-xs">
+                  <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
+                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       <ArrowRight className="w-4 h-4 text-emerald-600" /> Arrivals (Check-Ins)
                     </CardTitle>
-                    <Badge className="bg-emerald-100 text-emerald-800 border-none font-bold">
+                    <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-none font-bold">
                       {agenda.checkIns.length} Guests
                     </Badge>
                   </CardHeader>
@@ -1389,18 +1389,18 @@ export function AvailabilityCalendarTab() {
                         <div
                           key={b.id}
                           onClick={() => setSelectedBooking(b)}
-                          className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-emerald-50/50 hover:border-emerald-200 transition-all cursor-pointer space-y-1.5"
+                          className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all cursor-pointer space-y-1.5"
                         >
                           <div className="flex justify-between items-start">
-                            <span className="font-bold text-xs text-slate-900">{b.guest_name}</span>
+                            <span className="font-bold text-xs text-slate-900 dark:text-white">{b.guest_name}</span>
                             <Badge variant="outline" className="text-[10px] capitalize font-bold">
                               {b.status}
                             </Badge>
                           </div>
-                          <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
                             <span>{b.room?.name}</span>
                             <span className="font-bold text-[#B38728]">
-                              ₱{Number(b.total_amount).toLocaleString()}
+                              â‚±{Number(b.total_amount).toLocaleString()}
                             </span>
                           </div>
                           <div className="text-[10px] text-slate-400">
@@ -1413,12 +1413,12 @@ export function AvailabilityCalendarTab() {
                 </Card>
 
                 {/* 2. Check-outs Card */}
-                <Card className="rounded-2xl border-slate-200 shadow-xs">
-                  <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
-                    <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-700 bg-white dark:bg-[#151F2E] shadow-xs">
+                  <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
+                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       <ArrowLeft className="w-4 h-4 text-blue-600" /> Departures (Check-Outs)
                     </CardTitle>
-                    <Badge className="bg-blue-100 text-blue-800 border-none font-bold">
+                    <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-none font-bold">
                       {agenda.checkOuts.length} Guests
                     </Badge>
                   </CardHeader>
@@ -1432,17 +1432,17 @@ export function AvailabilityCalendarTab() {
                         <div
                           key={b.id}
                           onClick={() => setSelectedBooking(b)}
-                          className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-blue-50/50 hover:border-blue-200 transition-all cursor-pointer space-y-1.5"
+                          className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-800 transition-all cursor-pointer space-y-1.5"
                         >
                           <div className="flex justify-between items-start">
-                            <span className="font-bold text-xs text-slate-900">{b.guest_name}</span>
+                            <span className="font-bold text-xs text-slate-900 dark:text-white">{b.guest_name}</span>
                             <Badge variant="outline" className="text-[10px] capitalize font-bold">
                               {b.status}
                             </Badge>
                           </div>
-                          <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
                             <span>{b.room?.name}</span>
-                            <span className="font-bold text-slate-700">
+                            <span className="font-bold text-slate-700 dark:text-slate-300">
                               Stayed {b.check_in} to {b.check_out}
                             </span>
                           </div>
@@ -1453,12 +1453,12 @@ export function AvailabilityCalendarTab() {
                 </Card>
 
                 {/* 3. Available Rooms on this date */}
-                <Card className="rounded-2xl border-slate-200 shadow-xs md:col-span-2 lg:col-span-1">
-                  <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
-                    <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Card className="rounded-2xl border-slate-200 dark:border-slate-700 bg-white dark:bg-[#151F2E] shadow-xs md:col-span-2 lg:col-span-1">
+                  <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
+                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       <BedDouble className="w-4 h-4 text-[#B38728]" /> Vacant Accommodations
                     </CardTitle>
-                    <Badge className="bg-amber-100 text-amber-800 border-none font-bold">
+                    <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-none font-bold">
                       {agenda.vacantRooms.length} Free
                     </Badge>
                   </CardHeader>
@@ -1471,12 +1471,12 @@ export function AvailabilityCalendarTab() {
                       agenda.vacantRooms.map((r: any) => (
                         <div
                           key={r.id}
-                          className="p-2.5 rounded-xl border border-slate-200 bg-white flex items-center justify-between hover:bg-slate-50 transition-colors"
+                          className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                         >
                           <div>
-                            <div className="font-bold text-xs text-slate-900">{r.name}</div>
+                            <div className="font-bold text-xs text-slate-900 dark:text-white">{r.name}</div>
                             <div className="text-[10px] text-slate-400">
-                              ₱{Number(r.price).toLocaleString()} • Cap: {r.capacity || "2-4"}
+                              â‚±{Number(r.price).toLocaleString()} â€¢ Cap: {r.capacity || "2-4"}
                             </div>
                           </div>
                           <Button
@@ -1522,11 +1522,11 @@ export function AvailabilityCalendarTab() {
               <div className="space-y-5 py-2">
                 {/* Check-ins */}
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800 mb-2 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-2 flex items-center gap-1.5">
                     <ArrowRight className="w-3.5 h-3.5" /> Check-Ins ({agenda.checkIns.length})
                   </h4>
                   {agenda.checkIns.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic bg-slate-50 p-2.5 rounded-xl">
+                    <p className="text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700">
                       No check-ins today.
                     </p>
                   ) : (
@@ -1538,14 +1538,14 @@ export function AvailabilityCalendarTab() {
                             setDayAgendaModalDate(null);
                             setSelectedBooking(b);
                           }}
-                          className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/50 transition-colors cursor-pointer flex justify-between items-center"
+                          className="p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/40 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer flex justify-between items-center"
                         >
                           <div>
-                            <span className="font-bold text-xs text-slate-900 block">
+                            <span className="font-bold text-xs text-slate-900 dark:text-white block">
                               {b.guest_name}
                             </span>
-                            <span className="text-[11px] text-slate-600">
-                              {b.room?.name} • Check-out: {b.check_out}
+                            <span className="text-[11px] text-slate-600 dark:text-slate-300">
+                              {b.room?.name} â€¢ Check-out: {b.check_out}
                             </span>
                           </div>
                           <Badge className="bg-emerald-600 text-white text-[10px]">
@@ -1559,11 +1559,11 @@ export function AvailabilityCalendarTab() {
 
                 {/* Check-outs */}
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-blue-800 mb-2 flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-400 mb-2 flex items-center gap-1.5">
                     <ArrowLeft className="w-3.5 h-3.5" /> Check-Outs ({agenda.checkOuts.length})
                   </h4>
                   {agenda.checkOuts.length === 0 ? (
-                    <p className="text-xs text-slate-400 italic bg-slate-50 p-2.5 rounded-xl">
+                    <p className="text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700">
                       No check-outs today.
                     </p>
                   ) : (
@@ -1575,14 +1575,14 @@ export function AvailabilityCalendarTab() {
                             setDayAgendaModalDate(null);
                             setSelectedBooking(b);
                           }}
-                          className="p-3 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/50 transition-colors cursor-pointer flex justify-between items-center"
+                          className="p-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/40 hover:bg-blue-100/50 dark:hover:bg-blue-900/40 transition-colors cursor-pointer flex justify-between items-center"
                         >
                           <div>
-                            <span className="font-bold text-xs text-slate-900 block">
+                            <span className="font-bold text-xs text-slate-900 dark:text-white block">
                               {b.guest_name}
                             </span>
-                            <span className="text-[11px] text-slate-600">
-                              {b.room?.name} • Departed
+                            <span className="text-[11px] text-slate-600 dark:text-slate-300">
+                              {b.room?.name} â€¢ Departed
                             </span>
                           </div>
                           <Badge variant="outline" className="text-[10px]">
@@ -1597,7 +1597,7 @@ export function AvailabilityCalendarTab() {
                 {/* Stays in house */}
                 {agenda.stays.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
                       In-House Stays ({agenda.stays.length})
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1608,10 +1608,10 @@ export function AvailabilityCalendarTab() {
                             setDayAgendaModalDate(null);
                             setSelectedBooking(b);
                           }}
-                          className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer text-xs"
+                          className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer text-xs"
                         >
-                          <span className="font-bold text-slate-900 block">{b.guest_name}</span>
-                          <span className="text-[11px] text-slate-500">
+                          <span className="font-bold text-slate-900 dark:text-white block">{b.guest_name}</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
                             {b.room?.name} (until {b.check_out})
                           </span>
                         </div>
@@ -1672,14 +1672,14 @@ export function AvailabilityCalendarTab() {
           </DialogHeader>
           {cellActionData && (
             <div className="space-y-4 py-2">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                <span className="text-slate-400 block uppercase tracking-wider text-[10px] font-bold">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+                <span className="text-slate-400 dark:text-slate-500 block uppercase tracking-wider text-[10px] font-bold">
                   Selected Room & Date
                 </span>
-                <span className="font-extrabold text-sm text-slate-900 block mt-0.5">
+                <span className="font-extrabold text-sm text-slate-900 dark:text-white block mt-0.5">
                   {cellActionData.room.name}
                 </span>
-                <span className="text-slate-600 font-medium">
+                <span className="text-slate-600 dark:text-slate-300 font-medium">
                   {new Date(cellActionData.dateStr).toLocaleDateString("en-US", {
                     weekday: "long",
                     month: "long",
@@ -1703,7 +1703,7 @@ export function AvailabilityCalendarTab() {
 
                 <Button
                   variant="outline"
-                  className="w-full border-slate-300 text-slate-700 hover:bg-slate-50 font-bold rounded-xl h-10 justify-start px-4 text-xs"
+                  className="w-full border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold rounded-xl h-10 justify-start px-4 text-xs"
                   onClick={() => {
                     const { room, dateStr } = cellActionData;
                     setCellActionData(null);
@@ -1721,7 +1721,7 @@ export function AvailabilityCalendarTab() {
 
                 <Button
                   variant="ghost"
-                  className="w-full text-slate-600 font-bold rounded-xl h-9 justify-start px-4 text-xs"
+                  className="w-full text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold rounded-xl h-9 justify-start px-4 text-xs"
                   onClick={() => {
                     const { dateStr } = cellActionData;
                     setCellActionData(null);
@@ -1740,7 +1740,7 @@ export function AvailabilityCalendarTab() {
       <Dialog open={newBookingModalOpen} onOpenChange={setNewBookingModalOpen}>
         <DialogContent className="rounded-2xl max-w-lg p-6 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold font-display text-slate-900 flex items-center gap-2">
+            <DialogTitle className="text-xl font-bold font-display text-slate-900 dark:text-white flex items-center gap-2">
               <CalendarPlus className="w-5 h-5 text-[#B38728]" /> Direct / Walk-In Reservation
             </DialogTitle>
           </DialogHeader>
@@ -1755,13 +1755,13 @@ export function AvailabilityCalendarTab() {
                 value={bookingForm.room_id}
                 onValueChange={(val) => handleBookingFormChange({ room_id: val })}
               >
-                <SelectTrigger className="mt-1 rounded-xl text-xs bg-white border-slate-300 h-10">
+                <SelectTrigger className="mt-1 rounded-xl text-xs bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white h-10">
                   <SelectValue placeholder="Select Accommodation" />
                 </SelectTrigger>
                 <SelectContent>
                   {rooms.map((r: any) => (
                     <SelectItem key={r.id} value={r.id}>
-                      {r.name} ({r.type === "villa" ? "Function Hall" : r.type || "Room"}) - ₱
+                      {r.name} ({r.type === "villa" ? "Function Hall" : r.type || "Room"}) - â‚±
                       {Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}
                     </SelectItem>
                   ))}
@@ -1861,10 +1861,10 @@ export function AvailabilityCalendarTab() {
             </div>
 
             {/* Total Amount & Payment Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
               <div>
-                <Label className="text-xs font-semibold uppercase text-slate-600">
-                  Total Amount (₱) *
+                <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
+                  Total Amount (â‚±) *
                 </Label>
                 <Input
                   type="number"
@@ -1873,19 +1873,19 @@ export function AvailabilityCalendarTab() {
                   onChange={(e) =>
                     handleBookingFormChange({ total_amount: Number(e.target.value) })
                   }
-                  className="mt-1 rounded-xl text-xs font-bold text-[#B38728] h-9 bg-white"
+                  className="mt-1 rounded-xl text-xs font-bold text-[#B38728] h-9 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"
                 />
               </div>
 
               <div>
-                <Label className="text-xs font-semibold uppercase text-slate-600">
+                <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                   Payment Status
                 </Label>
                 <Select
                   value={bookingForm.payment_status}
                   onValueChange={(val: any) => handleBookingFormChange({ payment_status: val })}
                 >
-                  <SelectTrigger className="mt-1 rounded-xl text-xs bg-white border-slate-300 h-9">
+                  <SelectTrigger className="mt-1 rounded-xl text-xs bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1897,14 +1897,14 @@ export function AvailabilityCalendarTab() {
               </div>
 
               <div>
-                <Label className="text-xs font-semibold uppercase text-slate-600">
+                <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                   Method
                 </Label>
                 <Select
                   value={bookingForm.payment_method}
                   onValueChange={(val: any) => handleBookingFormChange({ payment_method: val })}
                 >
-                  <SelectTrigger className="mt-1 rounded-xl text-xs bg-white border-slate-300 h-9">
+                  <SelectTrigger className="mt-1 rounded-xl text-xs bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1954,21 +1954,21 @@ export function AvailabilityCalendarTab() {
       <Dialog open={maintenanceModalOpen} onOpenChange={setMaintenanceModalOpen}>
         <DialogContent className="rounded-2xl max-w-md p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold font-display text-slate-800 flex items-center gap-2">
-              <Wrench className="w-5 h-5 text-slate-600" /> Accommodation Maintenance
+            <DialogTitle className="text-lg font-bold font-display text-slate-800 dark:text-white flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-slate-600 dark:text-slate-400" /> Accommodation Maintenance
             </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleMaintenanceSubmit} className="space-y-4 py-2">
             <div>
-              <Label className="text-xs font-semibold uppercase text-slate-600">
+              <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                 Select Accommodation *
               </Label>
               <Select
                 value={maintenanceForm.room_id}
                 onValueChange={(val) => setMaintenanceForm({ ...maintenanceForm, room_id: val })}
               >
-                <SelectTrigger className="mt-1 rounded-xl text-xs bg-white border-slate-300">
+                <SelectTrigger className="mt-1 rounded-xl text-xs bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white">
                   <SelectValue placeholder="Choose room to set maintenance" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1983,7 +1983,7 @@ export function AvailabilityCalendarTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs font-semibold uppercase text-slate-600">Start Date</Label>
+                <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">Start Date</Label>
                 <Input
                   type="date"
                   required
@@ -1995,7 +1995,7 @@ export function AvailabilityCalendarTab() {
                 />
               </div>
               <div>
-                <Label className="text-xs font-semibold uppercase text-slate-600">End Date</Label>
+                <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">End Date</Label>
                 <Input
                   type="date"
                   required
@@ -2008,14 +2008,14 @@ export function AvailabilityCalendarTab() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full rounded-xl font-bold bg-slate-800 text-white">
+            <Button type="submit" className="w-full rounded-xl font-bold bg-slate-800 dark:bg-slate-700 text-white hover:bg-slate-900 dark:hover:bg-slate-600">
               Schedule Maintenance Closure
             </Button>
           </form>
 
           {/* List of currently scheduled room maintenance */}
-          <div className="mt-4 pt-4 border-t border-slate-200">
-            <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700 mb-2">
+          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
               Active Room Maintenance
             </h4>
             {rooms.filter((r: any) => r.status === "maintenance" || r.maintenance_start).length ===
@@ -2028,11 +2028,11 @@ export function AvailabilityCalendarTab() {
                   .map((r: any) => (
                     <div
                       key={r.id}
-                      className="flex justify-between items-center text-xs border p-2.5 rounded-xl bg-slate-50"
+                      className="flex justify-between items-center text-xs border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800"
                     >
                       <div>
-                        <span className="font-bold text-slate-900 block">{r.name}</span>
-                        <span className="text-[10px] text-slate-500">
+                        <span className="font-bold text-slate-900 dark:text-white block">{r.name}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
                           {r.maintenance_start || "Active"} to {r.maintenance_end || "Ongoing"}
                         </span>
                       </div>
@@ -2040,7 +2040,7 @@ export function AvailabilityCalendarTab() {
                         size="sm"
                         variant="outline"
                         onClick={() => clearRoomMaintenance(r.id)}
-                        className="h-7 px-2.5 text-xs font-bold text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                        className="h-7 px-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
                       >
                         Restore Room
                       </Button>
@@ -2099,8 +2099,8 @@ export function AvailabilityCalendarTab() {
             </Button>
           </form>
 
-          <div className="mt-4 pt-4 border-t border-slate-200">
-            <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700 mb-2">
+          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
               Active Resort Blocks
             </h4>
             {blocks.length === 0 ? (
@@ -2110,16 +2110,16 @@ export function AvailabilityCalendarTab() {
                 {blocks.map((b: any) => (
                   <li
                     key={b.id}
-                    className="flex justify-between items-center text-xs border p-2.5 rounded-xl bg-slate-50 font-medium"
+                    className="flex justify-between items-center text-xs border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 font-medium"
                   >
                     <span>
                       <strong>{b.start_date}</strong> to <strong>{b.end_date}</strong>{" "}
-                      {b.reason && <span className="text-slate-500">({b.reason})</span>}
+                      {b.reason && <span className="text-slate-500 dark:text-slate-400">({b.reason})</span>}
                     </span>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-rose-600 hover:bg-rose-50 h-7 px-2 font-bold"
+                      className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 h-7 px-2 font-bold"
                       onClick={async () => {
                         await supabase.from("resort_blocks" as any).delete().eq("id", b.id);
                         refetch();
@@ -2168,12 +2168,12 @@ export function AvailabilityCalendarTab() {
           {selectedBooking && (
             <div className="space-y-4 py-2">
               {/* Information Grid */}
-              <div className="grid grid-cols-2 gap-3.5 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div className="grid grid-cols-2 gap-3.5 text-xs bg-slate-50 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div>
                   <span className="font-bold uppercase tracking-wider text-slate-400 block mb-0.5 text-[10px]">
                     Guest Name
                   </span>
-                  <span className="font-bold text-slate-900 text-sm">
+                  <span className="font-bold text-slate-900 dark:text-white text-sm">
                     {selectedBooking.guest_name}
                   </span>
                 </div>
@@ -2181,7 +2181,7 @@ export function AvailabilityCalendarTab() {
                   <span className="font-bold uppercase tracking-wider text-slate-400 block mb-0.5 text-[10px]">
                     Contact Phone
                   </span>
-                  <span className="font-semibold text-slate-900">
+                  <span className="font-semibold text-slate-900 dark:text-white">
                     {selectedBooking.guest_phone || "None provided"}
                   </span>
                 </div>
@@ -2189,7 +2189,7 @@ export function AvailabilityCalendarTab() {
                   <span className="font-bold uppercase tracking-wider text-slate-400 block mb-0.5 text-[10px]">
                     Email Address
                   </span>
-                  <span className="font-semibold text-slate-800 break-all">
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 break-all">
                     {selectedBooking.guest_email || "N/A"}
                   </span>
                 </div>
@@ -2197,7 +2197,7 @@ export function AvailabilityCalendarTab() {
                   <span className="font-bold uppercase tracking-wider text-slate-400 block mb-0.5 text-[10px]">
                     Accommodation
                   </span>
-                  <span className="font-bold text-slate-900">
+                  <span className="font-bold text-slate-900 dark:text-white">
                     {selectedBooking.room?.name || selectedBooking.room_id}
                   </span>
                 </div>
@@ -2205,7 +2205,7 @@ export function AvailabilityCalendarTab() {
                   <span className="font-bold uppercase tracking-wider text-slate-400 block mb-0.5 text-[10px]">
                     Check-In Date
                   </span>
-                  <span className="font-bold text-emerald-700">
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400">
                     {selectedBooking.check_in}
                   </span>
                 </div>
@@ -2213,7 +2213,7 @@ export function AvailabilityCalendarTab() {
                   <span className="font-bold uppercase tracking-wider text-slate-400 block mb-0.5 text-[10px]">
                     Check-Out Date
                   </span>
-                  <span className="font-bold text-blue-700">
+                  <span className="font-bold text-blue-700 dark:text-blue-400">
                     {selectedBooking.check_out}
                   </span>
                 </div>
@@ -2222,7 +2222,7 @@ export function AvailabilityCalendarTab() {
                     Total Amount
                   </span>
                   <span className="text-[#B38728] font-black text-base font-display">
-                    ₱{Number(selectedBooking.total_amount).toLocaleString()}
+                    â‚±{Number(selectedBooking.total_amount).toLocaleString()}
                   </span>
                 </div>
                 <div>
@@ -2235,8 +2235,8 @@ export function AvailabilityCalendarTab() {
                       className={cn(
                         "capitalize text-[10px] font-bold",
                         selectedBooking.payments?.[0]?.status === "verified"
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-                          : "border-amber-500 bg-amber-50 text-amber-800"
+                          ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300"
+                          : "border-amber-500 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300"
                       )}
                     >
                       {selectedBooking.payments?.[0]?.status || "Unpaid"}
@@ -2249,7 +2249,7 @@ export function AvailabilityCalendarTab() {
                           selectedBooking.payments?.[0]?.status || "unpaid"
                         )
                       }
-                      className="text-[10px] font-bold text-blue-600 hover:underline"
+                      className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       Toggle Paid
                     </button>
@@ -2257,11 +2257,11 @@ export function AvailabilityCalendarTab() {
                 </div>
 
                 {selectedBooking.special_requests && (
-                  <div className="col-span-2 pt-2 border-t border-slate-200">
+                  <div className="col-span-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                     <span className="font-bold uppercase tracking-wider text-slate-400 block mb-0.5 text-[10px]">
                       Special Requests / Notes
                     </span>
-                    <p className="text-slate-700 text-xs italic bg-white p-2 rounded-lg border border-slate-200">
+                    <p className="text-slate-700 dark:text-slate-300 text-xs italic bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
                       {selectedBooking.special_requests}
                     </p>
                   </div>
@@ -2315,7 +2315,7 @@ export function AvailabilityCalendarTab() {
 
                 <Link
                   to="/admin/bookings"
-                  className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 font-bold pt-2 transition-colors"
+                  className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold pt-2 transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" /> Open Full Details in Bookings Ledger
                 </Link>
@@ -2327,3 +2327,7 @@ export function AvailabilityCalendarTab() {
     </div>
   );
 }
+
+
+
+

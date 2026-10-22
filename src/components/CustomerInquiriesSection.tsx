@@ -258,7 +258,7 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
 
   if (isLoading) {
     return (
-      <div className="p-16 text-center border border-slate-200 rounded-3xl bg-white shadow-sm flex flex-col items-center justify-center gap-3">
+      <div className="p-16 text-center border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-[#151F2E] shadow-sm flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-7 h-7 animate-spin text-[#D4AF37]" />
         <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
           Loading your conversations...
@@ -270,15 +270,15 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
   // Empty state if customer has no inquiries
   if (sortedInquiries.length === 0) {
     return (
-      <div className="p-12 sm:p-16 text-center border border-slate-200/90 rounded-3xl bg-white shadow-sm space-y-5 max-w-2xl mx-auto">
-        <div className="w-16 h-16 rounded-full bg-amber-50 text-[#D4AF37] flex items-center justify-center mx-auto border border-[#D4AF37]/30 shadow-inner">
+      <div className="p-12 sm:p-16 text-center border border-slate-200/90 dark:border-slate-800 rounded-3xl bg-white dark:bg-[#151F2E] shadow-sm space-y-5 max-w-2xl mx-auto">
+        <div className="w-16 h-16 rounded-full bg-amber-50 dark:bg-amber-950/40 text-[#D4AF37] flex items-center justify-center mx-auto border border-[#D4AF37]/30 shadow-inner">
           <MessageSquareQuote className="w-8 h-8" />
         </div>
         <div className="space-y-1.5">
-          <h3 className="text-xl font-bold text-slate-900 font-display">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white font-display">
             No Messages or Inquiries Yet
           </h3>
-          <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
             You haven't sent any inquiries to Punong Spring Resort. Have a question
             about our villas, pool amenities, or special getaway packages?
           </p>
@@ -298,12 +298,12 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 font-display">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white font-display">
             Messages & Inquiries
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Communicate directly with resort administration and view replies in real time.
           </p>
         </div>
@@ -315,7 +315,7 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
             variant="outline"
             size="sm"
             onClick={() => setShowMobileList(!showMobileList)}
-            className="md:hidden rounded-xl border-slate-200 text-xs"
+            className="md:hidden rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-xs"
           >
             {showMobileList ? (
               <>View Conversation Thread</>
@@ -331,7 +331,7 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
             asChild
             variant="outline"
             size="sm"
-            className="rounded-xl border-slate-200 text-xs hover:border-[#D4AF37]"
+            className="rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-xs hover:border-[#D4AF37]"
           >
             <Link to="/contact">
               <MessageSquare className="w-3.5 h-3.5 mr-1.5 text-accent" /> New Inquiry
@@ -348,9 +348,9 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
             showMobileList ? "block" : "hidden md:block"
           }`}
         >
-          <div className="flex items-center justify-between px-1 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="flex items-center justify-between px-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             <span>Conversations ({sortedInquiries.length})</span>
-            <span className="text-[10px] text-slate-400 font-normal">Newest first</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Newest first</span>
           </div>
 
           <div className="space-y-2.5 max-h-[680px] overflow-y-auto pr-1">
@@ -372,12 +372,12 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
                   }}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer text-left ${
                     isSelected
-                      ? "bg-amber-50/40 border-[#D4AF37] ring-1 ring-[#D4AF37]/40 shadow-sm"
-                      : "bg-white border-slate-200/90 hover:border-slate-300 hover:shadow-sm"
+                      ? "bg-amber-50/40 dark:bg-amber-950/30 border-[#D4AF37] ring-1 ring-[#D4AF37]/40 shadow-sm"
+                      : "bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="font-bold text-xs text-slate-900 font-display truncate">
+                    <span className="font-bold text-xs text-slate-900 dark:text-white font-display truncate">
                       Inquiry #{inquiry.id.slice(0, 8)}
                     </span>
                     <div>
@@ -387,33 +387,33 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
                         </Badge>
                       )}
                       {statusInfo.variant === "waiting" && (
-                        <Badge className="bg-amber-100 hover:bg-amber-100 text-amber-900 border-amber-200 text-[10px] font-semibold px-2 py-0.5">
+                        <Badge className="bg-amber-100 dark:bg-amber-950/50 hover:bg-amber-100 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800 text-[10px] font-semibold px-2 py-0.5">
                           Waiting for Reply
                         </Badge>
                       )}
                       {statusInfo.variant === "replied" && (
-                        <Badge className="bg-emerald-100 hover:bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-semibold px-2 py-0.5">
+                        <Badge className="bg-emerald-100 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 text-[10px] font-semibold px-2 py-0.5">
                           Replied
                         </Badge>
                       )}
                       {statusInfo.variant === "read" && (
-                        <Badge className="bg-blue-100 hover:bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-semibold px-2 py-0.5">
+                        <Badge className="bg-blue-100 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800 text-[10px] font-semibold px-2 py-0.5">
                           Read
                         </Badge>
                       )}
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mb-2 italic">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed mb-2 italic">
                     "{latestMsg?.message || inquiry.message}"
                   </p>
 
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-100 pt-2">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-2">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3 text-slate-300" />
                       {formatDateTime(latestMsg?.created_at || inquiry.created_at)}
                     </span>
-                    <span className="font-medium text-slate-500">
+                    <span className="font-medium text-slate-500 dark:text-slate-400">
                       {msgs.length > 0 ? `${msgs.length} msg${msgs.length === 1 ? "" : "s"}` : "1 msg"}
                     </span>
                   </div>
@@ -430,25 +430,25 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
           }`}
         >
           {activeInquiry ? (
-            <Card className="bg-white border-slate-200/90 rounded-3xl shadow-sm overflow-hidden flex flex-col min-h-[600px] max-h-[750px]">
+            <Card className="bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden flex flex-col min-h-[600px] max-h-[750px]">
               {/* Active Conversation Header */}
-              <div className="p-5 sm:p-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-amber-50/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 dark:from-slate-900 via-white dark:via-[#151F2E] to-amber-50/20 dark:to-amber-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="px-2.5 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#B38728] font-bold text-[10px] uppercase tracking-wider border border-[#D4AF37]/30">
                       Active Conversation
                     </span>
-                    <Badge variant="outline" className="text-xs font-semibold">
+                    <Badge variant="outline" className="text-xs font-semibold dark:border-slate-700 dark:text-slate-200">
                       {getCustomerStatus(activeInquiry).label}
                     </Badge>
                   </div>
-                  <h3 className="text-base sm:text-lg font-bold font-display text-slate-900">
+                  <h3 className="text-base sm:text-lg font-bold font-display text-slate-900 dark:text-white">
                     Booking Inquiry #{activeInquiry.id.slice(0, 8)}
                   </h3>
                   <div className="flex items-center gap-3 text-xs text-slate-400">
                     <span>Started {formatDateTime(activeInquiry.created_at)}</span>
                     <span>•</span>
-                    <span className="text-slate-600">{activeInquiry.email}</span>
+                    <span className="text-slate-600 dark:text-slate-300">{activeInquiry.email}</span>
                   </div>
                 </div>
 
@@ -467,7 +467,7 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
               </div>
 
               {/* Chat Messages Body */}
-              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 bg-slate-50/40">
+              <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 bg-slate-50/40 dark:bg-slate-900/40">
                 {activeMessages.map((msg, index) => {
                   const isAdmin = msg.sender_role === "admin";
                   return (
@@ -480,8 +480,8 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
                       <div
                         className={`max-w-[85%] sm:max-w-[78%] rounded-2xl p-4 space-y-1.5 shadow-sm transition-all ${
                           isAdmin
-                            ? "bg-amber-50/50 border border-[#D4AF37]/40 text-slate-900 rounded-tl-sm"
-                            : "bg-slate-900 text-white rounded-tr-sm"
+                            ? "bg-amber-50/50 dark:bg-slate-800/90 border border-[#D4AF37]/40 text-slate-900 dark:text-slate-100 rounded-tl-sm"
+                            : "bg-slate-900 dark:bg-[#0B111A] text-white rounded-tr-sm border border-transparent dark:border-slate-700"
                         }`}
                       >
                         <div className="flex items-center justify-between gap-4">
@@ -533,12 +533,12 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
 
                 {/* Waiting Notice if no admin reply yet */}
                 {!activeMessages.some((m) => m.sender_role === "admin") && (
-                  <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-2xl text-center space-y-1 my-2">
-                    <div className="inline-flex items-center gap-1.5 text-amber-900 font-bold text-xs">
+                  <div className="p-4 bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 rounded-2xl text-center space-y-1 my-2">
+                    <div className="inline-flex items-center gap-1.5 text-amber-900 dark:text-amber-300 font-bold text-xs">
                       <Clock className="w-4 h-4 text-amber-600" />
                       Waiting for reply from Punong Spring Resort
                     </div>
-                    <p className="text-[11px] text-amber-700 leading-relaxed max-w-md mx-auto">
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed max-w-md mx-auto">
                       Our resort administration reviews inquiries promptly. When a reply is
                       posted, it will appear here and a notification will be delivered to your email.
                     </p>
@@ -549,7 +549,7 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
               {/* Message Composer (Always accessible to send follow-ups) */}
               <form
                 onSubmit={handleSendFollowUp}
-                className="p-4 sm:p-5 bg-white border-t border-slate-100 space-y-3"
+                className="p-4 sm:p-5 bg-white dark:bg-[#151F2E] border-t border-slate-100 dark:border-slate-800 space-y-3"
               >
                 <div className="relative">
                   <Textarea
@@ -558,7 +558,7 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
                     value={followUpText}
                     onChange={(e) => setFollowUpText(e.target.value)}
                     placeholder="Type your message or follow-up to the resort administrators..."
-                    className="border-slate-200 focus-visible:ring-[#D4AF37] resize-none text-sm pr-24 rounded-2xl"
+                    className="border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus-visible:ring-[#D4AF37] resize-none text-sm pr-24 rounded-2xl"
                   />
                   <Button
                     type="submit"
@@ -586,7 +586,7 @@ export function CustomerInquiriesSection({ user }: CustomerInquiriesSectionProps
               </form>
             </Card>
           ) : (
-            <div className="p-12 text-center border border-slate-200 rounded-3xl bg-white text-slate-400 text-sm">
+            <div className="p-12 text-center border border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-[#151F2E] text-slate-400 dark:text-slate-500 text-sm">
               Select a conversation to view the message history.
             </div>
           )}
