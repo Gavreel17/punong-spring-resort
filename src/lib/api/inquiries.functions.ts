@@ -163,3 +163,47 @@ export const sendCustomerFollowUpServerFn = createServerFn({ method: "POST" })
       throw new Error(err.message || "Failed to send follow-up message.");
     }
   });
+
+export const deleteInquiryServerFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      inquiryId: z.string().min(1),
+    })
+  )
+  .handler(async ({ data }) => {
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+
+      const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: false },
+        realtime: { transport: ws as any },
+      });
+
+      // 1. Delete associated messages first
+      const { error: msgError } = await (client as any)
+        .from("inquiry_messages")
+        .delete()
+        .eq("inquiry_id", data.inquiryId);
+
+      if (msgError) {
+        console.warn("[deleteInquiryServerFn Message Delete Notice]:", msgError.message);
+      }
+
+      // 2. Delete inquiry record
+      const { error: inqError } = await (client as any)
+        .from("inquiries")
+        .delete()
+        .eq("id", data.inquiryId);
+
+      if (inqError) {
+        console.error("[deleteInquiryServerFn Error]:", inqError.message);
+        throw new Error(inqError.message);
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      console.error("[deleteInquiryServerFn Exception]:", err);
+      throw new Error(err.message || "Failed to delete inquiry thread.");
+    }
+  });
+

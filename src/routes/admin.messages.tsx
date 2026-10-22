@@ -53,6 +53,7 @@ import {
 } from "lucide-react";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import { deleteInquiryServerFn } from "@/lib/api/inquiries.functions";
 
 const MySwal = withReactContent(Swal);
 
@@ -108,6 +109,8 @@ function AdminMessagesPage() {
   const [replySubject, setReplySubject] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const [inquiryToDelete, setInquiryToDelete] = useState<Inquiry | null>(null);
+  const [deletingInquiry, setDeletingInquiry] = useState(false);
 
   // Fetch all inquiries including full message thread
   const { data: inquiries = [], isLoading } = useQuery({
@@ -349,45 +352,48 @@ function getInquiryLatestTime(item: Inquiry): number {
     }
   }
 
-  // Delete message with confirmation
-  async function handleDeleteInquiry(inquiry: Inquiry) {
-    const result = await MySwal.fire({
-      title: "Delete Inquiry?",
-      text: "Are you sure you want to delete this message thread? This action cannot be undone.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#e11d48",
-      cancelButtonColor: "#64748b",
-      confirmButtonText: "Yes, delete",
-      cancelButtonText: "Cancel",
-    });
+  // Open delete confirmation modal
+  function handleDeleteInquiry(inquiry: Inquiry) {
+    setInquiryToDelete(inquiry);
+  }
 
-    if (!result.isConfirmed) return;
+  // Execute deletion of inquiry and its message thread
+  async function handleConfirmDelete() {
+    if (!inquiryToDelete) return;
+    setDeletingInquiry(true);
+    const targetId = inquiryToDelete.id;
 
     try {
-      await supabase.from("inquiry_messages").delete().eq("inquiry_id", inquiry.id);
-      const { error } = await supabase
-        .from("inquiries")
-        .delete()
-        .eq("id", inquiry.id);
-
-      if (error) throw error;
-
-      MySwal.fire({
-        title: "Deleted!",
-        text: "The inquiry has been deleted.",
-        icon: "success",
-        confirmButtonColor: "#D4AF37",
-      });
-
-      if (selectedInquiry?.id === inquiry.id) {
-        setIsViewOpen(false);
+      let success = false;
+      try {
+        const res = await deleteInquiryServerFn({ data: { inquiryId: targetId } });
+        if (res?.success) success = true;
+      } catch (serverErr) {
+        console.warn("deleteInquiryServerFn failed, attempting client fallback:", serverErr);
       }
 
-      qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
-      qc.invalidateQueries({ queryKey: ["admin-unread-inquiries"] });
+      if (!success) {
+        await supabase.from("inquiry_messages").delete().eq("inquiry_id", targetId);
+        const { error: inqErr } = await supabase.from("inquiries").delete().eq("id", targetId);
+        if (inqErr) throw inqErr;
+      }
+
+      toast.success("Inquiry thread deleted successfully.");
+
+      if (selectedInquiry?.id === targetId) {
+        setIsViewOpen(false);
+        setSelectedInquiry(null);
+      }
+
+      setInquiryToDelete(null);
+
+      await qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
+      await qc.invalidateQueries({ queryKey: ["admin-unread-inquiries"] });
     } catch (err: any) {
-      MySwal.fire("Error!", err.message || "Failed to delete inquiry.", "error");
+      console.error("Delete inquiry error:", err);
+      toast.error(err.message || "Failed to delete inquiry.");
+    } finally {
+      setDeletingInquiry(false);
     }
   }
 
@@ -962,6 +968,60 @@ function getInquiryLatestTime(item: Inquiry): number {
               </form>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE INQUIRY CONFIRMATION MODAL */}
+      <Dialog
+        open={!!inquiryToDelete}
+        onOpenChange={(open) => {
+          if (!open && !deletingInquiry) {
+            setInquiryToDelete(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md bg-white border border-slate-100 p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center">
+          {/* Circular warning icon matching the design */}
+          <div className="w-20 h-20 rounded-full border-[3px] border-[#FDBA74] flex items-center justify-center mx-auto mb-2 bg-[#FFF7ED]">
+            <span className="text-4xl font-serif font-bold text-[#EA580C] select-none leading-none">
+              !
+            </span>
+          </div>
+
+          <DialogHeader className="space-y-2 text-center sm:text-center">
+            <DialogTitle className="font-serif text-3xl font-bold text-slate-800 tracking-tight text-center">
+              Delete Inquiry?
+            </DialogTitle>
+            <p className="text-slate-600 text-center max-w-sm mx-auto text-sm sm:text-base leading-relaxed">
+              Are you sure you want to delete this message thread? This action cannot be undone.
+            </p>
+          </DialogHeader>
+
+          <div className="flex items-center justify-center gap-3 mt-6 w-full">
+            <Button
+              type="button"
+              disabled={deletingInquiry}
+              onClick={handleConfirmDelete}
+              className="bg-[#e11d48] hover:bg-[#be123c] text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all shadow-sm flex items-center gap-2 cursor-pointer h-10 min-w-[120px] justify-center"
+            >
+              {deletingInquiry ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Yes, delete"
+              )}
+            </Button>
+            <Button
+              type="button"
+              disabled={deletingInquiry}
+              onClick={() => setInquiryToDelete(null)}
+              className="bg-[#64748b] hover:bg-[#475569] text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all shadow-sm cursor-pointer h-10 min-w-[100px] justify-center"
+            >
+              Cancel
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
