@@ -302,7 +302,6 @@ function BookingsTab() {
       .from("bookings")
       .update({
         deleted_at: new Date().toISOString(),
-        deleted_by: user?.id || null,
       })
       .eq("id", id);
 

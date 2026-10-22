@@ -63,7 +63,7 @@ export const trashService = {
 
     // 2. Persist to Supabase deleted_records table if available
     try {
-      await supabase.from("deleted_records" as any).insert({
+      const { error: dbErr } = await supabase.from("deleted_records" as any).insert({
         record_id: item.id,
         record_type: item.type,
         title: item.title,
@@ -76,9 +76,11 @@ export const trashService = {
         deleted_by: item.deleted_by || null,
         deleted_by_name: item.deleted_by_name || null,
       });
-    } catch (dbErr) {
-      // Non-fatal if table not yet migrated, local registry maintains persistence
-      console.warn("Notice: deleted_records database insert fallback:", dbErr);
+      if (dbErr) {
+        console.warn("Notice: deleted_records database insert fallback:", dbErr.message);
+      }
+    } catch (err) {
+      console.warn("Notice: deleted_records database insert exception:", err);
     }
   },
 
@@ -121,7 +123,6 @@ export const trashService = {
               amount: b.total_amount,
               dates: `${b.check_in} → ${b.check_out}`,
               deleted_at: b.deleted_at || b.updated_at || new Date().toISOString(),
-              deleted_by: b.deleted_by,
               data: b,
             });
           }
@@ -217,7 +218,7 @@ export const trashService = {
       if (item.type === "booking") {
         const { error } = await supabase
           .from("bookings")
-          .update({ deleted_at: null, deleted_by: null })
+          .update({ deleted_at: null })
           .eq("id", item.id);
         if (error) throw error;
       } else if (item.type === "room") {
