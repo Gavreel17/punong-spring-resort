@@ -38,6 +38,7 @@ import {
   getRateTypeDisplay,
   getAccommodationCategoryLabel,
 } from "@/lib/rate-type-helper";
+import { trashService } from "@/lib/recently-deleted";
 
 const MySwal = withReactContent(Swal);
 
@@ -266,27 +267,43 @@ function RoomsTab() {
     const categoryLabel = getAccommodationCategoryLabel(targetRoom?.type);
 
     const result = await MySwal.fire({
-      title: `Delete ${categoryLabel}?`,
-      text: `Are you sure you want to delete this ${categoryLabel.toLowerCase()}? This action cannot be undone.`,
+      title: "Move to Recently Deleted?",
+      text: `Are you sure you want to delete ${categoryLabel.toLowerCase()} "${targetRoom?.name || ""}"? You can restore it anytime from Recently Deleted in Admin Reports.`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
+      confirmButtonColor: "#e11d48",
       cancelButtonColor: "#64748b",
-      confirmButtonText: "Yes, delete",
+      confirmButtonText: "Yes, move to trash",
     });
 
     if (!result.isConfirmed) return;
 
-    // Delete or mark deleted
-    const { error } = await supabase.from("rooms").delete().eq("id", id);
-    if (error) {
-      const { error: softErr } = await supabase.from("rooms").update({ status: "deleted", is_available: false }).eq("id", id);
-      if (softErr) return MySwal.fire("Error!", softErr.message, "error");
+    if (targetRoom) {
+      await trashService.recordDeleted({
+        id: id,
+        type: "room",
+        title: targetRoom.name,
+        subtitle: `${targetRoom.type === "villa" ? "Function Hall" : targetRoom.type?.toUpperCase()} Accommodation`,
+        description: `Capacity: ${targetRoom.capacity} persons • Rate: ₱${Number(targetRoom.price || 0).toLocaleString()}`,
+        amount: targetRoom.price,
+        dates: `Rate: ₱${Number(targetRoom.price || 0).toLocaleString()}`,
+        data: targetRoom,
+        deleted_by: user?.id,
+        deleted_by_name: user?.user_metadata?.fullname || user?.email,
+      });
     }
 
-    MySwal.fire("Success!", `${categoryLabel} deleted successfully.`, "success");
+    const { error } = await supabase
+      .from("rooms")
+      .update({ status: "deleted", is_available: false })
+      .eq("id", id);
+
+    if (error) return MySwal.fire("Error!", error.message, "error");
+
+    MySwal.fire("Moved to Trash!", `${categoryLabel} has been moved to Recently Deleted.`, "success");
     qc.invalidateQueries({ queryKey: ["admin-rooms"] });
     qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
+    qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
   }
 
   return (

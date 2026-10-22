@@ -54,6 +54,8 @@ import {
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { deleteInquiryServerFn } from "@/lib/api/inquiries.functions";
+import { useAuth } from "@/hooks/use-auth";
+import { trashService } from "@/lib/recently-deleted";
 
 const MySwal = withReactContent(Swal);
 
@@ -98,6 +100,7 @@ function formatDateTime(isoString: string) {
 }
 
 function AdminMessagesPage() {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -364,6 +367,41 @@ function getInquiryLatestTime(item: Inquiry): number {
     const targetId = inquiryToDelete.id;
 
     try {
+      // 1. Fetch thread messages to ensure full conversation snapshot is preserved
+      let threadMessages: any[] = inquiryToDelete.inquiry_messages || [];
+      if (!threadMessages || threadMessages.length === 0) {
+        try {
+          const { data: fetchedMsgs } = await supabase
+            .from("inquiry_messages")
+            .select("*")
+            .eq("inquiry_id", targetId)
+            .order("created_at", { ascending: true });
+          if (fetchedMsgs) threadMessages = fetchedMsgs;
+        } catch (fetchErr) {
+          console.warn("Could not pre-fetch thread messages:", fetchErr);
+        }
+      }
+
+      // 2. Record full inquiry thread in Recently Deleted
+      await trashService.recordDeleted({
+        id: targetId,
+        type: "inquiry",
+        title: `${inquiryToDelete.name} (${inquiryToDelete.email})`,
+        subtitle: `Inquiry Thread (${(inquiryToDelete.status || "unread").toUpperCase()})`,
+        description:
+          inquiryToDelete.message.length > 120
+            ? inquiryToDelete.message.slice(0, 120) + "..."
+            : inquiryToDelete.message,
+        dates: inquiryToDelete.created_at,
+        data: {
+          ...inquiryToDelete,
+          threadMessages,
+        },
+        deleted_by: user?.id,
+        deleted_by_name: user?.user_metadata?.fullname || user?.email,
+      });
+
+      // 3. Remove active messages and inquiry
       let success = false;
       try {
         const res = await deleteInquiryServerFn({ data: { inquiryId: targetId } });
@@ -378,7 +416,7 @@ function getInquiryLatestTime(item: Inquiry): number {
         if (inqErr) throw inqErr;
       }
 
-      toast.success("Inquiry thread deleted successfully.");
+      toast.success("Inquiry moved to Recently Deleted.");
 
       if (selectedInquiry?.id === targetId) {
         setIsViewOpen(false);
@@ -389,6 +427,7 @@ function getInquiryLatestTime(item: Inquiry): number {
 
       await qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
       await qc.invalidateQueries({ queryKey: ["admin-unread-inquiries"] });
+      await qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
     } catch (err: any) {
       console.error("Delete inquiry error:", err);
       toast.error(err.message || "Failed to delete inquiry.");
@@ -990,10 +1029,10 @@ function getInquiryLatestTime(item: Inquiry): number {
 
           <DialogHeader className="space-y-2 text-center sm:text-center">
             <DialogTitle className="font-serif text-3xl font-bold text-slate-800 tracking-tight text-center">
-              Delete Inquiry?
+              Move to Recently Deleted?
             </DialogTitle>
             <p className="text-slate-600 text-center max-w-sm mx-auto text-sm sm:text-base leading-relaxed">
-              Are you sure you want to delete this message thread? This action cannot be undone.
+              Are you sure you want to delete this message thread? You can review or restore this inquiry anytime from Recently Deleted in Admin Reports.
             </p>
           </DialogHeader>
 
@@ -1007,10 +1046,10 @@ function getInquiryLatestTime(item: Inquiry): number {
               {deletingInquiry ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Deleting...
+                  Moving...
                 </>
               ) : (
-                "Yes, delete"
+                "Yes, move to trash"
               )}
             </Button>
             <Button

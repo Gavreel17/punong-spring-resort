@@ -41,10 +41,15 @@ import {
   startOfMonth,
   startOfYear,
 } from "date-fns";
-import { FileDown, Printer, FileText, BarChart3, Users, BedDouble, History, RefreshCcw, Trash2, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { FileDown, Printer, FileText, BarChart3, Users, BedDouble, History, RefreshCcw, Trash2, CheckCircle2, AlertCircle, ExternalLink, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { ExecutiveReportPrintDocument } from "@/components/ExecutiveReportPrintDocument";
+
+const MySwal = withReactContent(Swal);
 
 export const Route = createFileRoute("/admin/reports")({
   component: ReportsDashboard,
@@ -132,25 +137,123 @@ function ReportsDashboard() {
     );
   }, [rawBookings]);
 
-  const { data: allTrashItems = [] } = useQuery({
+  const { data: allTrashItems = [], isLoading: isTrashLoading } = useQuery({
     queryKey: ["admin-trash-all"],
     queryFn: async () => {
       return await trashService.getAllDeleted();
     },
   });
 
+  const [isRefreshingDeleted, setIsRefreshingDeleted] = useState(false);
+
+  const handleRefreshDeleted = async () => {
+    if (isRefreshingDeleted) return;
+    setIsRefreshingDeleted(true);
+    try {
+      await qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
+      await qc.refetchQueries({ queryKey: ["admin-trash-all"] });
+      toast.success("Recently Deleted records refreshed.");
+    } catch (err) {
+      console.error("Refresh error:", err);
+      toast.error("Failed to refresh deleted records.");
+    } finally {
+      setIsRefreshingDeleted(false);
+    }
+  };
+
   const restoreTrashItem = async (item: TrashItem) => {
+    const typeLabel =
+      item.type === "room"
+        ? "Accommodation"
+        : item.type === "customer"
+        ? "Customer Profile"
+        : item.type === "inquiry"
+        ? "Customer Inquiry"
+        : "Booking Reservation";
+
+    const targetModule =
+      item.type === "room"
+        ? "Rooms & Cottages Portfolio"
+        : item.type === "customer"
+        ? "Guest Directory & CRM"
+        : item.type === "inquiry"
+        ? "Customer Inquiries"
+        : "Bookings Management";
+
+    const result = await MySwal.fire({
+      title: `Restore ${typeLabel}?`,
+      text: `Are you sure you want to restore "${item.title}"? It will be safely returned to ${targetModule} with all original details preserved.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#10b981",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, restore record",
+    });
+
+    if (!result.isConfirmed) return;
+
+    const toastId = toast.loading(`Restoring ${item.title}...`);
     const res = await trashService.restore(item);
+
     if (!res.success) {
-      toast.error(res.message || "Failed to restore record.");
+      toast.error(res.message || "Failed to restore record.", { id: toastId });
+      MySwal.fire("Restoration Failed", res.message || "Failed to restore record.", "error");
     } else {
-      toast.success(`${item.title} restored!`);
+      toast.success(`"${item.title}" restored successfully!`, { id: toastId });
       qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
       qc.invalidateQueries({ queryKey: ["reports-bookings-all"] });
       qc.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
       qc.invalidateQueries({ queryKey: ["admin-rooms"] });
       qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
       qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
+      qc.invalidateQueries({ queryKey: ["admin-unread-inquiries"] });
+      qc.invalidateQueries({ queryKey: ["admin-customers-unified"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
+    }
+  };
+
+  const permanentlyDeleteTrashItem = async (item: TrashItem) => {
+    const typeLabel =
+      item.type === "room"
+        ? "accommodation"
+        : item.type === "customer"
+        ? "customer profile"
+        : item.type === "inquiry"
+        ? "inquiry thread"
+        : "booking";
+
+    const result = await MySwal.fire({
+      title: "Permanently Delete?",
+      html: `Are you sure you want to permanently delete this ${typeLabel} <strong>"${item.title}"</strong>?<br/><br/><span style="color: #e11d48; font-weight: 600;">Warning: This action cannot be undone.</span> The record will be permanently purged from the database.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e11d48",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, permanently delete",
+    });
+
+    if (!result.isConfirmed) return;
+
+    const toastId = toast.loading(`Permanently deleting ${item.title}...`);
+    const res = await trashService.deletePermanently(item);
+
+    if (!res.success) {
+      toast.error(res.message || "Could not permanently delete record.", { id: toastId });
+      MySwal.fire({
+        title: "Delete Failed",
+        text: res.message || "Could not permanently delete record.",
+        icon: "error",
+        confirmButtonColor: "#64748b",
+      });
+    } else {
+      toast.success(`"${item.title}" permanently removed from database.`, { id: toastId });
+      qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
+      qc.invalidateQueries({ queryKey: ["reports-bookings-all"] });
+      qc.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
+      qc.invalidateQueries({ queryKey: ["admin-rooms"] });
+      qc.invalidateQueries({ queryKey: ["rooms-and-bookings"] });
+      qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
+      qc.invalidateQueries({ queryKey: ["admin-unread-inquiries"] });
       qc.invalidateQueries({ queryKey: ["admin-customers-unified"] });
       qc.invalidateQueries({ queryKey: ["admin-stats"] });
     }
@@ -723,8 +826,8 @@ function ReportsDashboard() {
               <TabsTrigger value="customers" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <Users className="w-4 h-4 mr-2" /> Customer Reports
               </TabsTrigger>
-              <TabsTrigger value="deleted" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-red-600 data-[state=active]:text-red-700">
-                <History className="w-4 h-4 mr-2" /> Recently Deleted
+              <TabsTrigger value="deleted" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-red-600 data-[state=active]:text-red-700 font-medium">
+                <History className="w-4 h-4 mr-2" /> Recently Deleted {allTrashItems.length > 0 && `(${allTrashItems.length})`}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -915,16 +1018,19 @@ function ReportsDashboard() {
               <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border-b">
                 <div>
                   <h3 className="font-semibold text-lg text-rose-700">Recently Deleted Records ({allTrashItems.length})</h3>
-                  <p className="text-xs text-slate-500">Deleted bookings, accommodations, customer profiles, and inquiries that can be reviewed or restored.</p>
+                  <p className="text-xs text-slate-500">Deleted bookings, accommodations, customer profiles, and inquiries that can be reviewed, restored, or permanently deleted.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="border-slate-300 text-slate-700 hover:bg-slate-100"
-                    onClick={() => qc.invalidateQueries({ queryKey: ["admin-trash-all"] })}
+                    className="border-slate-300 text-slate-700 hover:bg-slate-100 font-medium cursor-pointer"
+                    disabled={isRefreshingDeleted || isTrashLoading}
+                    onClick={handleRefreshDeleted}
+                    title="Reload latest deleted records from the database"
                   >
-                    <RefreshCcw className="w-3.5 h-3.5 mr-1.5 text-slate-500" /> Refresh
+                    <RefreshCcw className={cn("w-3.5 h-3.5 mr-1.5 text-slate-500", (isRefreshingDeleted || isTrashLoading) && "animate-spin text-slate-700")} />
+                    {isRefreshingDeleted || isTrashLoading ? "Refreshing..." : "Refresh"}
                   </Button>
                 </div>
               </div>
@@ -943,15 +1049,41 @@ function ReportsDashboard() {
                   <TableBody>
                     {allTrashItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No recently deleted records.</TableCell>
+                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <History className="w-8 h-8 text-slate-300" />
+                            <p className="text-sm font-semibold text-slate-600">No recently deleted records.</p>
+                            <p className="text-xs text-slate-400 max-w-sm">
+                              When you delete bookings, accommodations, profiles, or inquiries, they will appear here safely for restoration.
+                            </p>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ) : (
                       allTrashItems.map((item) => (
                         <TableRow key={`${item.type}-${item.id}`}>
                           <TableCell>
-                            <Badge variant="outline" className="capitalize font-bold text-[10px]">
-                              {item.type}
-                            </Badge>
+                            {item.type === "booking" ? (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-bold text-[10px] uppercase">
+                                Booking
+                              </Badge>
+                            ) : item.type === "room" ? (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-[10px] uppercase">
+                                Accommodation
+                              </Badge>
+                            ) : item.type === "customer" ? (
+                              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 font-bold text-[10px] uppercase">
+                                Customer Profile
+                              </Badge>
+                            ) : item.type === "inquiry" ? (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-bold text-[10px] uppercase">
+                                Customer Inquiry
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="capitalize font-bold text-[10px]">
+                                {item.type}
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="font-medium text-slate-900">{item.title}</div>
@@ -974,17 +1106,30 @@ function ReportsDashboard() {
                             </div>
                             <div className="text-xs text-slate-500">
                               {item.deleted_at ? format(parseISO(item.deleted_at), "h:mm a") : ""}
+                              {item.deleted_by_name ? ` • by ${item.deleted_by_name}` : ""}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 font-semibold cursor-pointer"
-                              onClick={() => restoreTrashItem(item)}
-                            >
-                              <RefreshCcw className="w-4 h-4 mr-1.5" /> Restore
-                            </Button>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-emerald-700 bg-emerald-50/60 border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800 font-semibold cursor-pointer h-8 px-2.5 rounded-lg shadow-2xs"
+                                onClick={() => restoreTrashItem(item)}
+                                title="Restore this record back to its original module"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Restore
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-rose-700 bg-rose-50/60 border-rose-300 hover:bg-rose-100 hover:text-rose-800 font-semibold cursor-pointer h-8 px-2.5 rounded-lg shadow-2xs"
+                                onClick={() => permanentlyDeleteTrashItem(item)}
+                                title="Permanently remove this record from the database"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-600" /> Delete
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))

@@ -32,6 +32,7 @@ import { Eye, CheckCircle2, XCircle, Banknote, CreditCard, Search, CalendarClock
 import { Link } from "@tanstack/react-router";
 
 import { processAutoBookingStatuses } from "@/lib/booking-utils";
+import { trashService } from "@/lib/recently-deleted";
 import { cn } from "@/lib/utils";
 
 const MySwal = withReactContent(Swal);
@@ -265,31 +266,54 @@ function BookingsTab() {
 
 
   async function deleteBooking(id: string) {
+    const targetBooking = bookings.find((b: any) => b.id === id);
+    const guestName = targetBooking?.guest_name || "this booking reservation";
+
     const result = await MySwal.fire({
-      title: "Delete Booking?",
-      text: "Are you sure you want to permanently delete this booking reservation? This action cannot be undone.",
+      title: "Move to Recently Deleted?",
+      text: `Are you sure you want to delete reservation for "${guestName}"? You can restore it anytime from Recently Deleted in Admin Reports.`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
+      confirmButtonColor: "#e11d48",
       cancelButtonColor: "#64748b",
-      confirmButtonText: "Yes, delete",
+      confirmButtonText: "Yes, move to trash",
     });
 
     if (!result.isConfirmed) return;
 
-    // Delete associated payments first then booking, or cancel if referenced
-    await supabase.from("payments").delete().eq("booking_id", id);
-    const { error } = await supabase.from("bookings").delete().eq("id", id);
-    if (error) {
-      const { error: fallbackErr } = await supabase.from("bookings").update({ status: "cancelled", deleted_at: new Date().toISOString() }).eq("id", id);
-      if (fallbackErr) return MySwal.fire("Error!", fallbackErr.message, "error");
+    if (targetBooking) {
+      await trashService.recordDeleted({
+        id: id,
+        type: "booking",
+        title: targetBooking.guest_name || "Reservation",
+        subtitle: targetBooking.room?.name
+          ? `${targetBooking.room.name} (${targetBooking.room.type?.toUpperCase()})`
+          : `Booking #${id.slice(0, 8)}`,
+        description: `${targetBooking.guest_email || "No email"} • ${targetBooking.guest_phone || "No phone"} • ${targetBooking.guests || 1} guest(s)`,
+        amount: targetBooking.total_amount,
+        dates: `${targetBooking.check_in} → ${targetBooking.check_out}`,
+        data: targetBooking,
+        deleted_by: user?.id,
+        deleted_by_name: user?.user_metadata?.fullname || user?.email,
+      });
     }
 
-    MySwal.fire("Deleted!", "Booking has been deleted.", "success");
+    const { error } = await supabase
+      .from("bookings")
+      .update({
+        deleted_at: new Date().toISOString(),
+        deleted_by: user?.id || null,
+      })
+      .eq("id", id);
+
+    if (error) return MySwal.fire("Error!", error.message, "error");
+
+    MySwal.fire("Moved to Trash!", "Booking reservation moved to Recently Deleted.", "success");
     qc.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
     qc.invalidateQueries({ queryKey: ["admin-stats"] });
     qc.invalidateQueries({ queryKey: ["admin-availability-calendar"] });
     qc.invalidateQueries({ queryKey: ["reports-bookings-all"] });
+    qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
   }
 
   async function viewReceipt(urlOrPath: string) {

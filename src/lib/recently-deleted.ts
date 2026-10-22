@@ -12,6 +12,8 @@ export interface TrashItem {
   amount?: number;
   dates?: string;
   deleted_at: string;
+  deleted_by?: string;
+  deleted_by_name?: string;
   data: any;
 }
 
@@ -39,16 +41,45 @@ function setLocalTrash(items: TrashItem[]): void {
 
 export const trashService = {
   /**
-   * Save an item into the local trash registry (for inquiries, customers, feedback, etc.)
+   * Save an item into the database (and backup in local registry)
    */
-  recordDeleted(item: Omit<TrashItem, "deleted_at"> & { deleted_at?: string }): void {
-    const items = getLocalTrash().filter((i) => i.id !== item.id);
-    const newEntry: TrashItem = {
+  async recordDeleted(
+    item: Omit<TrashItem, "deleted_at"> & {
+      deleted_at?: string;
+      deleted_by?: string;
+      deleted_by_name?: string;
+    }
+  ): Promise<void> {
+    const finalDeletedAt = item.deleted_at || new Date().toISOString();
+    const entry: TrashItem = {
       ...item,
-      deleted_at: item.deleted_at || new Date().toISOString(),
+      deleted_at: finalDeletedAt,
     };
-    items.unshift(newEntry);
+
+    // 1. Save to local fallback cache immediately
+    const items = getLocalTrash().filter((i) => i.id !== item.id);
+    items.unshift(entry);
     setLocalTrash(items);
+
+    // 2. Persist to Supabase deleted_records table if available
+    try {
+      await supabase.from("deleted_records" as any).insert({
+        record_id: item.id,
+        record_type: item.type,
+        title: item.title,
+        subtitle: item.subtitle || null,
+        description: item.description || null,
+        amount: item.amount || null,
+        dates: item.dates || null,
+        record_data: item.data || {},
+        deleted_at: finalDeletedAt,
+        deleted_by: item.deleted_by || null,
+        deleted_by_name: item.deleted_by_name || null,
+      });
+    } catch (dbErr) {
+      // Non-fatal if table not yet migrated, local registry maintains persistence
+      console.warn("Notice: deleted_records database insert fallback:", dbErr);
+    }
   },
 
   /**
@@ -60,12 +91,14 @@ export const trashService = {
   },
 
   /**
-   * Fetch all recently deleted items combined across database (bookings, rooms) and local registry
+   * Fetch all recently deleted items combined across database (bookings, rooms, deleted_records)
+   * and offline cache.
    */
   async getAllDeleted(): Promise<TrashItem[]> {
     const allItems: TrashItem[] = [];
+    const seenIds = new Set<string>();
 
-    // 1. Fetch soft-deleted bookings from Supabase
+    // 1. Fetch soft-deleted bookings directly from Supabase bookings table
     try {
       const { data: bookings, error } = await supabase
         .from("bookings")
@@ -75,24 +108,30 @@ export const trashService = {
 
       if (!error && bookings) {
         bookings.forEach((b: any) => {
-          allItems.push({
-            id: b.id,
-            type: "booking",
-            title: b.guest_name || "Reservation",
-            subtitle: b.room?.name ? `${b.room.name} (${b.room.type?.toUpperCase()})` : `Booking #${b.id.slice(0, 8)}`,
-            description: `${b.guest_email || "No email"} • ${b.guest_phone || "No phone"} • ${b.guests || 1} guest(s)`,
-            amount: b.total_amount,
-            dates: `${b.check_in} → ${b.check_out}`,
-            deleted_at: b.deleted_at || b.updated_at || new Date().toISOString(),
-            data: b,
-          });
+          if (!seenIds.has(b.id)) {
+            seenIds.add(b.id);
+            allItems.push({
+              id: b.id,
+              type: "booking",
+              title: b.guest_name || "Reservation",
+              subtitle: b.room?.name
+                ? `${b.room.name} (${b.room.type?.toUpperCase()})`
+                : `Booking #${b.id.slice(0, 8)}`,
+              description: `${b.guest_email || "No email"} • ${b.guest_phone || "No phone"} • ${b.guests || 1} guest(s)`,
+              amount: b.total_amount,
+              dates: `${b.check_in} → ${b.check_out}`,
+              deleted_at: b.deleted_at || b.updated_at || new Date().toISOString(),
+              deleted_by: b.deleted_by,
+              data: b,
+            });
+          }
         });
       }
     } catch (err) {
       console.error("Error fetching deleted bookings:", err);
     }
 
-    // 2. Fetch soft-deleted rooms from Supabase
+    // 2. Fetch soft-deleted rooms directly from Supabase rooms table
     try {
       const { data: rooms, error } = await supabase
         .from("rooms")
@@ -102,84 +141,160 @@ export const trashService = {
 
       if (!error && rooms) {
         rooms.forEach((r: any) => {
-          const typeName = r.type === "villa" ? "Function Hall" : r.type?.toUpperCase();
-          allItems.push({
-            id: r.id,
-            type: "room",
-            title: r.name,
-            subtitle: `${typeName} Accommodation`,
-            description: `Capacity: ${r.capacity} persons • Rate: ₱${Number(r.price).toLocaleString()}${getRoomRateType(r) === 'day' ? '/day' : '/night'}`,
-            amount: r.price,
-            dates: `Rate: ₱${Number(r.price).toLocaleString()}`,
-            deleted_at: r.updated_at || new Date().toISOString(),
-            data: r,
-          });
+          if (!seenIds.has(r.id)) {
+            seenIds.add(r.id);
+            const typeName = r.type === "villa" ? "Function Hall" : r.type?.toUpperCase();
+            allItems.push({
+              id: r.id,
+              type: "room",
+              title: r.name,
+              subtitle: `${typeName} Accommodation`,
+              description: `Capacity: ${r.capacity} persons • Rate: ₱${Number(r.price).toLocaleString()}${getRoomRateType(r) === "day" ? "/day" : "/night"}`,
+              amount: r.price,
+              dates: `Rate: ₱${Number(r.price).toLocaleString()}`,
+              deleted_at: r.updated_at || new Date().toISOString(),
+              data: r,
+            });
+          }
         });
       }
     } catch (err) {
       console.error("Error fetching deleted rooms:", err);
     }
 
-    // 3. Include other items from persistent trash registry (inquiries, customers, feedbacks)
+    // 3. Fetch from deleted_records table in Supabase
+    try {
+      const { data: dbDeleted, error } = await supabase
+        .from("deleted_records" as any)
+        .select("*")
+        .is("restored_at", null)
+        .order("deleted_at", { ascending: false });
+
+      if (!error && dbDeleted) {
+        dbDeleted.forEach((record: any) => {
+          if (!seenIds.has(record.record_id)) {
+            seenIds.add(record.record_id);
+            allItems.push({
+              id: record.record_id,
+              type: record.record_type as TrashEntityType,
+              title: record.title,
+              subtitle: record.subtitle,
+              description: record.description,
+              amount: record.amount ? Number(record.amount) : undefined,
+              dates: record.dates,
+              deleted_at: record.deleted_at,
+              deleted_by: record.deleted_by,
+              deleted_by_name: record.deleted_by_name,
+              data: record.record_data,
+            });
+          }
+        });
+      }
+    } catch (err) {
+      console.warn("Notice: deleted_records table query fallback:", err);
+    }
+
+    // 4. Merge persistent local backup items (inquiries, customers, feedbacks)
     const localItems = getLocalTrash();
-    // Exclude if already in bookings or rooms
     localItems.forEach((local) => {
-      if (!allItems.some((existing) => existing.id === local.id)) {
+      if (!seenIds.has(local.id)) {
+        seenIds.add(local.id);
         allItems.push(local);
       }
     });
 
     // Sort all by deleted_at descending
-    return allItems.sort((a, b) => new Date(b.deleted_at).getTime() - new Date(a.deleted_at).getTime());
+    return allItems.sort(
+      (a, b) => new Date(b.deleted_at).getTime() - new Date(a.deleted_at).getTime()
+    );
   },
 
   /**
-   * Restore a single trash item
+   * Restore a single trash item back to its original module
    */
   async restore(item: TrashItem): Promise<{ success: boolean; message?: string }> {
     try {
       if (item.type === "booking") {
-        const { error } = await supabase.from("bookings").update({ deleted_at: null }).eq("id", item.id);
+        const { error } = await supabase
+          .from("bookings")
+          .update({ deleted_at: null, deleted_by: null })
+          .eq("id", item.id);
         if (error) throw error;
       } else if (item.type === "room") {
-        const { error } = await supabase.from("rooms").update({ status: "available" }).eq("id", item.id);
+        const { error } = await supabase
+          .from("rooms")
+          .update({ status: "available", is_available: true })
+          .eq("id", item.id);
         if (error) throw error;
       } else if (item.type === "inquiry") {
         // Re-insert inquiry into database
-        const payload = { ...item.data };
-        delete payload.inquiry_messages;
-        const { error } = await supabase.from("inquiries").upsert([payload]);
-        if (error) throw error;
-        trashService.removeLocal(item.id);
+        const raw = item.data || {};
+        const inquiryPayload: any = {
+          id: raw.id || item.id,
+          name: raw.name || item.title?.split(" (")[0] || "Customer",
+          email: raw.email || (item.title?.includes("(") ? item.title.split("(")[1].replace(")", "") : ""),
+          message: raw.message || item.description || "Inquiry message",
+          status: raw.status || "unread",
+          admin_reply: raw.admin_reply || null,
+          replied_at: raw.replied_at || null,
+          created_at: raw.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        if (raw.customer_id) {
+          inquiryPayload.customer_id = raw.customer_id;
+        }
+
+        const { error: inqErr } = await supabase.from("inquiries").upsert([inquiryPayload]);
+        if (inqErr) throw inqErr;
+
+        // Restore thread messages if saved
+        if (raw.threadMessages && Array.isArray(raw.threadMessages) && raw.threadMessages.length > 0) {
+          try {
+            await supabase.from("inquiry_messages").upsert(raw.threadMessages);
+          } catch (mErr) {
+            console.warn("Could not restore inquiry messages thread:", mErr);
+          }
+        }
       } else if (item.type === "customer") {
         // Re-insert profile if it had one
-        if (item.data?.profileId) {
+        const customerProfileId = item.data?.profileId || item.data?.id;
+        if (customerProfileId) {
           const profilePayload = {
-            id: item.data.profileId,
+            id: customerProfileId,
             fullname: item.data.fullname || item.title,
             email: item.data.email || "",
             phone: item.data.phone || null,
+            created_at: item.data.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           };
           const { error } = await supabase.from("profiles").upsert([profilePayload]);
           if (error) throw error;
         }
-        trashService.removeLocal(item.id);
       } else if (item.type === "feedback") {
         const { error } = await supabase.from("feedbacks").upsert([item.data]);
         if (error) throw error;
-        trashService.removeLocal(item.id);
+      }
+
+      // Mark restored or clean up in deleted_records table
+      try {
+        await supabase
+          .from("deleted_records" as any)
+          .delete()
+          .eq("record_id", item.id);
+      } catch (cleanErr) {
+        console.warn("Notice: deleted_records cleanup:", cleanErr);
       }
 
       trashService.removeLocal(item.id);
       return { success: true };
     } catch (err: any) {
       console.error("Failed to restore item:", err);
-      return { success: false, message: err.message || "Failed to restore item." };
+      return { success: false, message: err.message || "Failed to restore record." };
     }
   },
 
   /**
-   * Permanently delete a single trash item
+   * Permanently delete a single trash item from the database
    */
   async deletePermanently(item: TrashItem): Promise<{ success: boolean; message?: string }> {
     try {
@@ -189,9 +304,23 @@ export const trashService = {
         const { error } = await supabase.from("bookings").delete().eq("id", item.id);
         if (error) throw error;
       } else if (item.type === "room") {
+        // Check if existing reservations reference this room
+        const { data: refs } = await supabase
+          .from("bookings")
+          .select("id")
+          .eq("room_id", item.id)
+          .limit(1);
+
+        if (refs && refs.length > 0) {
+          return {
+            success: false,
+            message:
+              "This accommodation cannot be permanently deleted because past reservations reference it. It will remain safely hidden in Recently Deleted.",
+          };
+        }
+
         const { error } = await supabase.from("rooms").delete().eq("id", item.id);
         if (error) {
-          // If foreign key constraint blocks deletion due to past reservation records
           if (error.message.includes("violates foreign key") || error.message.includes("constraint")) {
             return {
               success: false,
@@ -204,22 +333,30 @@ export const trashService = {
       } else if (item.type === "inquiry") {
         await supabase.from("inquiry_messages").delete().eq("inquiry_id", item.id);
         await supabase.from("inquiries").delete().eq("id", item.id);
-        trashService.removeLocal(item.id);
       } else if (item.type === "customer") {
-        if (item.data?.profileId) {
-          await supabase.from("profiles").delete().eq("id", item.data.profileId);
+        const profileId = item.data?.profileId || item.data?.id;
+        if (profileId) {
+          await supabase.from("profiles").delete().eq("id", profileId);
         }
-        trashService.removeLocal(item.id);
       } else if (item.type === "feedback") {
         await supabase.from("feedbacks").delete().eq("id", item.id);
-        trashService.removeLocal(item.id);
+      }
+
+      // Remove from deleted_records table
+      try {
+        await supabase
+          .from("deleted_records" as any)
+          .delete()
+          .eq("record_id", item.id);
+      } catch (cleanErr) {
+        console.warn("Notice: deleted_records permanent delete cleanup:", cleanErr);
       }
 
       trashService.removeLocal(item.id);
       return { success: true };
     } catch (err: any) {
       console.error("Failed to permanently delete item:", err);
-      return { success: false, message: err.message || "Failed to permanently delete item." };
+      return { success: false, message: err.message || "Failed to permanently delete record." };
     }
   },
 

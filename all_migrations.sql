@@ -610,4 +610,40 @@ GRANT INSERT ON public.inquiry_messages TO anon;
 
 CREATE INDEX IF NOT EXISTS idx_inquiry_messages_inquiry_id ON public.inquiry_messages (inquiry_id, created_at ASC);
 
+-- Create deleted_records table and enhance soft deletion for Punong Spring Resort
+CREATE TABLE IF NOT EXISTS public.deleted_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  record_id TEXT NOT NULL,
+  record_type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  description TEXT,
+  amount NUMERIC(10,2),
+  dates TEXT,
+  record_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  deleted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  deleted_by_name TEXT,
+  restored_at TIMESTAMPTZ,
+  restored_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS deleted_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+
+ALTER TABLE public.deleted_records ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins can manage deleted_records" ON public.deleted_records;
+CREATE POLICY "Admins can manage deleted_records" ON public.deleted_records
+  FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+GRANT ALL ON public.deleted_records TO authenticated;
+GRANT ALL ON public.deleted_records TO service_role;
+
+CREATE INDEX IF NOT EXISTS idx_deleted_records_type ON public.deleted_records (record_type);
+CREATE INDEX IF NOT EXISTS idx_deleted_records_record_id ON public.deleted_records (record_id);
+CREATE INDEX IF NOT EXISTS idx_deleted_records_deleted_at ON public.deleted_records (deleted_at DESC);
+
 
