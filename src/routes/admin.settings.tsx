@@ -683,7 +683,7 @@ function AdminSettingsPage() {
           </div>
 
           <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px; color: #92400e; font-size: 11px;">
-            âš ï¸ <b>Upsert Mode:</b> Existing records matching IDs will be updated with the backup snapshot. Non-conflicting live data will be retained.
+            ⚠️ <b>Upsert Mode:</b> Existing records matching IDs will be updated with the backup snapshot. Non-conflicting live data will be retained.
           </div>
         </div>
       `,

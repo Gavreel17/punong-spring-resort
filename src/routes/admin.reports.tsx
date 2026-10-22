@@ -604,7 +604,7 @@ function ReportsDashboard() {
             <BarChart3 className="w-24 h-24 -mb-4 -mr-4 text-[#D4AF37]" />
           </div>
           <p className="text-[10px] uppercase tracking-widest font-extrabold text-amber-300 mb-1">Total Period Revenue</p>
-          <p className="text-3xl font-black text-white font-display">â‚±{stats.revenue.toLocaleString()}</p>
+          <p className="text-3xl font-black text-white font-display">₱{stats.revenue.toLocaleString()}</p>
         </div>
       </div>
 
@@ -631,7 +631,7 @@ function ReportsDashboard() {
                 <BarChart data={dailyRevenueData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} tickFormatter={(val) => `â‚±${val}`} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} tickFormatter={(val) => `₱${val}`} />
                   <RechartsTooltip cursor={{ fill: 'rgba(51, 65, 85, 0.2)' }} contentStyle={{ borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#f8fafc', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)' }} />
                   <Bar dataKey="amount" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={50} />
                 </BarChart>
@@ -912,7 +912,7 @@ function ReportsDashboard() {
                             </TableCell>
                             <TableCell>
                               <span className="capitalize font-medium text-slate-700 dark:text-slate-300">
-                                {method === "gcash" ? "GCash" : method === "resort" ? "At Resort" : "â€”"}
+                                {method === "gcash" ? "GCash" : method === "resort" ? "At Resort" : "—"}
                               </span>
                             </TableCell>
                             <TableCell>
@@ -967,7 +967,7 @@ function ReportsDashboard() {
                         <TableCell>
                           <Badge variant="secondary">{r.timesBooked} bookings</Badge>
                         </TableCell>
-                        <TableCell className="font-bold text-primary">â‚±{r.revenue.toLocaleString()}</TableCell>
+                        <TableCell className="font-bold text-primary">₱{r.revenue.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -1008,7 +1008,7 @@ function ReportsDashboard() {
                         <TableCell className="text-slate-700 dark:text-slate-300">{c.email}</TableCell>
                         <TableCell className="text-slate-700 dark:text-slate-300">{c.phone}</TableCell>
                         <TableCell className="text-slate-800 dark:text-slate-200">{c.bookingsCount}</TableCell>
-                        <TableCell className="font-bold text-primary">â‚±{c.totalSpent.toLocaleString()}</TableCell>
+                        <TableCell className="font-bold text-primary">₱{c.totalSpent.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -1093,14 +1093,14 @@ function ReportsDashboard() {
                             {item.subtitle && <div className="text-xs text-slate-500 dark:text-slate-400">{item.subtitle}</div>}
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm text-slate-800 dark:text-slate-200">{item.dates || "â€”"}</div>
+                            <div className="text-sm text-slate-800 dark:text-slate-200">{item.dates || "—"}</div>
                             {item.description && <div className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{item.description}</div>}
                           </TableCell>
                           <TableCell>
                             {item.amount !== undefined && item.amount > 0 ? (
-                              <span className="font-medium text-slate-700 dark:text-slate-200">â‚±{item.amount.toLocaleString()}</span>
+                              <span className="font-medium text-slate-700 dark:text-slate-200">₱{item.amount.toLocaleString()}</span>
                             ) : (
-                              <span className="text-slate-400">â€”</span>
+                              <span className="text-slate-400">—</span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -1109,7 +1109,7 @@ function ReportsDashboard() {
                             </div>
                             <div className="text-xs text-slate-500 dark:text-slate-400">
                               {item.deleted_at ? format(parseISO(item.deleted_at), "h:mm a") : ""}
-                              {item.deleted_by_name ? ` â€¢ by ${item.deleted_by_name}` : ""}
+                              {item.deleted_by_name ? ` • by ${item.deleted_by_name}` : ""}
                             </div>
                           </TableCell>
                           <TableCell className="text-right whitespace-nowrap">

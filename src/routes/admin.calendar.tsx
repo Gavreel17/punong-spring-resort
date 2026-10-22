@@ -278,7 +278,7 @@ export function AvailabilityCalendarTab() {
             color: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm",
             type: "booking",
             booking: b,
-            text: isCheckInDay ? `â†’ ${guestFirst}` : guestFirst,
+            text: isCheckInDay ? `⏳ ${guestFirst}` : guestFirst,
             dateStr,
           };
         }
@@ -287,7 +287,7 @@ export function AvailabilityCalendarTab() {
             color: "bg-amber-500 text-white hover:bg-amber-600 shadow-sm",
             type: "booking",
             booking: b,
-            text: isCheckInDay ? `â³ ${guestFirst}` : guestFirst,
+            text: isCheckInDay ? `⏳ ${guestFirst}` : guestFirst,
             dateStr,
           };
         }
@@ -1132,8 +1132,8 @@ export function AvailabilityCalendarTab() {
                           </div>
                           <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                             <span>{r.type === "villa" ? "Function Hall" : r.type || "ROOM"}</span>
-                            <span>â€¢</span>
-                            <span>â‚±{Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}</span>
+                            <span>•</span>
+                            <span>₱{Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}</span>
                           </div>
                         </div>
                       </td>
@@ -1400,7 +1400,7 @@ export function AvailabilityCalendarTab() {
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
                             <span>{b.room?.name}</span>
                             <span className="font-bold text-[#B38728]">
-                              â‚±{Number(b.total_amount).toLocaleString()}
+                              ₱{Number(b.total_amount).toLocaleString()}
                             </span>
                           </div>
                           <div className="text-[10px] text-slate-400">
@@ -1476,7 +1476,7 @@ export function AvailabilityCalendarTab() {
                           <div>
                             <div className="font-bold text-xs text-slate-900 dark:text-white">{r.name}</div>
                             <div className="text-[10px] text-slate-400">
-                              â‚±{Number(r.price).toLocaleString()} â€¢ Cap: {r.capacity || "2-4"}
+                              ₱{Number(r.price).toLocaleString()} • Cap: {r.capacity || "2-4"}
                             </div>
                           </div>
                           <Button
@@ -1545,7 +1545,7 @@ export function AvailabilityCalendarTab() {
                               {b.guest_name}
                             </span>
                             <span className="text-[11px] text-slate-600 dark:text-slate-300">
-                              {b.room?.name} â€¢ Check-out: {b.check_out}
+                              {b.room?.name} • Check-out: {b.check_out}
                             </span>
                           </div>
                           <Badge className="bg-emerald-600 text-white text-[10px]">
@@ -1582,7 +1582,7 @@ export function AvailabilityCalendarTab() {
                               {b.guest_name}
                             </span>
                             <span className="text-[11px] text-slate-600 dark:text-slate-300">
-                              {b.room?.name} â€¢ Departed
+                              {b.room?.name} • Departed
                             </span>
                           </div>
                           <Badge variant="outline" className="text-[10px]">
@@ -1761,7 +1761,7 @@ export function AvailabilityCalendarTab() {
                 <SelectContent>
                   {rooms.map((r: any) => (
                     <SelectItem key={r.id} value={r.id}>
-                      {r.name} ({r.type === "villa" ? "Function Hall" : r.type || "Room"}) - â‚±
+                      {r.name} ({r.type === "villa" ? "Function Hall" : r.type || "Room"}) - ₱
                       {Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}
                     </SelectItem>
                   ))}
@@ -1864,7 +1864,7 @@ export function AvailabilityCalendarTab() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
               <div>
                 <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
-                  Total Amount (â‚±) *
+                  Total Amount (₱) *
                 </Label>
                 <Input
                   type="number"
@@ -2222,7 +2222,7 @@ export function AvailabilityCalendarTab() {
                     Total Amount
                   </span>
                   <span className="text-[#B38728] font-black text-base font-display">
-                    â‚±{Number(selectedBooking.total_amount).toLocaleString()}
+                    ₱{Number(selectedBooking.total_amount).toLocaleString()}
                   </span>
                 </div>
                 <div>

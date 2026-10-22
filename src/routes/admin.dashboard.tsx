@@ -23,11 +23,11 @@ import { useAdminStats } from "@/hooks/use-admin-stats";
 import { AdminStatsRow } from "@/components/AdminStatsRow";
 
 export const Route = createFileRoute("/admin/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard â€” Admin | Punong Spring Resort" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Admin | Punong Spring Resort" }] }),
   component: AdminDashboard,
 });
 
-// â”€â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helper ────────────────────────────────────────────────────────────────
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
@@ -41,7 +41,7 @@ function statusBadge(status: string) {
   return map[status] ?? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700";
 }
 
-// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main Component ─────────────────────────────────────────────────────────
 
 function AdminDashboard() {
   const todayStr = new Date().toISOString().split("T")[0];
@@ -81,12 +81,12 @@ function AdminDashboard() {
   const avgRating =
     feedbacks && feedbacks.length > 0
       ? (feedbacks.reduce((s: number, f: any) => s + Number(f.rating), 0) / feedbacks.length).toFixed(1)
-      : "â€”";
+      : "—";
 
   // Recent 8 bookings
   const recentBookings = allBookings.slice(0, 8);
 
-  // â”€â”€ Booking Status Breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Booking Status Breakdown ───────────────────────────────────────────
 
   const statusBreakdown = [
     { label: "Confirmed / Active", count: stats.approvedCount, icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
@@ -94,7 +94,7 @@ function AdminDashboard() {
     { label: "Awaiting Payments", count: pendingPayments ?? 0, icon: AlertCircle, color: "text-orange-600 bg-orange-50 border-orange-200" },
   ];
 
-  // â”€â”€ Quick-Action Links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Quick-Action Links ─────────────────────────────────────────────────
 
   const quickLinks = [
     { label: "View Calendar", to: "/admin/calendar", icon: CalendarDays, desc: "Monthly booking overview" },
@@ -108,7 +108,7 @@ function AdminDashboard() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-      {/* â”€â”€ Page Title â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Page Title ─────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -140,10 +140,10 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* â”€â”€ KPI Cards (Unified Across Admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── KPI Cards (Unified Across Admin) ────────────────────────── */}
       <AdminStatsRow showSubtitles={true} />
 
-      {/* â”€â”€ Status Breakdown + Quick Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Status Breakdown + Quick Actions ───────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-5">
 
         {/* Status Breakdown (2 cols wide) */}
@@ -220,7 +220,7 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* â”€â”€ Occupancy Overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Occupancy Overview ─────────────────────────────────────── */}
       <div className="rounded-2xl bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
@@ -297,7 +297,7 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* â”€â”€ Recent Bookings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Recent Bookings ────────────────────────────────────────── */}
       <div className="rounded-2xl bg-white dark:bg-[#151F2E] border border-slate-200/80 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div>
@@ -336,14 +336,14 @@ function AdminDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{b.guest_name}</p>
                   <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
-                    {(b as any).room?.name ?? "â€”"} &bull; {b.check_in} â†’ {b.check_out}
+                    {(b as any).room?.name ?? "—"} &bull; {b.check_in} → {b.check_out}
                   </p>
                 </div>
 
                 {/* Amount */}
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-extrabold text-[#B38728] font-display">
-                    â‚±{Number(b.total_amount).toLocaleString()}
+                    ₱{Number(b.total_amount).toLocaleString()}
                   </p>
                   <p className="text-[10px] text-slate-400">
                     {format(parseISO(b.created_at), "MMM d, yyyy")}
