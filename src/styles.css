@@ -308,10 +308,14 @@
 
     /* Suppress administrative web chrome */
     aside,
-    header,
+    header:not(.executive-report-header),
     nav,
     .print\:hidden {
       display: none !important;
+    }
+
+    .executive-report-header {
+      display: block !important;
     }
 
     /* Unconstrain viewport heights and scroll containers */
