@@ -93,6 +93,22 @@ export const trashService = {
   },
 
   /**
+   * Check synchronously if an ID is currently in the local trash
+   */
+  isDeleted(id: string): boolean {
+    return getLocalTrash().some((i) => i.id === id);
+  },
+
+  /**
+   * Get all IDs currently in the local trash
+   */
+  getLocalTrashIds(type?: TrashEntityType): string[] {
+    const list = getLocalTrash();
+    if (!type) return list.map((i) => i.id);
+    return list.filter((i) => i.type === type).map((i) => i.id);
+  },
+
+  /**
    * Fetch all recently deleted items combined across database (bookings, rooms, deleted_records)
    * and offline cache.
    */

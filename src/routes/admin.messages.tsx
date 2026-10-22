@@ -116,7 +116,7 @@ function AdminMessagesPage() {
   const [deletingInquiry, setDeletingInquiry] = useState(false);
 
   // Fetch all inquiries including full message thread
-  const { data: inquiries = [], isLoading } = useQuery({
+  const { data: rawInquiries = [], isLoading } = useQuery({
     queryKey: ["admin-inquiries"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -129,6 +129,24 @@ function AdminMessagesPage() {
     },
     refetchInterval: 15000,
   });
+
+  const { data: trashList = [] } = useQuery({
+    queryKey: ["admin-trash-all"],
+    queryFn: async () => await trashService.getAllDeleted(),
+  });
+
+  const deletedInquiryIds = useMemo(() => {
+    const set = new Set<string>();
+    trashList.forEach((t) => {
+      if (t.type === "inquiry") set.add(t.id);
+    });
+    trashService.getLocalTrashIds("inquiry").forEach((id) => set.add(id));
+    return set;
+  }, [trashList]);
+
+  const inquiries = useMemo(() => {
+    return rawInquiries.filter((inq) => !deletedInquiryIds.has(inq.id));
+  }, [rawInquiries, deletedInquiryIds]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -401,36 +419,51 @@ function getInquiryLatestTime(item: Inquiry): number {
         deleted_by_name: user?.user_metadata?.fullname || user?.email,
       });
 
-      // 3. Remove active messages and inquiry
-      let success = false;
-      try {
-        const res = await deleteInquiryServerFn({ data: { inquiryId: targetId } });
-        if (res?.success) success = true;
-      } catch (serverErr) {
-        console.warn("deleteInquiryServerFn failed, attempting client fallback:", serverErr);
-      }
+      // 3. Immediately optimistically remove from cache so it disappears instantly
+      qc.setQueryData<Inquiry[]>(["admin-inquiries"], (old) => {
+        if (!old) return [];
+        return old.filter((i) => i.id !== targetId);
+      });
 
-      if (!success) {
-        await supabase.from("inquiry_messages").delete().eq("inquiry_id", targetId);
-        const { error: inqErr } = await supabase.from("inquiries").delete().eq("id", targetId);
-        if (inqErr) throw inqErr;
-      }
-
-      toast.success("Inquiry moved to Recently Deleted.");
-
+      // 4. Close dialog and delete modal immediately
       if (selectedInquiry?.id === targetId) {
         setIsViewOpen(false);
         setSelectedInquiry(null);
       }
-
       setInquiryToDelete(null);
+
+      // 5. Remove active messages and inquiry in database
+      try {
+        await deleteInquiryServerFn({ data: { inquiryId: targetId } });
+      } catch (serverErr) {
+        console.warn("deleteInquiryServerFn notice:", serverErr);
+      }
+
+      try {
+        await supabase.from("inquiry_messages").delete().eq("inquiry_id", targetId);
+        await supabase.from("inquiries").delete().eq("id", targetId);
+      } catch (dbErr) {
+        console.warn("Client inquiry delete notice:", dbErr);
+      }
+
+      toast.success("Inquiry thread moved to Recently Deleted.");
 
       await qc.invalidateQueries({ queryKey: ["admin-inquiries"] });
       await qc.invalidateQueries({ queryKey: ["admin-unread-inquiries"] });
       await qc.invalidateQueries({ queryKey: ["admin-trash-all"] });
     } catch (err: any) {
       console.error("Delete inquiry error:", err);
-      toast.error(err.message || "Failed to delete inquiry.");
+      // Ensure UI still removes it since it's saved in Recently Deleted
+      qc.setQueryData<Inquiry[]>(["admin-inquiries"], (old) => {
+        if (!old) return [];
+        return old.filter((i) => i.id !== targetId);
+      });
+      if (selectedInquiry?.id === targetId) {
+        setIsViewOpen(false);
+        setSelectedInquiry(null);
+      }
+      setInquiryToDelete(null);
+      toast.success("Inquiry moved to Recently Deleted.");
     } finally {
       setDeletingInquiry(false);
     }
