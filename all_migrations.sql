@@ -726,5 +726,110 @@ CREATE TRIGGER trg_protect_completed_booking_payment
   FOR EACH ROW
   EXECUTE FUNCTION public.protect_completed_booking_payment();
 
+-- ============================================================
+-- Resort Blocks Table & Backend Enforced Overlap Trigger
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.resort_blocks (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  start_date  DATE        NOT NULL,
+  end_date    DATE        NOT NULL CHECK (end_date >= start_date),
+  reason      TEXT        DEFAULT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_by  UUID        REFERENCES auth.users(id) ON DELETE SET NULL DEFAULT NULL,
+  CONSTRAINT no_empty_range CHECK (end_date >= start_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_resort_blocks_start ON public.resort_blocks(start_date);
+CREATE INDEX IF NOT EXISTS idx_resort_blocks_end   ON public.resort_blocks(end_date);
+
+GRANT SELECT ON public.resort_blocks TO anon;
+GRANT SELECT ON public.resort_blocks TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.resort_blocks TO authenticated;
+GRANT ALL ON public.resort_blocks TO service_role;
+
+ALTER TABLE public.resort_blocks ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "resort_blocks_read_all" ON public.resort_blocks;
+CREATE POLICY "resort_blocks_read_all"
+  ON public.resort_blocks FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "resort_blocks_admin_insert" ON public.resort_blocks;
+CREATE POLICY "resort_blocks_admin_insert"
+  ON public.resort_blocks FOR INSERT TO authenticated
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+DROP POLICY IF EXISTS "resort_blocks_admin_delete" ON public.resort_blocks;
+CREATE POLICY "resort_blocks_admin_delete"
+  ON public.resort_blocks FOR DELETE TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+
+DROP POLICY IF EXISTS "resort_blocks_admin_update" ON public.resort_blocks;
+CREATE POLICY "resort_blocks_admin_update"
+  ON public.resort_blocks FOR UPDATE TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+CREATE OR REPLACE FUNCTION public.prevent_double_booking()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_conflict RECORD;
+  v_block RECORD;
+BEGIN
+  IF NEW.deleted_at IS NOT NULL OR NEW.status NOT IN ('pending', 'approved') THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT id, start_date, end_date, reason INTO v_block
+  FROM public.resort_blocks
+  WHERE (
+    CASE 
+      WHEN NEW.check_in = NEW.check_out THEN
+        NEW.check_in <= end_date AND NEW.check_out >= start_date
+      ELSE
+        NEW.check_in < end_date AND NEW.check_out > start_date
+    END
+  )
+  LIMIT 1;
+
+  IF v_block.id IS NOT NULL THEN
+    RAISE EXCEPTION 'RESORT_BLOCKED: The resort is closed/blocked from % to % (Reason: %). Please choose different dates.',
+      v_block.start_date, v_block.end_date, COALESCE(v_block.reason, 'Administrative Closure');
+  END IF;
+
+  PERFORM 1 FROM public.rooms WHERE id = NEW.room_id FOR UPDATE;
+
+  SELECT id, guest_name, check_in, check_out, status INTO v_conflict
+  FROM public.bookings
+  WHERE room_id = NEW.room_id
+    AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
+    AND deleted_at IS NULL
+    AND status IN ('pending', 'approved')
+    AND (
+      CASE 
+        WHEN check_in = check_out OR NEW.check_in = NEW.check_out THEN
+          NEW.check_in <= check_out AND NEW.check_out >= check_in
+        ELSE
+          NEW.check_in < check_out AND NEW.check_out > check_in
+      END
+    )
+  LIMIT 1;
+
+  IF v_conflict.id IS NOT NULL THEN
+    RAISE EXCEPTION 'UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_double_booking ON public.bookings;
+CREATE TRIGGER trg_prevent_double_booking
+  BEFORE INSERT OR UPDATE OF room_id, check_in, check_out, status ON public.bookings
+  FOR EACH ROW
+  EXECUTE FUNCTION public.prevent_double_booking();
+
+NOTIFY pgrst, 'reload schema';
+
 
 

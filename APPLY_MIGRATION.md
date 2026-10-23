@@ -1,62 +1,11 @@
-# IMPORTANT: Run these SQLs in your Supabase SQL Editor
-# Dashboard → SQL Editor → New Query → Paste → Click Run
-
----
-
-## 1. Double-Booking Prevention Migration
-File: `supabase/migrations/20261023220000_prevent_double_booking_trigger.sql`
+# IMPORTANT: Run this SQL in your Supabase SQL Editor
+### Dashboard → SQL Editor → New Query → Paste → Click Run
 
 ```sql
-DROP POLICY IF EXISTS "anyone view booking schedule" ON public.bookings;
-CREATE POLICY "anyone view booking schedule" ON public.bookings
-  FOR SELECT TO anon, authenticated
-  USING (deleted_at IS NULL AND status IN ('pending', 'approved'));
+-- ============================================================
+-- 1. Create resort_blocks Table with RLS & Indices
+-- ============================================================
 
-CREATE OR REPLACE FUNCTION public.prevent_double_booking()
-RETURNS TRIGGER AS $$
-DECLARE v_conflict RECORD;
-BEGIN
-  IF NEW.deleted_at IS NOT NULL OR NEW.status NOT IN ('pending', 'approved') THEN
-    RETURN NEW;
-  END IF;
-  PERFORM 1 FROM public.rooms WHERE id = NEW.room_id FOR UPDATE;
-  SELECT id, guest_name, check_in, check_out, status INTO v_conflict
-  FROM public.bookings
-  WHERE room_id = NEW.room_id
-    AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
-    AND deleted_at IS NULL
-    AND status IN ('pending', 'approved')
-    AND (
-      CASE
-        WHEN check_in = check_out OR NEW.check_in = NEW.check_out THEN
-          NEW.check_in <= check_out AND NEW.check_out >= check_in
-        ELSE
-          NEW.check_in < check_out AND NEW.check_out > check_in
-      END
-    )
-  LIMIT 1;
-  IF v_conflict.id IS NOT NULL THEN
-    RAISE EXCEPTION 'UNAVAILABLE: This accommodation is already booked for the selected dates.';
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trg_prevent_double_booking ON public.bookings;
-CREATE TRIGGER trg_prevent_double_booking
-  BEFORE INSERT OR UPDATE OF room_id, check_in, check_out, status ON public.bookings
-  FOR EACH ROW EXECUTE FUNCTION public.prevent_double_booking();
-```
-
----
-
-## 2. ⚠️ CRITICAL – Resort Blocks Table (fixes "Failed to block dates" error)
-File: `supabase/migrations/20261024000000_create_resort_blocks_table.sql`
-
-The `resort_blocks` table **must exist in Supabase** for the Block Resort Dates feature to work.
-Run this SQL in **Supabase Dashboard → SQL Editor → New Query**:
-
-```sql
 CREATE TABLE IF NOT EXISTS public.resort_blocks (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   start_date  DATE        NOT NULL,
@@ -77,38 +26,107 @@ GRANT ALL ON public.resort_blocks TO service_role;
 
 ALTER TABLE public.resort_blocks ENABLE ROW LEVEL SECURITY;
 
--- Policy: Anyone (including anon) can read blocks to display unavailable dates
+-- Read policy: Anyone can read blocked dates to see unavailable dates
 DROP POLICY IF EXISTS "resort_blocks_read_all" ON public.resort_blocks;
 CREATE POLICY "resort_blocks_read_all"
   ON public.resort_blocks FOR SELECT USING (true);
 
--- Policy: Only admins can insert new blocks
+-- Admin management policies
 DROP POLICY IF EXISTS "resort_blocks_admin_insert" ON public.resort_blocks;
 CREATE POLICY "resort_blocks_admin_insert"
   ON public.resort_blocks FOR INSERT TO authenticated
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
--- Policy: Only admins can delete blocks
 DROP POLICY IF EXISTS "resort_blocks_admin_delete" ON public.resort_blocks;
 CREATE POLICY "resort_blocks_admin_delete"
   ON public.resort_blocks FOR DELETE TO authenticated
   USING (public.has_role(auth.uid(), 'admin'));
 
--- Policy: Only admins can update blocks
 DROP POLICY IF EXISTS "resort_blocks_admin_update" ON public.resort_blocks;
 CREATE POLICY "resort_blocks_admin_update"
   ON public.resort_blocks FOR UPDATE TO authenticated
   USING (public.has_role(auth.uid(), 'admin'))
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
--- Notify PostgREST to refresh its schema cache immediately
+-- ============================================================
+-- 2. Concurrency-Safe Trigger Enforcing Resort Blocks & Availability
+-- ============================================================
+
+DROP POLICY IF EXISTS "anyone view booking schedule" ON public.bookings;
+CREATE POLICY "anyone view booking schedule" ON public.bookings
+  FOR SELECT TO anon, authenticated
+  USING (deleted_at IS NULL AND status IN ('pending', 'approved'));
+
+CREATE OR REPLACE FUNCTION public.prevent_double_booking()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_conflict RECORD;
+  v_block RECORD;
+BEGIN
+  -- Only validate active blocking reservations
+  IF NEW.deleted_at IS NOT NULL OR NEW.status NOT IN ('pending', 'approved') THEN
+    RETURN NEW;
+  END IF;
+
+  -- 1. Check active resort-wide blocks
+  SELECT id, start_date, end_date, reason INTO v_block
+  FROM public.resort_blocks
+  WHERE (
+    CASE 
+      WHEN NEW.check_in = NEW.check_out THEN
+        NEW.check_in <= end_date AND NEW.check_out >= start_date
+      ELSE
+        NEW.check_in < end_date AND NEW.check_out > start_date
+    END
+  )
+  LIMIT 1;
+
+  IF v_block.id IS NOT NULL THEN
+    RAISE EXCEPTION 'RESORT_BLOCKED: The resort is closed/blocked from % to % (Reason: %). Please choose different dates.',
+      v_block.start_date, v_block.end_date, COALESCE(v_block.reason, 'Administrative Closure');
+  END IF;
+
+  -- 2. Lock the target accommodation row to serialize concurrent booking transactions
+  PERFORM 1 FROM public.rooms WHERE id = NEW.room_id FOR UPDATE;
+
+  -- 3. Detect overlapping active reservations
+  SELECT id, guest_name, check_in, check_out, status INTO v_conflict
+  FROM public.bookings
+  WHERE room_id = NEW.room_id
+    AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
+    AND deleted_at IS NULL
+    AND status IN ('pending', 'approved')
+    AND (
+      CASE 
+        WHEN check_in = check_out OR NEW.check_in = NEW.check_out THEN
+          NEW.check_in <= check_out AND NEW.check_out >= check_in
+        ELSE
+          NEW.check_in < check_out AND NEW.check_out > check_in
+      END
+    )
+  LIMIT 1;
+
+  IF v_conflict.id IS NOT NULL THEN
+    RAISE EXCEPTION 'UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_prevent_double_booking ON public.bookings;
+CREATE TRIGGER trg_prevent_double_booking
+  BEFORE INSERT OR UPDATE OF room_id, check_in, check_out, status ON public.bookings
+  FOR EACH ROW
+  EXECUTE FUNCTION public.prevent_double_booking();
+
+-- Force PostgREST to reload its schema cache immediately
 NOTIFY pgrst, 'reload schema';
 ```
 
-After running this SQL:
-- Go to Admin → Calendar → Block Resort Dates Override
-- Enter Start Date, End Date, optional Reason
-- Click **Apply Resort Block** — it will now save successfully
-- The blocked dates will appear in the Active Resort Blocks list
-- Customers cannot book during blocked dates
-- Walk-in reservations are also blocked during those dates
+---
+
+### What this achieves:
+1. Creates the `resort_blocks` table with Row-Level Security so that customers can read unavailable dates, and only admins can block/unblock dates.
+2. Updates `prevent_double_booking()` database trigger to strictly reject any booking for dates overlapping a resort block at the database level.
+3. Automatically reloads the PostgREST schema cache so no errors occur.

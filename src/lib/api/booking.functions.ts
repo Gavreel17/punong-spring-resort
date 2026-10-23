@@ -552,6 +552,10 @@ export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
           const blk = blocks[0];
           return {
             available: false,
+            isResortBlocked: true,
+            blockReason: blk.reason || null,
+            startDate: blk.start_date,
+            endDate: blk.end_date,
             message: `UNAVAILABLE: The resort is closed/blocked from ${blk.start_date} to ${blk.end_date} (${blk.reason || "Resort Blocked"}). Please choose different dates.`,
             conflicts: [
               {

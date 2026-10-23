@@ -34,6 +34,7 @@ import { processAutoBookingStatuses } from "@/lib/booking-utils";
 import { getRoomRateType, enrichRoomWithRateType } from "@/lib/rate-type-helper";
 import { validatePhilippineMobileNumber, isValidPhilippineMobileNumber } from "@/lib/phone-validation";
 import { PhoneInputField } from "@/components/PhoneInputField";
+import { ResortBlockedModal, formatBlockDateRange } from "@/components/ResortBlockedModal";
 
 const MySwal = withReactContent(Swal);
 
@@ -70,6 +71,15 @@ function BookPage() {
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const [guestExceeded, setGuestExceeded] = useState(false);
+
+  // Resort-wide block popup alert state
+  const [blockedModalOpen, setBlockedModalOpen] = useState(false);
+  const [selectedBlock, setSelectedBlock] = useState<any>(null);
+
+  const openBlockedModal = (block: any) => {
+    setSelectedBlock(block);
+    setBlockedModalOpen(true);
+  };
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/auth" });
@@ -167,7 +177,7 @@ function BookPage() {
     refetchInterval: 5000,
   });
 
-  const { data: blocks } = useQuery({
+  const { data: blocks = [] } = useQuery({
     queryKey: ["resort-blocks"],
     queryFn: async () => {
       try {
@@ -177,8 +187,25 @@ function BookPage() {
         return [] as any[];
       }
     },
-    refetchInterval: 10000,
+    refetchInterval: 5000,
   });
+
+  // Real-time synchronization whenever resort_blocks are applied or removed
+  useEffect(() => {
+    const channel = supabase
+      .channel("customer-resort-blocks-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "resort_blocks" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["resort-blocks"] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   useEffect(() => {
     if (user) {
@@ -225,7 +252,12 @@ function BookPage() {
     if (blocks && blocks.length > 0) {
       for (const block of blocks) {
         if (dateStr >= block.start_date && dateStr <= block.end_date) {
-          return { status: "booked", tooltip: block.reason ? `Resort Blocked: ${block.reason}` : "Resort Blocked" };
+          return {
+            status: "blocked",
+            block,
+            reason: block.reason || "The resort is temporarily unavailable for the selected dates.",
+            tooltip: block.reason ? `Resort Blocked: ${block.reason}` : "Resort Blocked",
+          };
         }
       }
     }
@@ -264,7 +296,8 @@ function BookPage() {
     if (start.getTime() > end.getTime()) return true;
     let cur = new Date(start);
     while (cur <= end) {
-      if (getDayStatus(cur).status === "booked") {
+      const st = getDayStatus(cur);
+      if (st.status === "booked" || st.status === "blocked") {
         return true;
       }
       cur.setDate(cur.getDate() + 1);
@@ -283,17 +316,33 @@ function BookPage() {
       }
 
       let cur = new Date(start);
-      let conflictReason: string | null = null;
+      let foundBlock: any = null;
+      let foundBookingConflict: string | null = null;
       while (cur <= end) {
         const st = getDayStatus(cur);
-        if (st.status === "booked") {
-          conflictReason = `UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.`;
+        if (st.status === "blocked") {
+          foundBlock = st.block;
+          break;
+        } else if (st.status === "booked") {
+          foundBookingConflict = `UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.`;
           break;
         }
         cur.setDate(cur.getDate() + 1);
       }
 
-      setConflictWarning(conflictReason);
+      if (foundBlock) {
+        const blockDates = formatBlockDateRange(foundBlock.start_date, foundBlock.end_date);
+        setConflictWarning(
+          `RESORT TEMPORARILY UNAVAILABLE: The resort is closed from ${blockDates}${
+            foundBlock.reason ? ` (${foundBlock.reason})` : ""
+          }. Please select another date.`
+        );
+        openBlockedModal(foundBlock);
+      } else if (foundBookingConflict) {
+        setConflictWarning(foundBookingConflict);
+      } else {
+        setConflictWarning(null);
+      }
     } else {
       setConflictWarning(null);
     }
@@ -414,14 +463,42 @@ function BookPage() {
       return toast.error(extraBedValidationMessage);
     }
 
+    if (isSelectedDateRangeBooked || conflictWarning) {
+      const hit = blocks.find((b: any) => form.check_in <= b.end_date && form.check_out >= b.start_date);
+      if (hit) {
+        openBlockedModal(hit);
+        return;
+      }
+      return toast.error(
+        conflictWarning ||
+          "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
+        { duration: 6000 }
+      );
+    }
+
     // Validation passed! Open Reminder Modal before submitting
     setShowReminderModal(true);
   }
 
   async function handleConfirmAndSubmit() {
     if (submitting || !user || !room) return;
+
+    const hitBlock = blocks.find((b: any) =>
+      form.check_in <= b.end_date && form.check_out >= b.start_date
+    );
+    if (hitBlock) {
+      setShowReminderModal(false);
+      openBlockedModal(hitBlock);
+      return;
+    }
+
     if (isSelectedDateRangeBooked || conflictWarning) {
-      return toast.error("Cannot proceed: Selected dates include dates marked in red (already booked).");
+      setShowReminderModal(false);
+      return toast.error(
+        conflictWarning ||
+          "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
+        { duration: 6000 }
+      );
     }
     if (isNonRoomCapacityExceeded) {
       setShowReminderModal(false);
@@ -439,15 +516,6 @@ function BookPage() {
       setShowReminderModal(false);
       return toast.error(
         phoneValidation.error || "Please provide a valid Philippine phone number starting with 09."
-      );
-    }
-
-    if (isSelectedDateRangeBooked || conflictWarning) {
-      setShowReminderModal(false);
-      return toast.error(
-        conflictWarning ||
-          "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
-        { duration: 6000 }
       );
     }
 
@@ -491,6 +559,14 @@ function BookPage() {
       if (!serverAvail.available) {
         setSubmitting(false);
         setShowReminderModal(false);
+        if ((serverAvail as any).isResortBlocked) {
+          openBlockedModal({
+            reason: (serverAvail as any).blockReason,
+            start_date: (serverAvail as any).startDate,
+            end_date: (serverAvail as any).endDate,
+          });
+          return;
+        }
         return toast.error(
           serverAvail.message ||
             "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
@@ -556,6 +632,11 @@ function BookPage() {
       }
 
       if (error) {
+        if (error.message?.includes("RESORT_BLOCKED") || error.details?.includes("RESORT_BLOCKED")) {
+          const hit = blocks.find((b: any) => form.check_in <= b.end_date && form.check_out >= b.start_date);
+          openBlockedModal(hit || { reason: "The resort is temporarily unavailable for the selected dates.", start_date: form.check_in, end_date: form.check_out });
+          return;
+        }
         MySwal.fire("Error!", error.message, "error");
         return;
       }
@@ -635,9 +716,11 @@ function BookPage() {
 
   const CustomDayButton = (dayProps: React.ComponentProps<typeof DayButton>) => {
     const { day, modifiers, className: defaultClassName, ...btnProps } = dayProps;
-    const { status, tooltip } = getDayStatus(day.date);
+    const dayStatus = getDayStatus(day.date);
+    const { status, tooltip } = dayStatus;
 
-    const isBooked = status === "booked";
+    const isBlocked = status === "blocked";
+    const isBooked = status === "booked" || isBlocked;
     const isPast = status === "past";
     const isAvailable = status === "available";
     const isSelected = !!modifiers.selected;
@@ -653,6 +736,12 @@ function BookPage() {
               aria-disabled={isBooked || isPast}
               data-status={status}
               onClick={(e) => {
+                if (isBlocked) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openBlockedModal((dayStatus as any).block);
+                  return;
+                }
                 if (isBooked) {
                   e.preventDefault();
                   e.stopPropagation();
@@ -671,7 +760,7 @@ function BookPage() {
               }}
               className={cn(
                 "h-9 w-9 p-0 font-medium rounded-md transition-all flex items-center justify-center text-sm relative select-none",
-                // Red for booked dates - highest priority, never overridden
+                // Red for booked and blocked dates - highest priority, never overridden
                 isBooked &&
                   "!bg-red-600 hover:!bg-red-700 !text-white font-bold shadow-sm !cursor-not-allowed !opacity-100 border border-red-700 ring-0",
                 // Selected state (only for available dates) - Blue
@@ -684,17 +773,23 @@ function BookPage() {
                   "!bg-emerald-600 hover:!bg-emerald-700 !text-white font-medium shadow-xs hover:scale-105 transition-transform",
                 // Past dates
                 isPast &&
-                  "!bg-slate-100 !text-slate-400 !opacity-50 !cursor-not-allowed line-through",
+                  "!bg-slate-100 !text-slate-400 !opacity-50 !cursor-not-allowed line-through"
               )}
             >
               <span>{day.date.getDate()}</span>
               {isBooked && (
-                <span className="sr-only">(Booked)</span>
+                <span className="sr-only">({isBlocked ? "Resort Blocked" : "Booked"})</span>
               )}
             </button>
           </TooltipTrigger>
           <TooltipContent className="z-[60] font-medium shadow-md text-xs">
-            {isBooked ? `🔴 ${tooltip} — Not Available` : isAvailable ? "🟢 Available for Booking" : "Past Date"}
+            {isBlocked
+              ? `🔴 Resort Blocked: ${(dayStatus as any).reason || "Temporarily Closed"}`
+              : isBooked
+              ? `🔴 ${tooltip} — Not Available`
+              : isAvailable
+              ? "🟢 Available for Booking"
+              : "Past Date"}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -749,6 +844,11 @@ function BookPage() {
                     // Single date clicked
                     if (range.from && !range.to) {
                       const fromStatus = getDayStatus(range.from);
+                      if (fromStatus.status === "blocked") {
+                        openBlockedModal((fromStatus as any).block);
+                        setForm((f) => ({ ...f, check_in: "", check_out: "" }));
+                        return;
+                      }
                       if (fromStatus.status === "booked") {
                         toast.error(`This date is already booked (${fromStatus.tooltip}). Dates marked in red cannot be booked.`);
                         setForm((f) => ({ ...f, check_in: "", check_out: "" }));
@@ -769,8 +869,9 @@ function BookPage() {
                       const from = new Date(range.from);
                       const to = new Date(range.to);
 
-                      // Check for booked dates anywhere within range
+                      // Check for blocked or booked dates anywhere within range
                       let cur = new Date(from);
+                      let foundBlock: any = null;
                       let hasBooked = false;
                       let conflictDateStr = "";
                       let conflictTooltip = "";
@@ -778,6 +879,10 @@ function BookPage() {
                       while (cur <= to) {
                         const curStr = format(cur, "yyyy-MM-dd");
                         const st = getDayStatus(cur);
+                        if (st.status === "blocked") {
+                          foundBlock = (st as any).block;
+                          break;
+                        }
                         if (st.status === "booked") {
                           hasBooked = true;
                           conflictDateStr = curStr;
@@ -785,6 +890,12 @@ function BookPage() {
                           break;
                         }
                         cur.setDate(cur.getDate() + 1);
+                      }
+
+                      if (foundBlock) {
+                        openBlockedModal(foundBlock);
+                        setForm((f) => ({ ...f, check_in: "", check_out: "" }));
+                        return;
                       }
 
                       if (hasBooked) {
@@ -801,7 +912,10 @@ function BookPage() {
                       setForm((f) => ({ ...f, check_in, check_out }));
                     }
                   }}
-                  disabled={(date) => getDayStatus(date).status === "booked" || date < today}
+                  disabled={(date) => {
+                    const st = getDayStatus(date);
+                    return st.status === "booked" || st.status === "blocked" || date < today;
+                  }}
                   className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs p-2 sm:p-4 max-w-full text-slate-900 dark:text-white"
                   components={{ DayButton: CustomDayButton }}
                 />
@@ -814,7 +928,7 @@ function BookPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3.5 h-3.5 rounded bg-red-600 shadow-xs"></div>
-                  <span className="font-semibold text-red-600 dark:text-red-400">Booked</span>
+                  <span className="font-semibold text-red-600 dark:text-red-400">Not Available / Blocked</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3.5 h-3.5 rounded bg-blue-600 shadow-xs"></div>
@@ -1512,6 +1626,20 @@ function BookPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* RESORT TEMPORARILY UNAVAILABLE POPUP ALERT */}
+      <ResortBlockedModal
+        isOpen={blockedModalOpen}
+        onClose={() => setBlockedModalOpen(false)}
+        reason={selectedBlock?.reason}
+        startDate={selectedBlock?.start_date}
+        endDate={selectedBlock?.end_date}
+        onChooseAnotherDate={() => {
+          setBlockedModalOpen(false);
+          setForm((f) => ({ ...f, check_in: "", check_out: "" }));
+          document.querySelector(".rdp")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }}
+      />
 
       <Footer />
     </div>
