@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,9 +61,11 @@ import {
   Trash2,
   Building2,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { processAutoBookingStatuses } from "@/lib/booking-utils";
 import { cn } from "@/lib/utils";
+import { checkRoomAvailabilityServerFn } from "@/lib/api/booking.functions";
 
 const MySwal = withReactContent(Swal);
 
@@ -118,6 +120,13 @@ export function AvailabilityCalendarTab() {
     special_requests: "",
   });
   const [creatingBooking, setCreatingBooking] = useState(false);
+
+  // Real-time availability check state
+  type AvailConflict = { id: string; guestName: string; checkIn: string; checkOut: string; status: string };
+  const [availStatus, setAvailStatus] = useState<"idle" | "checking" | "available" | "unavailable" | "error">("idle");
+  const [availConflicts, setAvailConflicts] = useState<AvailConflict[]>([]);
+  const [availError, setAvailError] = useState<string | null>(null);
+  const availCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cell click action picker modal
   const [cellActionData, setCellActionData] = useState<{
@@ -478,6 +487,67 @@ export function AvailabilityCalendarTab() {
     setBookingForm(next);
   };
 
+  // Realtime availability check - debounced 600ms after any key field changes
+  useEffect(() => {
+    if (!newBookingModalOpen) return;
+    if (!bookingForm.room_id || !bookingForm.check_in || !bookingForm.check_out) {
+      setAvailStatus("idle");
+      setAvailConflicts([]);
+      setAvailError(null);
+      return;
+    }
+    if (bookingForm.check_out <= bookingForm.check_in) {
+      setAvailStatus("idle");
+      return;
+    }
+
+    // Clear previous debounce timer
+    if (availCheckTimer.current) clearTimeout(availCheckTimer.current);
+    setAvailStatus("checking");
+    setAvailConflicts([]);
+    setAvailError(null);
+
+    availCheckTimer.current = setTimeout(async () => {
+      try {
+        const result = await checkRoomAvailabilityServerFn({
+          data: {
+            roomId: bookingForm.room_id,
+            checkIn: bookingForm.check_in,
+            checkOut: bookingForm.check_out,
+          },
+        });
+        if ((result as any).dbError) {
+          setAvailStatus("error");
+          setAvailError((result as any).error || "Failed to check availability.");
+        } else if ((result as any).available) {
+          setAvailStatus("available");
+          setAvailConflicts([]);
+        } else {
+          setAvailStatus("unavailable");
+          setAvailConflicts((result as any).conflicts || []);
+          if ((result as any).error) setAvailError((result as any).error);
+        }
+      } catch (err: any) {
+        setAvailStatus("error");
+        setAvailError(err?.message || "Availability check failed. Please retry.");
+      }
+    }, 600);
+
+    return () => {
+      if (availCheckTimer.current) clearTimeout(availCheckTimer.current);
+    };
+  }, [bookingForm.room_id, bookingForm.check_in, bookingForm.check_out, newBookingModalOpen]);
+
+  // Reset availability state when modal closes
+  useEffect(() => {
+    if (!newBookingModalOpen) {
+      setAvailStatus("idle");
+      setAvailConflicts([]);
+      setAvailError(null);
+      if (availCheckTimer.current) clearTimeout(availCheckTimer.current);
+    }
+  }, [newBookingModalOpen]);
+
   // Submit direct reservation
   const handleCreateBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -505,29 +575,44 @@ export function AvailabilityCalendarTab() {
       }
     }
 
-    // Double-booking check
-    const conflict = bookings.find((b: any) => {
-      if (b.room_id !== bookingForm.room_id) return false;
-      if (b.status === "rejected" || b.status === "cancelled" || b.status === "no-show") return false;
-      if (b.deleted_at) return false;
-      if (b.check_in === b.check_out || bookingForm.check_in === bookingForm.check_out) {
-        return bookingForm.check_in <= b.check_out && bookingForm.check_out >= b.check_in;
-      }
-      return bookingForm.check_in < b.check_out && bookingForm.check_out > b.check_in;
-    });
-
-    if (conflict) {
-      const confirmOverride = await MySwal.fire({
-        title: "Schedule Conflict Detected!",
-        text: `This accommodation is already reserved by ${conflict.guest_name} from ${conflict.check_in} to ${conflict.check_out}. Do you still want to proceed?`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#f59e0b",
-        cancelButtonColor: "#64748b",
-        confirmButtonText: "Force Booking",
+    // ===== SERVER-SIDE DOUBLE BOOKING PREVENTION =====
+    // Always re-validate on submit against the live database regardless of UI state
+    setCreatingBooking(true);
+    let serverAvailResult: any;
+    try {
+      serverAvailResult = await checkRoomAvailabilityServerFn({
+        data: {
+          roomId: bookingForm.room_id,
+          checkIn: bookingForm.check_in,
+          checkOut: bookingForm.check_out,
+        },
       });
-      if (!confirmOverride.isConfirmed) return;
+    } catch (err: any) {
+      setCreatingBooking(false);
+      toast.error("Unable to verify room availability from the server. Please retry.");
+      return;
     }
+
+    if (serverAvailResult?.dbError) {
+      setCreatingBooking(false);
+      toast.error(serverAvailResult.error || "Availability check failed. Cannot save reservation.");
+      return;
+    }
+
+    if (!serverAvailResult?.available) {
+      setCreatingBooking(false);
+      const firstConflict = serverAvailResult?.conflicts?.[0];
+      toast.error(
+        firstConflict
+          ? `UNAVAILABLE – ALREADY BOOKED: ${firstConflict.guestName} has a ${firstConflict.status} reservation from ${firstConflict.checkIn} to ${firstConflict.checkOut}. Please select another date or accommodation.`
+          : "This accommodation is already booked for the selected dates. Please select another date or accommodation.",
+        { duration: 6000 }
+      );
+      setAvailStatus("unavailable");
+      setAvailConflicts(serverAvailResult?.conflicts || []);
+      return;
+    }
+    // ===== END SERVER-SIDE CHECK ======
 
     setCreatingBooking(true);
     try {
@@ -1762,25 +1847,40 @@ export function AvailabilityCalendarTab() {
           </DialogHeader>
 
           <form onSubmit={handleCreateBookingSubmit} className="space-y-4 py-2">
-            {/* Accommodation select */}
+            {/* Accommodation select - shows UNAVAILABLE label when dates clash */}
             <div>
-              <Label className="text-xs font-semibold uppercase text-slate-600">
+              <Label className="text-xs font-semibold uppercase text-slate-600 dark:text-slate-400">
                 Accommodation Room / Villa *
               </Label>
               <Select
                 value={bookingForm.room_id}
                 onValueChange={(val) => handleBookingFormChange({ room_id: val })}
               >
-                <SelectTrigger className="mt-1 rounded-xl text-xs bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white h-10">
+                <SelectTrigger
+                  className={cn(
+                    "mt-1 rounded-xl text-xs bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white h-10",
+                    availStatus === "unavailable" && "border-rose-500 ring-1 ring-rose-500"
+                  )}
+                >
                   <SelectValue placeholder="Select Accommodation" />
                 </SelectTrigger>
                 <SelectContent>
-                  {rooms.map((r: any) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name} ({r.type === "villa" ? "Function Hall" : r.type || "Room"}) - ₱
-                      {Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}
-                    </SelectItem>
-                  ))}
+                  {rooms.map((r: any) => {
+                    // Check if this room is known to be conflicting based on realtime check
+                    const isConflicting =
+                      availStatus === "unavailable" &&
+                      bookingForm.room_id === r.id &&
+                      availConflicts.length > 0;
+                    return (
+                      <SelectItem key={r.id} value={r.id}>
+                        <span className={isConflicting ? "text-rose-600 dark:text-rose-400 font-bold" : ""}>
+                          {r.name} ({r.type === "villa" ? "Function Hall" : r.type || "Room"}) - ₱
+                          {Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}
+                          {isConflicting && " — UNAVAILABLE"}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -1945,6 +2045,80 @@ export function AvailabilityCalendarTab() {
               />
             </div>
 
+            {/* ===== AVAILABILITY STATUS BANNER ===== */}
+            {bookingForm.room_id && bookingForm.check_in && bookingForm.check_out && bookingForm.check_out > bookingForm.check_in && (
+              <div
+                className={cn(
+                  "rounded-xl border px-4 py-3 text-xs flex items-start gap-3 transition-all duration-300",
+                  availStatus === "checking" &&
+                    "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700",
+                  availStatus === "available" &&
+                    "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700",
+                  availStatus === "unavailable" &&
+                    "bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700",
+                  availStatus === "error" &&
+                    "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700",
+                  availStatus === "idle" && "hidden"
+                )}
+              >
+                {availStatus === "checking" && (
+                  <>
+                    <Loader2 className="w-4 h-4 text-slate-500 shrink-0 animate-spin mt-0.5" />
+                    <span className="text-slate-600 dark:text-slate-300 font-semibold">
+                      Checking real-time availability...
+                    </span>
+                  </>
+                )}
+                {availStatus === "available" && (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
+                        ✓ AVAILABLE
+                      </span>
+                      <span className="text-emerald-600 dark:text-emerald-300 ml-2">
+                        — This accommodation is free for the selected dates.
+                      </span>
+                    </div>
+                  </>
+                )}
+                {availStatus === "unavailable" && (
+                  <>
+                    <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1.5">
+                      <div className="font-black text-rose-700 dark:text-rose-400 uppercase tracking-wide">
+                        ✗ UNAVAILABLE — ALREADY BOOKED
+                      </div>
+                      {availConflicts.map((c) => (
+                        <div key={c.id} className="text-rose-600 dark:text-rose-300">
+                          <span className="font-bold">{c.guestName}</span> has a{" "}
+                          <span className="capitalize font-semibold">{c.status}</span> reservation from{" "}
+                          <span className="font-bold">{c.checkIn}</span> to{" "}
+                          <span className="font-bold">{c.checkOut}</span>.
+                        </div>
+                      ))}
+                      <div className="text-rose-500 dark:text-rose-400 font-semibold pt-0.5">
+                        ➜ Please select another date or accommodation.
+                      </div>
+                    </div>
+                  </>
+                )}
+                {availStatus === "error" && (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-bold text-amber-700 dark:text-amber-400">
+                        Availability Check Error
+                      </div>
+                      <div className="text-amber-600 dark:text-amber-300">
+                        {availError || "Could not verify availability. Please try again before saving."}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             <DialogFooter className="pt-2">
               <Button
                 type="button"
@@ -1956,10 +2130,37 @@ export function AvailabilityCalendarTab() {
               </Button>
               <Button
                 type="submit"
-                disabled={creatingBooking}
-                className="rounded-xl font-bold bg-[#B38728] hover:bg-[#9a721e] text-white"
+                disabled={
+                  creatingBooking ||
+                  availStatus === "checking" ||
+                  availStatus === "unavailable" ||
+                  availStatus === "error"
+                }
+                className={cn(
+                  "rounded-xl font-bold text-white transition-all",
+                  availStatus === "unavailable" || availStatus === "error"
+                    ? "bg-rose-400 dark:bg-rose-800 cursor-not-allowed opacity-60"
+                    : "bg-[#B38728] hover:bg-[#9a721e]"
+                )}
+                title={
+                  availStatus === "unavailable"
+                    ? "Cannot save: accommodation is already booked for these dates"
+                    : availStatus === "error"
+                    ? "Cannot save: availability could not be verified"
+                    : availStatus === "checking"
+                    ? "Verifying availability..."
+                    : "Confirm & Save Walk-In Booking"
+                }
               >
-                {creatingBooking ? "Confirming..." : "Confirm & Save Booking"}
+                {creatingBooking ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> Confirming...</>
+                ) : availStatus === "checking" ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> Checking...</>
+                ) : availStatus === "unavailable" ? (
+                  "⛔ Room Unavailable"
+                ) : (
+                  "Confirm & Save Booking"
+                )}
               </Button>
             </DialogFooter>
           </form>

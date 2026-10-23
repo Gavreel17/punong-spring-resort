@@ -480,4 +480,101 @@ export const undoPaymentServerFn = createServerFn({ method: "POST" })
     }
   });
 
+/**
+ * Server-side room availability check to prevent double booking.
+ * Uses database-level query to detect conflicting bookings for walk-in / direct reservations.
+ *
+ * Overlap condition:  new_check_in < existing_check_out AND new_check_out > existing_check_in
+ * Statuses that BLOCK inventory: pending, approved, verified, confirmed, checked-in
+ * Statuses that DO NOT block: cancelled, rejected, no-show, completed
+ */
+export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      roomId: z.string(),
+      checkIn: z.string(),   // YYYY-MM-DD
+      checkOut: z.string(),  // YYYY-MM-DD
+      excludeBookingId: z.string().optional(), // For edit mode: exclude the booking being edited
+    })
+  )
+  .handler(async ({ data }) => {
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabaseUrl =
+        process.env.VITE_SUPABASE_URL ||
+        process.env.SUPABASE_URL ||
+        "https://dqpbbzsxfwbozqcguwux.supabase.co";
+      const supabaseKey =
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.SUPABASE_PUBLISHABLE_KEY ||
+        process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+        "sb_publishable_oSM68VF1C-NOQjAtAlg44g_F39kZFkn";
 
+      const client = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false },
+        realtime: { transport: ws as any },
+      });
+
+      // Validate date inputs
+      if (!data.checkIn || !data.checkOut || !data.roomId) {
+        return { available: false, error: "Room ID, check-in, and check-out dates are required." };
+      }
+
+      if (data.checkIn >= data.checkOut) {
+        return { available: false, error: "Check-out date must be after check-in date." };
+      }
+
+      // Statuses that block inventory
+      const BLOCKING_STATUSES = ["pending", "approved", "verified", "confirmed", "checked-in"];
+
+      // Query conflicting bookings using date-overlap formula
+      // new_check_in < existing_check_out AND new_check_out > existing_check_in
+      let query = client
+        .from("bookings")
+        .select("id, guest_name, check_in, check_out, status")
+        .eq("room_id", data.roomId)
+        .is("deleted_at", null)
+        .in("status", BLOCKING_STATUSES)
+        .lt("check_in", data.checkOut)
+        .gt("check_out", data.checkIn);
+
+      // Exclude existing booking when editing
+      if (data.excludeBookingId) {
+        query = query.neq("id", data.excludeBookingId);
+      }
+
+      const { data: conflicts, error: qErr } = await query;
+
+      if (qErr) {
+        console.error("[checkRoomAvailabilityServerFn] DB error:", qErr.message);
+        return {
+          available: false,
+          error: `Database check failed: ${qErr.message}. Cannot save reservation until availability is confirmed.`,
+          dbError: true,
+        };
+      }
+
+      if (!conflicts || conflicts.length === 0) {
+        return { available: true, conflicts: [] };
+      }
+
+      // Return conflict details to surface in UI
+      return {
+        available: false,
+        conflicts: conflicts.map((c) => ({
+          id: c.id,
+          guestName: c.guest_name || "Another Guest",
+          checkIn: c.check_in,
+          checkOut: c.check_out,
+          status: c.status,
+        })),
+      };
+    } catch (err: any) {
+      console.error("[checkRoomAvailabilityServerFn] error:", err);
+      return {
+        available: false,
+        error: err?.message || "Failed to verify availability on server.",
+        dbError: true,
+      };
+    }
+  });
