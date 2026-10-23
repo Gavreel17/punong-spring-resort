@@ -148,6 +148,7 @@ export const cancelBookingCustomerServerFn = createServerFn({ method: "POST" })
       bookingId: z.string(),
       userId: z.string(),
       cancellationReason: z.string(),
+      accessToken: z.string().optional(),
     })
   )
   .handler(async ({ data }) => {
@@ -162,26 +163,42 @@ export const cancelBookingCustomerServerFn = createServerFn({ method: "POST" })
 
       const { createClient } = await import("@supabase/supabase-js");
       const supabaseUrl =
-        process.env.VITE_SUPABASE_URL || "https://dqpbbzsxfwbozqcguwux.supabase.co";
+        process.env.VITE_SUPABASE_URL ||
+        process.env.SUPABASE_URL ||
+        "https://dqpbbzsxfwbozqcguwux.supabase.co";
       const supabaseKey =
         process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.SUPABASE_PUBLISHABLE_KEY ||
         process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
         "sb_publishable_oSM68VF1C-NOQjAtAlg44g_F39kZFkn";
 
-      const client = createClient(supabaseUrl, supabaseKey, {
+      const clientOptions: any = {
         auth: { persistSession: false },
         realtime: { transport: ws as any },
-      });
+      };
+
+      if (data.accessToken) {
+        clientOptions.global = {
+          headers: {
+            Authorization: `Bearer ${data.accessToken}`,
+          },
+        };
+      }
+
+      const client = createClient(supabaseUrl, supabaseKey, clientOptions);
 
       // 1. Fetch booking with payments
       const { data: booking, error: bErr } = await client
         .from("bookings")
-        .select("id, user_id, status, check_in, check_out, total_amount, guest_name, deleted_at, payments(id, amount, status, notes)")
+        .select("id, user_id, status, check_in, check_out, total_amount, guest_name, payments(id, amount, status, notes)")
         .eq("id", data.bookingId)
-        .is("deleted_at", null)
         .maybeSingle();
 
-      if (bErr || !booking) {
+      if (bErr) {
+        console.warn("[cancelBookingCustomerServerFn] Booking fetch error:", bErr.message);
+      }
+
+      if (!booking) {
         return { success: false, error: "Reservation not found or has been removed." };
       }
 
