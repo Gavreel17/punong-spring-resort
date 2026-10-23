@@ -498,20 +498,40 @@ export function AvailabilityCalendarTab() {
         next.total_amount = Number(room.price) * count;
       }
 
-      // Check local conflict immediately for 0ms visual feedback
+      // Check local resort blocks & bookings conflict immediately for 0ms visual feedback
       if (next.room_id && next.check_in && next.check_out) {
-        const local = checkLocalConflict(next.room_id, next.check_in, next.check_out);
-        if (local) {
+        const blockConflict = blocks.find(
+          (b: any) =>
+            next.check_in! <= b.end_date && next.check_out! >= b.start_date
+        );
+        if (blockConflict) {
           setAvailStatus("unavailable");
           setAvailConflicts([
             {
-              id: local.id,
-              guestName: local.guest_name || "Another Guest",
-              checkIn: local.check_in,
-              checkOut: local.check_out,
-              status: local.status,
+              id: blockConflict.id,
+              guestName: blockConflict.reason || "Resort Blocked",
+              checkIn: blockConflict.start_date,
+              checkOut: blockConflict.end_date,
+              status: "Resort Closed",
             },
           ]);
+        } else {
+          const local = checkLocalConflict(next.room_id, next.check_in, next.check_out);
+          if (local) {
+            setAvailStatus("unavailable");
+            setAvailConflicts([
+              {
+                id: local.id,
+                guestName: local.guest_name || "Another Guest",
+                checkIn: local.check_in,
+                checkOut: local.check_out,
+                status: local.status,
+              },
+            ]);
+          } else {
+            setAvailStatus("idle");
+            setAvailConflicts([]);
+          }
         }
       }
     }
@@ -533,7 +553,26 @@ export function AvailabilityCalendarTab() {
       return;
     }
 
-    // 1. Instant check against all currently loaded reservations
+    // 1. Instant check against resort blocks
+    const blockConflict = blocks.find(
+      (b: any) =>
+        bookingForm.check_in <= b.end_date && bookingForm.check_out >= b.start_date
+    );
+    if (blockConflict) {
+      setAvailStatus("unavailable");
+      setAvailConflicts([
+        {
+          id: blockConflict.id,
+          guestName: blockConflict.reason || "Resort Blocked",
+          checkIn: blockConflict.start_date,
+          checkOut: blockConflict.end_date,
+          status: "Resort Closed",
+        },
+      ]);
+      return;
+    }
+
+    // 2. Instant check against all currently loaded reservations
     const localConflict = checkLocalConflict(
       bookingForm.room_id,
       bookingForm.check_in,
@@ -597,7 +636,7 @@ export function AvailabilityCalendarTab() {
     return () => {
       if (availCheckTimer.current) clearTimeout(availCheckTimer.current);
     };
-  }, [bookingForm.room_id, bookingForm.check_in, bookingForm.check_out, newBookingModalOpen, bookings]);
+  }, [bookingForm.room_id, bookingForm.check_in, bookingForm.check_out, newBookingModalOpen, bookings, blocks]);
 
   // Reset availability state when modal closes
   useEffect(() => {
@@ -636,7 +675,29 @@ export function AvailabilityCalendarTab() {
       }
     }
 
-    // ===== 1. CHECK LOCAL CONFLICT FIRST =====
+    // ===== 1. CHECK RESORT BLOCKS FIRST =====
+    const resortBlockConflict = blocks.find(
+      (b: any) =>
+        bookingForm.check_in <= b.end_date && bookingForm.check_out >= b.start_date
+    );
+    if (resortBlockConflict) {
+      setAvailStatus("unavailable");
+      setAvailConflicts([
+        {
+          id: resortBlockConflict.id,
+          guestName: resortBlockConflict.reason || "Resort Blocked",
+          checkIn: resortBlockConflict.start_date,
+          checkOut: resortBlockConflict.end_date,
+          status: "Resort Closed",
+        },
+      ]);
+      return toast.error(
+        `UNAVAILABLE: The resort is closed/blocked from ${resortBlockConflict.start_date} to ${resortBlockConflict.end_date} (${resortBlockConflict.reason || "Resort Block"}). Cannot book during blocked dates.`,
+        { duration: 6000 }
+      );
+    }
+
+    // ===== 2. CHECK LOCAL BOOKINGS CONFLICT =====
     const localConflict = checkLocalConflict(
       bookingForm.room_id,
       bookingForm.check_in,
@@ -659,7 +720,7 @@ export function AvailabilityCalendarTab() {
       );
     }
 
-    // ===== 2. SERVER-SIDE DOUBLE BOOKING PREVENTION =====
+    // ===== 3. SERVER-SIDE DOUBLE BOOKING & BLOCK PREVENTION =====
     setCreatingBooking(true);
     let serverAvailResult: any;
     try {
@@ -687,7 +748,8 @@ export function AvailabilityCalendarTab() {
     if (!serverAvailResult?.available) {
       setCreatingBooking(false);
       toast.error(
-        "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
+        serverAvailResult?.message ||
+          "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
         { duration: 6000 }
       );
       setAvailStatus("unavailable");
@@ -2482,13 +2544,23 @@ export function AvailabilityCalendarTab() {
                       variant="ghost"
                       className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 h-7 px-2 font-bold"
                       onClick={async () => {
-                        await supabase.from("resort_blocks" as any).delete().eq("id", b.id);
-                        refetch();
-                        qc.invalidateQueries({ queryKey: ["global-availability"] });
-                        toast.success("Resort block removed");
+                        try {
+                          const { error } = await supabase.from("resort_blocks" as any).delete().eq("id", b.id);
+                          if (error) {
+                            console.error("[Delete Resort Block] DB error:", error);
+                            toast.error(`Failed to delete resort block: ${error.message}`);
+                            return;
+                          }
+                          refetch();
+                          qc.invalidateQueries({ queryKey: ["global-availability"] });
+                          qc.invalidateQueries({ queryKey: ["admin-availability-calendar"] });
+                          toast.success("Resort block deleted successfully.");
+                        } catch (err: any) {
+                          toast.error(err?.message || "Failed to delete resort block.");
+                        }
                       }}
                     >
-                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Remove
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
                     </Button>
                   </li>
                 ))}
