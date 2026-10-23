@@ -11,6 +11,7 @@ import {
 } from "@/lib/receipt-generator";
 import { toast } from "sonner";
 import { enrichRoomWithRateType } from "@/lib/rate-type-helper";
+import { isOvernightCottage } from "@/lib/booking-utils";
 
 export const Route = createFileRoute("/receipt/$bookingId")({
   component: ReceiptPage,
@@ -82,15 +83,9 @@ function ReceiptPage() {
   }
 
   const isCottage = booking.room?.type === "cottage";
-  const rawStayType = (booking as any).stay_type || 
-    (booking.special_requests?.toLowerCase().includes("overnight stay") || booking.special_requests?.toLowerCase().includes("overnight cottage fee") 
-      ? "overnight" 
-      : booking.special_requests?.toLowerCase().includes("day use") 
-      ? "day_use" 
-      : null);
-  const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number((booking as any).overnight_fee) > 0);
-  const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number((booking as any).overnight_fee) || 1000) : 0) : 0;
-  const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
+  const isOvernight = isOvernightCottage(booking as any);
+  const cottageOvernightFee = isCottage ? (isOvernight ? (Number((booking as any).overnight_fee) || 1000) : 0) : 0;
+  const stayTypeLabel = isOvernight ? "Overnight Stay" : "Day Use";
   const totalAmount = Number(booking.total_amount) || 0;
   const accommodationSubtotal = isCottage ? Math.max(0, totalAmount - cottageOvernightFee) : totalAmount;
 

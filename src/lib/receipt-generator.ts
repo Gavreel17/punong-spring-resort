@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
 import { getRoomRateType } from "./rate-type-helper";
+import { isOvernightCottage } from "./booking-utils";
 
 export interface BookingData {
   id: string;
@@ -296,16 +297,10 @@ export async function triggerDirectBlobDownload(
 export function generateReceiptWordHtml(booking: BookingData, settings: ResortSettings): string {
   const ref = formatBookingReference(booking);
   const isCottage = booking.room?.type === "cottage";
-  const rawStayType = booking.stay_type || 
-    (booking.special_requests?.toLowerCase().includes("overnight stay") || booking.special_requests?.toLowerCase().includes("overnight cottage fee") 
-      ? "overnight" 
-      : booking.special_requests?.toLowerCase().includes("day use") 
-      ? "day_use" 
-      : null);
-  const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number(booking.overnight_fee) > 0);
+  const isOvernight = isOvernightCottage(booking);
   const isDayRate = getRoomRateType(booking.room) === "day" || isCottage;
-  const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number(booking.overnight_fee) || 1000) : 0) : 0;
-  const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
+  const cottageOvernightFee = isCottage ? (isOvernight ? (Number(booking.overnight_fee) || 1000) : 0) : 0;
+  const stayTypeLabel = isOvernight ? "Overnight Stay" : "Day Use";
   const totalAmount = Number(booking.total_amount) || 0;
   const accommodationSubtotal = isCottage ? Math.max(0, totalAmount - cottageOvernightFee) : totalAmount;
   const nights = calculateNights(booking.check_in, booking.check_out);
@@ -736,15 +731,9 @@ export async function generateAndDownloadReceiptPdf(
     const totalAmount = Number(booking.total_amount) || 0;
     const isCottage = booking.room?.type === "cottage";
     const isDayRate = getRoomRateType(booking.room) === "day" || isCottage;
-    const rawStayType = booking.stay_type ||
-      (booking.special_requests?.toLowerCase().includes("overnight stay") || booking.special_requests?.toLowerCase().includes("overnight cottage fee")
-        ? "overnight"
-        : booking.special_requests?.toLowerCase().includes("day use")
-        ? "day_use"
-        : null);
-    const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number(booking.overnight_fee) > 0);
-    const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number(booking.overnight_fee) || 1000) : 0) : 0;
-    const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
+    const isOvernight = isOvernightCottage(booking);
+    const cottageOvernightFee = isCottage ? (isOvernight ? (Number(booking.overnight_fee) || 1000) : 0) : 0;
+    const stayTypeLabel = isOvernight ? "Overnight Stay" : "Day Use";
     const roomPrice = Number(booking.room?.price) || (nights > 0 ? (totalAmount - cottageOvernightFee) / nights : totalAmount);
     const accommodationSubtotal = roomPrice * nights;
 

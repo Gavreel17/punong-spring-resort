@@ -31,7 +31,7 @@ import withReactContent from "sweetalert2-react-content";
 import { Eye, CheckCircle2, XCircle, Banknote, CreditCard, Search, CalendarClock, Trash2, Printer, RotateCcw, Loader2, Lock, Check, Clock, UserX } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
-import { processAutoBookingStatuses, getPhilippineTime } from "@/lib/booking-utils";
+import { processAutoBookingStatuses, getPhilippineTime, isOvernightCottage, getBookingStayType } from "@/lib/booking-utils";
 import { autoCompleteBookingsServerFn, undoPaymentServerFn } from "@/lib/api/booking.functions";
 import { trashService } from "@/lib/recently-deleted";
 import { cn } from "@/lib/utils";
@@ -446,15 +446,9 @@ function BookingsTab() {
               const initial = b.guest_name ? b.guest_name[0].toUpperCase() : "G";
 
               const isCottage = b.room?.type === "cottage";
-              const rawStayType = b.stay_type || 
-                (b.special_requests?.toLowerCase().includes("overnight stay") || b.special_requests?.toLowerCase().includes("overnight cottage fee") 
-                  ? "overnight" 
-                  : b.special_requests?.toLowerCase().includes("day use") 
-                  ? "day_use" 
-                  : null);
-              const isOvernightCottage = isCottage && (rawStayType === "overnight" || Number(b.overnight_fee) > 0);
-              const cottageOvernightFee = isCottage ? (isOvernightCottage ? (Number(b.overnight_fee) || 1000) : 0) : 0;
-              const stayTypeLabel = isOvernightCottage ? "Overnight Stay" : "Day Use";
+              const isOvernight = isOvernightCottage(b);
+              const cottageOvernightFee = isCottage ? (isOvernight ? (Number(b.overnight_fee) || 1000) : 0) : 0;
+              const stayTypeLabel = isOvernight ? "Overnight Stay" : "Day Use";
               const totalAmount = Number(b.total_amount) || 0;
               const accommodationSubtotal = isCottage ? Math.max(0, totalAmount - cottageOvernightFee) : totalAmount;
 

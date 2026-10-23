@@ -32,7 +32,7 @@ import {
   Calendar, Users, CreditCard, Banknote, CheckCircle2, XCircle, Clock, 
   MessageSquareQuote, ShieldCheck, Check, Loader2, Edit3, User
 } from "lucide-react";
-import { processAutoBookingStatuses, getPhilippineTime } from "@/lib/booking-utils";
+import { processAutoBookingStatuses, getPhilippineTime, getBookingStayType, isOvernightCottage } from "@/lib/booking-utils";
 import { cancelBookingCustomerServerFn } from "@/lib/api/booking.functions";
 import { cn } from "@/lib/utils";
 import { CustomerInquiriesSection } from "@/components/CustomerInquiriesSection";
@@ -787,11 +787,11 @@ function Dashboard() {
                               Stay Type:{" "}
                               <strong className={cn(
                                 "px-2 py-0.5 rounded font-semibold text-[11px]",
-                                (b.stay_type === "overnight" || Number(b.overnight_fee) > 0 || b.special_requests?.toLowerCase().includes("overnight"))
+                                isOvernightCottage(b)
                                   ? "bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
                                   : "bg-slate-200/70 dark:bg-slate-700 text-slate-800 dark:text-slate-200"
                               )}>
-                                {(b.stay_type === "overnight" || Number(b.overnight_fee) > 0 || b.special_requests?.toLowerCase().includes("overnight"))
+                                {isOvernightCottage(b)
                                   ? "Overnight Stay (+₱1,000 Fee)"
                                   : "Day Use (₱0 Fee)"}
                               </strong>
@@ -839,7 +839,7 @@ function Dashboard() {
                         <span className="text-2xl font-extrabold text-[#B38728] dark:text-[#D4AF37] font-display">
                           ₱{Number(b.total_amount).toLocaleString()}
                         </span>
-                        {b.room?.type === "cottage" && (b.stay_type === "overnight" || Number(b.overnight_fee) > 0 || b.special_requests?.toLowerCase().includes("overnight")) && (
+                        {isOvernightCottage(b) && (
                           <span className="text-[10px] text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 px-1.5 py-0.5 rounded block mt-0.5 font-medium">
                             Includes ₱1,000 Overnight Cottage Fee
                           </span>

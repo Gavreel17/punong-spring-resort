@@ -476,7 +476,9 @@ function BookPage() {
         if (doubleFoamBeds > 0) extraDetails.push(`${doubleFoamBeds} Double Foam Bed(s) (₱${doubleFoamBeds * 600})`);
       } else if (isCottage) {
         extraDetails.push(`Stay Type: ${stayType === "overnight" ? "Overnight Stay" : "Day Use"}`);
-        extraDetails.push(`Overnight Cottage Fee: ₱${cottageOvernightFee.toLocaleString()}`);
+        if (stayType === "overnight" && cottageOvernightFee > 0) {
+          extraDetails.push(`Overnight Cottage Fee: ₱${cottageOvernightFee.toLocaleString()}`);
+        }
       }
       
       const specialRequestsText = extraDetails.length > 0

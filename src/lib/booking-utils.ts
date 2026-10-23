@@ -25,6 +25,97 @@ export function getPhilippineTime(): {
 }
 
 /**
+ * Accurately determines the customer's chosen stay type for a booking (especially for Cottages).
+ * Correctly distinguishes between "day_use" and "overnight" without false positive matches.
+ */
+export function getBookingStayType(b: {
+  stay_type?: string | null;
+  overnight_fee?: number | string | null;
+  special_requests?: string | null;
+  room?: { type?: string | null } | null;
+  rooms?: { type?: string | null } | null;
+}): "day_use" | "overnight" | null {
+  if (!b) return null;
+  const roomType = (b.room?.type || b.rooms?.type || "").toLowerCase();
+  const isCottage = roomType === "cottage";
+  if (!isCottage) return null;
+
+  // 1. Check explicit stay_type column value
+  const rawStay = String(b.stay_type || "").trim().toLowerCase();
+  if (rawStay === "day_use" || rawStay === "day use" || rawStay === "day") {
+    return "day_use";
+  }
+  if (rawStay === "overnight" || rawStay === "overnight stay") {
+    return "overnight";
+  }
+
+  // 2. Check explicit overnight_fee column
+  const fee = Number(b.overnight_fee);
+  if (!isNaN(fee) && fee > 0) {
+    return "overnight";
+  }
+
+  // 3. Inspect special_requests
+  const req = String(b.special_requests || "").toLowerCase();
+  if (req) {
+    // Explicit "Stay Type: Day Use" check (must take priority over mentions of "overnight cottage fee: ₱0")
+    if (
+      req.includes("stay type: day use") ||
+      req.includes("stay type: day_use") ||
+      req.includes("day use")
+    ) {
+      return "day_use";
+    }
+
+    // Explicit "Stay Type: Overnight" check
+    if (
+      req.includes("stay type: overnight") ||
+      req.includes("overnight stay")
+    ) {
+      return "overnight";
+    }
+
+    // Explicit fee check in special_requests string
+    if (
+      req.includes("overnight cottage fee: ₱1,000") ||
+      req.includes("overnight cottage fee: 1000") ||
+      req.includes("overnight cottage fee: ₱1000")
+    ) {
+      return "overnight";
+    }
+    if (
+      req.includes("overnight cottage fee: ₱0") ||
+      req.includes("overnight cottage fee: 0")
+    ) {
+      return "day_use";
+    }
+
+    if (req.includes("overnight") && !req.includes("0 fee") && !req.includes("₱0")) {
+      return "overnight";
+    }
+  }
+
+  // Default for Cottages is Day Use
+  return "day_use";
+}
+
+/**
+ * Returns true if the booking is a Cottage with Overnight Stay.
+ */
+export function isOvernightCottage(b: {
+  stay_type?: string | null;
+  overnight_fee?: number | string | null;
+  special_requests?: string | null;
+  room?: { type?: string | null } | null;
+  rooms?: { type?: string | null } | null;
+}): boolean {
+  if (!b) return false;
+  const roomType = (b.room?.type || b.rooms?.type || "").toLowerCase();
+  if (roomType !== "cottage") return false;
+  return getBookingStayType(b) === "overnight";
+}
+
+/**
  * Automatically updates booking statuses based on Resort Policy Hours:
  * 
  * RESORT POLICY HOURS:
@@ -98,10 +189,10 @@ export async function processAutoBookingStatuses(bookings?: any[]): Promise<bool
     const isPaid = paymentsList.some((p: any) => p.status === "verified" || p.status === "paid");
     const isUnpaid = !isPaid;
 
+
     const roomType = (b.room?.type || b.rooms?.type || "").toLowerCase();
     const isCottage = roomType === "cottage";
-    const rawStay = (b.stay_type || b.special_requests || "").toLowerCase();
-    const isDayUse = isCottage && (rawStay.includes("day use") || rawStay.includes("day_use") || !rawStay.includes("overnight"));
+    const isDayUse = isCottage && getBookingStayType(b) === "day_use";
 
     const checkInDate = String(b.check_in).trim();
     const checkOutDate = String(b.check_out).trim();
