@@ -782,7 +782,7 @@ function Dashboard() {
                             {b.status === "completed" && <Check className="w-3.5 h-3.5 text-blue-600 mr-0.5" />}
                             {b.status === "pending" && <Clock className="w-3.5 h-3.5 text-amber-600 mr-0.5" />}
                             {(b.status === "cancelled" || b.status === "rejected" || b.status === "no-show") && <XCircle className="w-3.5 h-3.5 text-rose-600 mr-0.5" />}
-                            Booking: {b.status === "approved" ? "Confirmed" : b.status === "pending" ? "Reserved" : b.status === "rejected" || b.status === "cancelled" ? "Cancelled Booked" : b.status === "no-show" ? "No Show" : b.status}
+                            Booking: {b.status === "approved" ? "Confirmed" : b.status === "pending" ? "Reserved" : b.status === "rejected" || b.status === "cancelled" ? "Cancelled" : b.status === "no-show" ? "No Show" : b.status}
                           </Badge>
                         </div>
                       </div>
@@ -811,37 +811,6 @@ function Dashboard() {
                           )}
                         </div>
                       </div>
-
-                      {/* Cancelled Booking Record Banner */}
-                      {(b.status === "cancelled" || b.status === "rejected") && (
-                        <div className="mt-3 p-3.5 rounded-xl bg-rose-50/90 dark:bg-rose-950/30 border-l-4 border-rose-500 border-y border-r border-rose-200 dark:border-rose-900/50 text-xs text-rose-900 dark:text-rose-200 space-y-1.5">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="font-bold flex items-center gap-1.5 text-rose-800 dark:text-rose-300 text-[11px] uppercase tracking-wider">
-                              <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                              Cancelled Booking Record
-                            </div>
-                            {notes.cancellation_date && (
-                              <span className="text-[11px] text-rose-700 dark:text-rose-300 font-medium">
-                                Cancelled: {new Date(notes.cancellation_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-slate-700 dark:text-slate-300">
-                            Reason: <strong className="text-rose-950 dark:text-rose-200 font-semibold">{notes.cancellation_reason || "Requested by guest"}</strong>
-                          </div>
-                          {isGcash && (
-                            <div className="text-[11px] text-amber-900 dark:text-amber-200 bg-amber-50/90 dark:bg-amber-950/40 p-2.5 rounded-lg border border-amber-200/90 dark:border-amber-800/60 font-medium flex items-center gap-2 mt-1">
-                              <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                              <span>GCash refund request logged. Resort administration will review and process your refund.</span>
-                            </div>
-                          )}
-                          {isResort && (
-                            <div className="text-[11px] text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 p-2 rounded-lg border border-rose-100 dark:border-rose-900/50 font-medium">
-                              Pay at resort reservation cancelled. No charge was incurred.
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
 
                     {/* Footer Row: Total Amount & Payment & Actions */}
@@ -863,34 +832,38 @@ function Dashboard() {
 
                         {/* Actions Row */}
                         <div className="flex flex-wrap items-center gap-2">
-                          <Button 
-                            variant="default" 
-                            size="sm" 
-                            className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold h-9 px-4 rounded-xl text-xs shadow-sm cursor-pointer disabled:opacity-75 flex items-center border border-transparent dark:border-slate-700"
-                            disabled={downloadingReceiptId === b.id}
-                            onClick={() => handleDownloadReceipt(b)}
-                          >
-                            {downloadingReceiptId === b.id ? (
-                              <>
-                                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#D4AF37]" /> Downloading...
-                              </>
-                            ) : (
-                              <>
-                                <Download className="w-3.5 h-3.5 mr-1 text-[#D4AF37]" /> Download Receipt
-                              </>
-                            )}
-                          </Button>
+                          {b.status !== "cancelled" && b.status !== "rejected" && (
+                            <>
+                              <Button 
+                                variant="default" 
+                                size="sm" 
+                                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold h-9 px-4 rounded-xl text-xs shadow-sm cursor-pointer disabled:opacity-75 flex items-center border border-transparent dark:border-slate-700"
+                                disabled={downloadingReceiptId === b.id}
+                                onClick={() => handleDownloadReceipt(b)}
+                              >
+                                {downloadingReceiptId === b.id ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#D4AF37]" /> Downloading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download className="w-3.5 h-3.5 mr-1 text-[#D4AF37]" /> Download Receipt
+                                  </>
+                                )}
+                              </Button>
 
-                          <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
-                          >
-                            <Link to="/receipt/$bookingId" params={{ bookingId: b.id }}>
-                              <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" /> View Receipt
-                            </Link>
-                          </Button>
+                              <Button
+                                asChild
+                                variant="outline"
+                                size="sm"
+                                className="border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold h-9 px-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+                              >
+                                <Link to="/receipt/$bookingId" params={{ bookingId: b.id }}>
+                                  <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" /> View Receipt
+                                </Link>
+                              </Button>
+                            </>
+                          )}
 
                           {/* Leave Feedback / Feedback Status */}
                           {(!b.feedbacks || b.feedbacks.length === 0) && (b.status !== "cancelled" && b.status !== "rejected") && (

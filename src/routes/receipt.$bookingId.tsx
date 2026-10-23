@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Download, ArrowLeft, Loader2 } from "lucide-react";
+import { Download, ArrowLeft, Loader2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { 
@@ -62,6 +62,25 @@ function ReceiptPage() {
 
   if (!booking) {
     return <div className="p-8 text-center text-red-500">Booking not found.</div>;
+  }
+
+  if (booking.status === "cancelled" || booking.status === "rejected") {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0B111A] flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 max-w-md w-full space-y-4">
+          <div className="w-12 h-12 bg-rose-100 dark:bg-rose-950/50 rounded-full flex items-center justify-center mx-auto text-rose-600">
+            <XCircle className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Receipt Unavailable</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            This reservation has been cancelled. Receipts are not available for cancelled bookings.
+          </p>
+          <Button onClick={handleBackToDashboard} className="w-full">
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const handleDownload = async () => {
