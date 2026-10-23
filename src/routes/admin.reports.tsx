@@ -617,7 +617,7 @@ function ReportsDashboard() {
 
 
       {/* Secondary Stats Cards for Payment & Reservation Verification Audit */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <Card className="p-4 bg-white dark:bg-[#151F2E] border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-emerald-500">
           <p className="text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-bold mb-0.5">Verified Payments</p>
           <p className="text-2xl font-black text-slate-800 dark:text-white font-mono">{stats.verifiedPayments}</p>
@@ -632,11 +632,6 @@ function ReportsDashboard() {
           <p className="text-xs uppercase tracking-wider text-blue-700 dark:text-blue-400 font-bold mb-0.5">Pay at Resort</p>
           <p className="text-2xl font-black text-slate-800 dark:text-white font-mono">{stats.resortCount}</p>
           <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Front desk on-site settlement</p>
-        </Card>
-        <Card className="p-4 bg-white dark:bg-[#151F2E] border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-yellow-500">
-          <p className="text-xs uppercase tracking-wider text-yellow-800 dark:text-yellow-400 font-bold mb-0.5">Pending Reservations</p>
-          <p className="text-2xl font-black text-yellow-700 dark:text-yellow-400 font-mono">{stats.pending}</p>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Bookings awaiting payment or confirmation</p>
         </Card>
       </div>
 

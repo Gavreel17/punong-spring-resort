@@ -257,7 +257,7 @@ export function ExecutiveReportPrintDocument({
                   </div>
                 </div>
 
-                {/* Sub-section B: Payment and Verification (4 Cards) */}
+                {/* Sub-section B: Payment and Verification (3 Cards) */}
                 <div className="mb-3.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
@@ -266,7 +266,7 @@ export function ExecutiveReportPrintDocument({
                     </h3>
                     <span className="text-[10px] text-slate-500">Payment workflow & proof auditing status</span>
                   </div>
-                  <div className="grid grid-cols-4 gap-2 text-xs">
+                  <div className="grid grid-cols-3 gap-2 text-xs">
                     {/* Verified Payments (Green) */}
                     <div className="p-2.5 border-2 border-emerald-400 bg-emerald-50/50 rounded-xs">
                       <div className="flex items-center justify-between">
@@ -309,21 +309,6 @@ export function ExecutiveReportPrintDocument({
                       </div>
                       <span className="text-[10px] text-blue-700 font-medium block mt-0.5">
                         Front desk on-site settlement
-                      </span>
-                    </div>
-
-                    {/* Pending Reservations (Yellow/Amber) */}
-                    <div className="p-2.5 border-2 border-yellow-400 bg-yellow-50/60 rounded-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] uppercase font-extrabold text-yellow-900 block tracking-wider">
-                          Pending Reservations
-                        </span>
-                        <span className="text-base font-black text-yellow-950 font-mono">
-                          {stats.pending}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-yellow-800 font-medium block mt-0.5">
-                        Bookings awaiting payment or confirmation
                       </span>
                     </div>
                   </div>
