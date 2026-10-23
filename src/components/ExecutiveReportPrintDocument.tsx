@@ -432,22 +432,6 @@ export function ExecutiveReportPrintDocument({
                         </td>
                       </tr>
 
-                      {/* Pending Reservations */}
-                      <tr className="bg-yellow-50/30">
-                        <td className="py-2 px-3 font-semibold text-yellow-950 border-r border-slate-200 text-xs">
-                          <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1.5"></span>
-                          Pending Reservations (Awaiting Payment / Review)
-                        </td>
-                        <td className="py-2 px-3 text-right font-bold text-yellow-900 border-r border-slate-200 text-xs font-mono">
-                          {stats.pending}
-                        </td>
-                        <td className="py-2 px-3 text-right text-slate-600 border-r border-slate-200 text-xs font-mono">
-                          {stats.total > 0 ? ((stats.pending / stats.total) * 100).toFixed(1) : "0.0"}%
-                        </td>
-                        <td className="py-2 px-3 text-slate-600 text-xs">
-                          Bookings awaiting payment or reservation confirmation by staff.
-                        </td>
-                      </tr>
 
                       {/* Awaiting Verification (Payment Proofs) */}
                       <tr className="bg-amber-50/30">
