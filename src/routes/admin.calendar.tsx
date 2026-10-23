@@ -1051,16 +1051,32 @@ export function AvailabilityCalendarTab() {
                         key={d}
                         onClick={() => setDayAgendaModalDate(dateStr)}
                         className={cn(
-                          "p-2 text-center w-10 min-w-10 font-bold border-r border-slate-200/60 cursor-pointer hover:bg-slate-200/80 transition-colors group",
-                          isToday ? "bg-amber-100/90 text-amber-950 font-black ring-1 ring-amber-400" : "text-slate-700"
+                          "p-2 text-center w-10 min-w-10 font-bold border-r border-slate-200/60 dark:border-slate-700/70 cursor-pointer hover:bg-slate-200/80 dark:hover:bg-slate-700/80 transition-colors group select-none",
+                          isToday
+                            ? "bg-amber-100/95 dark:bg-amber-500/25 text-amber-950 dark:text-amber-200 font-black ring-2 ring-amber-400/80 shadow-xs"
+                            : "text-slate-800 dark:text-slate-100"
                         )}
                         title={`Click to view agenda for ${dateStr}`}
                       >
-                        <div className="flex flex-col items-center">
-                          <span className="text-[9px] uppercase tracking-tighter opacity-60">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span
+                            className={cn(
+                              "text-[10px] uppercase font-bold tracking-wider",
+                              isToday
+                                ? "text-amber-950 dark:text-amber-300 font-extrabold"
+                                : "text-slate-500 dark:text-amber-300/90 group-hover:dark:text-amber-200"
+                            )}
+                          >
                             {new Date(dateStr).toLocaleDateString("en-US", { weekday: "narrow" })}
                           </span>
-                          <span className="text-xs group-hover:scale-110 transition-transform">
+                          <span
+                            className={cn(
+                              "text-xs font-black transition-transform group-hover:scale-110",
+                              isToday
+                                ? "text-amber-950 dark:text-amber-100 font-black"
+                                : "text-slate-900 dark:text-white"
+                            )}
+                          >
                             {d}
                           </span>
                         </div>
@@ -1148,8 +1164,8 @@ export function AvailabilityCalendarTab() {
                           <td
                             key={d}
                             className={cn(
-                              "p-1 border-r border-slate-100 transition-colors",
-                              isToday && "bg-amber-50/30"
+                              "p-1 border-r border-slate-100 dark:border-slate-800 transition-colors",
+                              isToday && "bg-amber-50/40 dark:bg-amber-500/10"
                             )}
                           >
                             <button
@@ -1260,10 +1276,10 @@ export function AvailabilityCalendarTab() {
                         <div className="flex items-center justify-between">
                           <span
                             className={cn(
-                              "text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center",
+                              "text-xs font-black w-6 h-6 rounded-full flex items-center justify-center transition-all",
                               isToday
-                                ? "bg-amber-500 text-white shadow-sm"
-                                : "text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
+                                ? "bg-amber-500 text-white shadow-sm ring-2 ring-amber-300"
+                                : "text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white"
                             )}
                           >
                             {day}
