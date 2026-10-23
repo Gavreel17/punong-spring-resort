@@ -115,8 +115,8 @@ export function AvailabilityCalendarTab() {
     check_out: "",
     guests: 1,
     total_amount: 0,
-    payment_status: "unpaid" as "unpaid" | "verified" | "pending",
-    payment_method: "cash" as "cash" | "gcash" | "bank_transfer",
+    payment_status: "verified" as "unpaid" | "verified",
+    payment_method: "cash" as "cash",
     special_requests: "",
   });
   const [creatingBooking, setCreatingBooking] = useState(false);
@@ -2086,7 +2086,6 @@ export function AvailabilityCalendarTab() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="verified">Verified (Paid)</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="unpaid">Unpaid</SelectItem>
                   </SelectContent>
                 </Select>
@@ -2105,8 +2104,6 @@ export function AvailabilityCalendarTab() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash">Cash (Counter)</SelectItem>
-                    <SelectItem value="gcash">GCash</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
