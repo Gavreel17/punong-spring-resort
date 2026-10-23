@@ -495,6 +495,7 @@ export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
       checkIn: z.string(),   // YYYY-MM-DD
       checkOut: z.string(),  // YYYY-MM-DD
       excludeBookingId: z.string().optional(), // For edit mode: exclude the booking being edited
+      accessToken: z.string().optional(), // User/Admin auth token for RLS bypass
     })
   )
   .handler(async ({ data }) => {
@@ -510,23 +511,33 @@ export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
         process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
         "sb_publishable_oSM68VF1C-NOQjAtAlg44g_F39kZFkn";
 
-      const client = createClient(supabaseUrl, supabaseKey, {
+      const clientOptions: any = {
         auth: { persistSession: false },
         realtime: { transport: ws as any },
-      });
+      };
+
+      if (data.accessToken) {
+        clientOptions.global = {
+          headers: {
+            Authorization: `Bearer ${data.accessToken}`,
+          },
+        };
+      }
+
+      const client = createClient(supabaseUrl, supabaseKey, clientOptions);
 
       // Validate date inputs
       if (!data.checkIn || !data.checkOut || !data.roomId) {
-        return { available: false, error: "Room ID, check-in, and check-out dates are required." };
+        return { available: false, error: "Accommodation ID, check-in, and check-out dates are required." };
       }
 
-      if (data.checkIn >= data.checkOut) {
-        return { available: false, error: "Check-out date must be after check-in date." };
+      if (data.checkIn > data.checkOut) {
+        return { available: false, error: "Check-out date cannot be earlier than check-in date." };
       }
 
       // Statuses that block inventory in PostgreSQL enum 'booking_status':
-      // The enum values in the database are: 'pending', 'approved', 'rejected', 'cancelled', 'completed', 'no-show'
       // Active reservations that hold inventory are strictly 'pending' and 'approved'.
+      // Cancelled, rejected, no-show, and completed reservations do not block inventory.
       const BLOCKING_STATUSES = ["pending", "approved"];
 
       // 1. Check resort-wide blocks
@@ -541,6 +552,7 @@ export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
           const blk = blocks[0];
           return {
             available: false,
+            message: `UNAVAILABLE: The resort is closed/blocked from ${blk.start_date} to ${blk.end_date} (${blk.reason || "Resort Blocked"}). Please choose different dates.`,
             conflicts: [
               {
                 id: blk.id,
@@ -577,6 +589,7 @@ export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
           if (isUnderMaint || overlapsMaint) {
             return {
               available: false,
+              message: "UNAVAILABLE: This accommodation is scheduled for maintenance. Please choose another accommodation or select different dates.",
               conflicts: [
                 {
                   id: "maintenance-" + roomInfo.id,
@@ -593,23 +606,21 @@ export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
         // rooms maintenance check non-fatal
       }
 
-      // 3. Query conflicting active bookings using date-overlap formula:
-      // new_check_in < existing_check_out AND new_check_out > existing_check_in
+      // 3. Query existing active bookings for this accommodation:
+      // Statuses: 'pending' (holds inventory) and 'approved' (confirmed/walk-in)
       let query = client
         .from("bookings")
         .select("id, guest_name, check_in, check_out, status")
         .eq("room_id", data.roomId)
         .is("deleted_at", null)
-        .in("status", BLOCKING_STATUSES)
-        .lt("check_in", data.checkOut)
-        .gt("check_out", data.checkIn);
+        .in("status", BLOCKING_STATUSES);
 
       // Exclude existing booking when editing
       if (data.excludeBookingId) {
         query = query.neq("id", data.excludeBookingId);
       }
 
-      const { data: conflicts, error: qErr } = await query;
+      const { data: rawBookings, error: qErr } = await query;
 
       if (qErr) {
         console.error("[checkRoomAvailabilityServerFn] DB error:", qErr.message);
@@ -620,13 +631,29 @@ export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
         };
       }
 
-      if (!conflicts || conflicts.length === 0) {
+      // Filter conflicting bookings using exact date-overlap condition:
+      // newCheckIn < existingCheckOut && newCheckOut > existingCheckIn
+      // Handling single-day bookings where check_in = check_out
+      const conflicts = (rawBookings || []).filter((b: any) => {
+        const isExistingSingleDay = b.check_in === b.check_out;
+        const isNewSingleDay = data.checkIn === data.checkOut;
+        if (isExistingSingleDay || isNewSingleDay) {
+          return data.checkIn <= b.check_out && data.checkOut >= b.check_in;
+        }
+        return data.checkIn < b.check_out && data.checkOut > b.check_in;
+      });
+
+      if (conflicts.length === 0) {
         return { available: true, conflicts: [] };
       }
 
       // Return conflict details to surface in UI
+      const defaultMsg =
+        "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.";
+
       return {
         available: false,
+        message: defaultMsg,
         conflicts: conflicts.map((c) => ({
           id: c.id,
           guestName: c.guest_name || "Another Guest",

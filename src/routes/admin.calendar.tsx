@@ -466,7 +466,22 @@ export function AvailabilityCalendarTab() {
     setNewBookingModalOpen(true);
   };
 
-  // Recalculate price when room or dates change in booking form
+  // Immediate conflict check against all live loaded reservations (online + walk-in)
+  const checkLocalConflict = (roomId: string, checkIn: string, checkOut: string) => {
+    if (!roomId || !checkIn || !checkOut || checkIn > checkOut) return null;
+    return bookings.find((b: any) => {
+      if (b.room_id !== roomId) return false;
+      if (b.deleted_at) return false;
+      const st = (b.status || "").toLowerCase();
+      if (st !== "pending" && st !== "approved") return false;
+      if (checkIn === checkOut || b.check_in === b.check_out) {
+        return checkIn <= b.check_out && checkOut >= b.check_in;
+      }
+      return checkIn < b.check_out && checkOut > b.check_in;
+    });
+  };
+
+  // Recalculate price and immediately check availability when room or dates change in booking form
   const handleBookingFormChange = (updates: Partial<typeof bookingForm>) => {
     const next = { ...bookingForm, ...updates };
 
@@ -482,12 +497,29 @@ export function AvailabilityCalendarTab() {
           : Math.max(next.check_in === next.check_out ? 1 : 0, diffDays);
         next.total_amount = Number(room.price) * count;
       }
+
+      // Check local conflict immediately for 0ms visual feedback
+      if (next.room_id && next.check_in && next.check_out) {
+        const local = checkLocalConflict(next.room_id, next.check_in, next.check_out);
+        if (local) {
+          setAvailStatus("unavailable");
+          setAvailConflicts([
+            {
+              id: local.id,
+              guestName: local.guest_name || "Another Guest",
+              checkIn: local.check_in,
+              checkOut: local.check_out,
+              status: local.status,
+            },
+          ]);
+        }
+      }
     }
 
     setBookingForm(next);
   };
 
-  // Realtime availability check - debounced 600ms after any key field changes
+  // Realtime availability check - debounced 300ms after any key field changes
   useEffect(() => {
     if (!newBookingModalOpen) return;
     if (!bookingForm.room_id || !bookingForm.check_in || !bookingForm.check_out) {
@@ -496,47 +528,76 @@ export function AvailabilityCalendarTab() {
       setAvailError(null);
       return;
     }
-    if (bookingForm.check_out <= bookingForm.check_in) {
+    if (bookingForm.check_out < bookingForm.check_in) {
       setAvailStatus("idle");
       return;
     }
 
+    // 1. Instant check against all currently loaded reservations
+    const localConflict = checkLocalConflict(
+      bookingForm.room_id,
+      bookingForm.check_in,
+      bookingForm.check_out
+    );
+
+    if (localConflict) {
+      setAvailStatus("unavailable");
+      setAvailConflicts([
+        {
+          id: localConflict.id,
+          guestName: localConflict.guest_name || "Another Guest",
+          checkIn: localConflict.check_in,
+          checkOut: localConflict.check_out,
+          status: localConflict.status,
+        },
+      ]);
+    } else {
+      setAvailStatus("checking");
+    }
+
     // Clear previous debounce timer
     if (availCheckTimer.current) clearTimeout(availCheckTimer.current);
-    setAvailStatus("checking");
-    setAvailConflicts([]);
-    setAvailError(null);
 
     availCheckTimer.current = setTimeout(async () => {
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
         const result = await checkRoomAvailabilityServerFn({
           data: {
             roomId: bookingForm.room_id,
             checkIn: bookingForm.check_in,
             checkOut: bookingForm.check_out,
+            accessToken: sessionData?.session?.access_token,
           },
         });
         if ((result as any).dbError) {
-          setAvailStatus("error");
-          setAvailError((result as any).error || "Failed to check availability.");
+          if (!localConflict) {
+            setAvailStatus("error");
+            setAvailError((result as any).error || "Failed to check availability.");
+          }
         } else if ((result as any).available) {
-          setAvailStatus("available");
-          setAvailConflicts([]);
+          // If server says available and no local conflict, mark available
+          if (!localConflict) {
+            setAvailStatus("available");
+            setAvailConflicts([]);
+            setAvailError(null);
+          }
         } else {
           setAvailStatus("unavailable");
           setAvailConflicts((result as any).conflicts || []);
           if ((result as any).error) setAvailError((result as any).error);
         }
       } catch (err: any) {
-        setAvailStatus("error");
-        setAvailError(err?.message || "Availability check failed. Please retry.");
+        if (!localConflict) {
+          setAvailStatus("error");
+          setAvailError(err?.message || "Availability check failed. Please retry.");
+        }
       }
-    }, 600);
+    }, 300);
 
     return () => {
       if (availCheckTimer.current) clearTimeout(availCheckTimer.current);
     };
-  }, [bookingForm.room_id, bookingForm.check_in, bookingForm.check_out, newBookingModalOpen]);
+  }, [bookingForm.room_id, bookingForm.check_in, bookingForm.check_out, newBookingModalOpen, bookings]);
 
   // Reset availability state when modal closes
   useEffect(() => {
@@ -555,8 +616,8 @@ export function AvailabilityCalendarTab() {
     if (!bookingForm.guest_name.trim()) return toast.error("Guest name is required");
     if (!bookingForm.check_in || !bookingForm.check_out)
       return toast.error("Check-in and Check-out dates are required");
-    if (bookingForm.check_out <= bookingForm.check_in)
-      return toast.error("Check-out date must be after Check-in date");
+    if (bookingForm.check_out < bookingForm.check_in)
+      return toast.error("Check-out date cannot be earlier than Check-in date");
 
     const phoneVal = validatePhilippineMobileNumber(bookingForm.guest_phone, { required: true });
     if (!phoneVal.isValid) {
@@ -575,16 +636,40 @@ export function AvailabilityCalendarTab() {
       }
     }
 
-    // ===== SERVER-SIDE DOUBLE BOOKING PREVENTION =====
-    // Always re-validate on submit against the live database regardless of UI state
+    // ===== 1. CHECK LOCAL CONFLICT FIRST =====
+    const localConflict = checkLocalConflict(
+      bookingForm.room_id,
+      bookingForm.check_in,
+      bookingForm.check_out
+    );
+    if (localConflict) {
+      setAvailStatus("unavailable");
+      setAvailConflicts([
+        {
+          id: localConflict.id,
+          guestName: localConflict.guest_name || "Another Guest",
+          checkIn: localConflict.check_in,
+          checkOut: localConflict.check_out,
+          status: localConflict.status,
+        },
+      ]);
+      return toast.error(
+        "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
+        { duration: 6000 }
+      );
+    }
+
+    // ===== 2. SERVER-SIDE DOUBLE BOOKING PREVENTION =====
     setCreatingBooking(true);
     let serverAvailResult: any;
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
       serverAvailResult = await checkRoomAvailabilityServerFn({
         data: {
           roomId: bookingForm.room_id,
           checkIn: bookingForm.check_in,
           checkOut: bookingForm.check_out,
+          accessToken: sessionData?.session?.access_token,
         },
       });
     } catch (err: any) {
@@ -601,18 +686,15 @@ export function AvailabilityCalendarTab() {
 
     if (!serverAvailResult?.available) {
       setCreatingBooking(false);
-      const firstConflict = serverAvailResult?.conflicts?.[0];
       toast.error(
-        firstConflict
-          ? `UNAVAILABLE – ALREADY BOOKED: ${firstConflict.guestName} has a ${firstConflict.status} reservation from ${firstConflict.checkIn} to ${firstConflict.checkOut}. Please select another date or accommodation.`
-          : "This accommodation is already booked for the selected dates. Please select another date or accommodation.",
+        "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
         { duration: 6000 }
       );
       setAvailStatus("unavailable");
       setAvailConflicts(serverAvailResult?.conflicts || []);
       return;
     }
-    // ===== END SERVER-SIDE CHECK ======
+    // ===== END AVAILABILITY CHECK ======
 
     setCreatingBooking(true);
     try {
@@ -1866,17 +1948,15 @@ export function AvailabilityCalendarTab() {
                 </SelectTrigger>
                 <SelectContent>
                   {rooms.map((r: any) => {
-                    // Check if this room is known to be conflicting based on realtime check
-                    const isConflicting =
-                      availStatus === "unavailable" &&
-                      bookingForm.room_id === r.id &&
-                      availConflicts.length > 0;
+                    const isConflicting = Boolean(
+                      checkLocalConflict(r.id, bookingForm.check_in, bookingForm.check_out)
+                    );
                     return (
                       <SelectItem key={r.id} value={r.id}>
-                        <span className={isConflicting ? "text-rose-600 dark:text-rose-400 font-bold" : ""}>
+                        <span className={isConflicting ? "text-rose-600 dark:text-rose-400 font-bold" : "text-slate-800 dark:text-slate-200"}>
                           {r.name} ({r.type === "villa" ? "Function Hall" : r.type || "Room"}) - ₱
                           {Number(r.price).toLocaleString()}{r.rate_type === "day" ? "/day" : "/night"}
-                          {isConflicting && " — UNAVAILABLE"}
+                          {isConflicting ? " — UNAVAILABLE" : " — AVAILABLE"}
                         </span>
                       </SelectItem>
                     );
@@ -2046,7 +2126,7 @@ export function AvailabilityCalendarTab() {
             </div>
 
             {/* ===== AVAILABILITY STATUS BANNER ===== */}
-            {bookingForm.room_id && bookingForm.check_in && bookingForm.check_out && bookingForm.check_out > bookingForm.check_in && (
+            {bookingForm.room_id && bookingForm.check_in && bookingForm.check_out && bookingForm.check_out >= bookingForm.check_in && (
               <div
                 className={cn(
                   "rounded-xl border px-4 py-3 text-xs flex items-start gap-3 transition-all duration-300",
@@ -2065,7 +2145,7 @@ export function AvailabilityCalendarTab() {
                   <>
                     <Loader2 className="w-4 h-4 text-slate-500 shrink-0 animate-spin mt-0.5" />
                     <span className="text-slate-600 dark:text-slate-300 font-semibold">
-                      Checking real-time availability...
+                      Checking real-time availability across all booking channels...
                     </span>
                   </>
                 )}
@@ -2087,19 +2167,26 @@ export function AvailabilityCalendarTab() {
                     <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                     <div className="space-y-1.5">
                       <div className="font-black text-rose-700 dark:text-rose-400 uppercase tracking-wide">
-                        ✗ UNAVAILABLE — ALREADY BOOKED
+                        ✗ UNAVAILABLE
                       </div>
-                      {availConflicts.map((c) => (
-                        <div key={c.id} className="text-rose-600 dark:text-rose-300">
-                          <span className="font-bold">{c.guestName}</span> has a{" "}
-                          <span className="capitalize font-semibold">{c.status}</span> reservation from{" "}
-                          <span className="font-bold">{c.checkIn}</span> to{" "}
-                          <span className="font-bold">{c.checkOut}</span>.
+                      <p className="text-rose-700 dark:text-rose-300 font-semibold leading-relaxed">
+                        UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.
+                      </p>
+                      {availConflicts.length > 0 && (
+                        <div className="space-y-1 pt-1">
+                          {availConflicts.map((c) => (
+                            <div
+                              key={c.id}
+                              className="text-rose-600 dark:text-rose-400 text-[11px] bg-rose-100/70 dark:bg-rose-900/40 px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-800"
+                            >
+                              <span className="font-bold">{c.guestName}</span> has a{" "}
+                              <span className="capitalize font-semibold">{c.status}</span> reservation from{" "}
+                              <span className="font-bold">{c.checkIn}</span> to{" "}
+                              <span className="font-bold">{c.checkOut}</span>.
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                      <div className="text-rose-500 dark:text-rose-400 font-semibold pt-0.5">
-                        ➜ Please select another date or accommodation.
-                      </div>
+                      )}
                     </div>
                   </>
                 )}

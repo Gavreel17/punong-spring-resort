@@ -287,7 +287,7 @@ function BookPage() {
       while (cur <= end) {
         const st = getDayStatus(cur);
         if (st.status === "booked") {
-          conflictReason = `Sorry, date ${format(cur, "MMM d, yyyy")} is already booked (${st.tooltip}) and cannot be reserved.`;
+          conflictReason = `UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.`;
           break;
         }
         cur.setDate(cur.getDate() + 1);
@@ -442,9 +442,18 @@ function BookPage() {
       );
     }
 
+    if (isSelectedDateRangeBooked || conflictWarning) {
+      setShowReminderModal(false);
+      return toast.error(
+        conflictWarning ||
+          "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
+        { duration: 6000 }
+      );
+    }
+
     setSubmitting(true);
 
-    // Perform server-side validation to ensure user cannot bypass extra-bed requirement
+    // 1. Validate requirements (phone, bed capacity) on server
     try {
       const { validateBookingRequirementsServerFn } = await import("@/lib/api/booking.functions");
       const serverValidation = await validateBookingRequirementsServerFn({
@@ -464,6 +473,32 @@ function BookPage() {
       }
     } catch (err) {
       console.warn("Server validation check fallback:", err);
+    }
+
+    // 2. Concurrency-safe server availability check against live database
+    try {
+      const { checkRoomAvailabilityServerFn } = await import("@/lib/api/booking.functions");
+      const { data: sessionData } = await supabase.auth.getSession();
+      const serverAvail = await checkRoomAvailabilityServerFn({
+        data: {
+          roomId: room.id,
+          checkIn: form.check_in,
+          checkOut: form.check_out,
+          accessToken: sessionData?.session?.access_token,
+        },
+      });
+
+      if (!serverAvail.available) {
+        setSubmitting(false);
+        setShowReminderModal(false);
+        return toast.error(
+          serverAvail.message ||
+            "UNAVAILABLE: This accommodation is already booked for the selected dates by another customer. Please choose another available accommodation or select different dates.",
+          { duration: 6000 }
+        );
+      }
+    } catch (err) {
+      console.warn("Server availability check fallback:", err);
     }
 
     try {
@@ -573,6 +608,12 @@ function BookPage() {
           .catch(() => {});
         supabase.auth.updateUser({ data: { fullname: form.fullname.trim() } }).catch(() => {});
       }
+
+      // Refresh room availability across application
+      qc.invalidateQueries({ queryKey: ["room-bookings", roomId] });
+      qc.invalidateQueries({ queryKey: ["admin-availability-calendar"] });
+      qc.invalidateQueries({ queryKey: ["global-availability"] });
+      qc.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
 
       await MySwal.fire({
         title: "Booking Submitted!",
