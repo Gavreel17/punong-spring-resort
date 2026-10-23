@@ -28,11 +28,13 @@ GRANT ALL ON public.resort_blocks TO service_role;
 ALTER TABLE public.resort_blocks ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Anyone (including anon) can read blocks to display unavailable dates
+DROP POLICY IF EXISTS "resort_blocks_read_all" ON public.resort_blocks;
 CREATE POLICY "resort_blocks_read_all"
   ON public.resort_blocks FOR SELECT
   USING (true);
 
 -- Policy: Only admins can insert new blocks
+DROP POLICY IF EXISTS "resort_blocks_admin_insert" ON public.resort_blocks;
 CREATE POLICY "resort_blocks_admin_insert"
   ON public.resort_blocks FOR INSERT
   TO authenticated
@@ -41,6 +43,7 @@ CREATE POLICY "resort_blocks_admin_insert"
   );
 
 -- Policy: Only admins can delete blocks
+DROP POLICY IF EXISTS "resort_blocks_admin_delete" ON public.resort_blocks;
 CREATE POLICY "resort_blocks_admin_delete"
   ON public.resort_blocks FOR DELETE
   TO authenticated
@@ -49,8 +52,12 @@ CREATE POLICY "resort_blocks_admin_delete"
   );
 
 -- Policy: Only admins can update blocks
+DROP POLICY IF EXISTS "resort_blocks_admin_update" ON public.resort_blocks;
 CREATE POLICY "resort_blocks_admin_update"
   ON public.resort_blocks FOR UPDATE
   TO authenticated
   USING (public.has_role(auth.uid(), 'admin'))
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+-- Notify PostgREST to reload the schema cache immediately
+NOTIFY pgrst, 'reload schema';

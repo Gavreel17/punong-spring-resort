@@ -908,10 +908,16 @@ export function AvailabilityCalendarTab() {
           toast.error("You do not have permission to block resort dates. Admin access required.");
         } else if (error.code === "23514") {
           toast.error("Invalid dates: End Date must be on or after Start Date.");
-        } else if (error.code === "42P01") {
+        } else if (
+          error.code === "42P01" ||
+          error.code === "PGRST205" ||
+          error.code === "PGRST200" ||
+          error.message?.includes("schema cache") ||
+          error.message?.includes("Could not find the table")
+        ) {
           toast.error(
-            "The resort_blocks table does not exist yet. Please run the latest database migration (20261024000000_create_resort_blocks_table.sql) in your Supabase dashboard.",
-            { duration: 10000 }
+            "Database table 'resort_blocks' not found. Please execute the migration in your Supabase SQL Editor (supabase/migrations/20261024000000_create_resort_blocks_table.sql).",
+            { duration: 12000 }
           );
         } else {
           toast.error(`Unable to save the resort block: ${error.message}`);
