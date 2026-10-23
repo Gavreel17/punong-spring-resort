@@ -262,3 +262,205 @@ export const cancelBookingCustomerServerFn = createServerFn({ method: "POST" })
     }
   });
 
+/**
+ * Server-side automatic booking completion based on Philippine Time (Asia/Manila, UTC+08:00)
+ */
+export async function autoCompleteBookingsOnServer() {
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabaseUrl =
+      process.env.VITE_SUPABASE_URL ||
+      process.env.SUPABASE_URL ||
+      "https://dqpbbzsxfwbozqcguwux.supabase.co";
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.SUPABASE_PUBLISHABLE_KEY ||
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      "sb_publishable_oSM68VF1C-NOQjAtAlg44g_F39kZFkn";
+
+    const client = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+      realtime: { transport: ws as any },
+    });
+
+    const now = new Date();
+    const todayPh = now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+
+    // Fetch active bookings whose checkout date has passed in Philippine time
+    // Exclude bookings that are already completed, cancelled, rejected, or no-show
+    const { data: pastBookings, error: fetchErr } = await client
+      .from("bookings")
+      .select("id, check_in, check_out, status")
+      .lt("check_out", todayPh)
+      .in("status", ["pending", "approved"])
+      .is("deleted_at", null);
+
+    if (fetchErr) {
+      console.warn("[autoCompleteBookingsOnServer] Fetch error:", fetchErr.message);
+      return { success: false, error: fetchErr.message, count: 0, todayPh };
+    }
+
+    if (!pastBookings || pastBookings.length === 0) {
+      return { success: true, count: 0, updatedIds: [], todayPh };
+    }
+
+    const updatedIds: string[] = [];
+    for (const b of pastBookings) {
+      const { error: updErr } = await client
+        .from("bookings")
+        .update({ status: "completed" })
+        .eq("id", b.id);
+
+      if (!updErr) {
+        updatedIds.push(b.id);
+      } else {
+        console.warn(`[autoCompleteBookingsOnServer] Failed to complete booking ${b.id}:`, updErr.message);
+      }
+    }
+
+    if (updatedIds.length > 0) {
+      console.log(`[autoCompleteBookingsOnServer] Automatically completed ${updatedIds.length} past booking(s) on Philippine date ${todayPh}`);
+    }
+
+    return {
+      success: true,
+      count: updatedIds.length,
+      updatedIds,
+      todayPh,
+    };
+  } catch (err: any) {
+    console.error("[autoCompleteBookingsOnServer] Execution error:", err);
+    return { success: false, error: err?.message || "Server auto-completion failed", count: 0 };
+  }
+}
+
+/**
+ * Server function callable by client components and API requests to trigger automatic booking completion
+ */
+export const autoCompleteBookingsServerFn = createServerFn({ method: "POST" })
+  .handler(async () => {
+    return await autoCompleteBookingsOnServer();
+  });
+
+/**
+ * Server function for undoing payment:
+ * STRICT BUSINESS RULE: Rejects undo payment if the reservation is already Completed.
+ */
+export const undoPaymentServerFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      bookingId: z.string(),
+      paymentId: z.string(),
+      adminId: z.string().optional(),
+    })
+  )
+  .handler(async ({ data }) => {
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabaseUrl =
+        process.env.VITE_SUPABASE_URL ||
+        process.env.SUPABASE_URL ||
+        "https://dqpbbzsxfwbozqcguwux.supabase.co";
+      const supabaseKey =
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.SUPABASE_PUBLISHABLE_KEY ||
+        process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+        "sb_publishable_oSM68VF1C-NOQjAtAlg44g_F39kZFkn";
+
+      const client = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false },
+        realtime: { transport: ws as any },
+      });
+
+      // 1. Fetch target booking
+      const { data: booking, error: bErr } = await client
+        .from("bookings")
+        .select("id, status, check_out, guest_name")
+        .eq("id", data.bookingId)
+        .maybeSingle();
+
+      if (bErr || !booking) {
+        return { success: false, error: "Reservation booking record not found." };
+      }
+
+      const now = new Date();
+      const todayPh = now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+      const checkOutDate = String(booking.check_out || "").split("T")[0].trim();
+
+      // If checkout date has passed in Philippine time, ensure it is completed
+      if (checkOutDate && checkOutDate < todayPh && booking.status !== "completed") {
+        await client.from("bookings").update({ status: "completed" }).eq("id", booking.id);
+        booking.status = "completed";
+      }
+
+      // STRICT BACKEND ENFORCEMENT:
+      // "Once a booking's status is Completed, the admin must not be able to undo, reverse, or reset its payment through the normal booking interface.
+      // Enforce the restriction in the backend, not just by hiding the button.
+      // Reject direct API requests attempting to undo payment for a completed booking.
+      // Display a clear message if a blocked action is attempted:
+      // 'Payment cannot be undone because this booking is already completed.'"
+      if (booking.status === "completed") {
+        return {
+          success: false,
+          error: "Payment cannot be undone because this booking is already completed.",
+        };
+      }
+
+      // 2. Fetch payment record
+      const { data: payment, error: pFetchErr } = await client
+        .from("payments")
+        .select("id, status, amount")
+        .eq("id", data.paymentId)
+        .maybeSingle();
+
+      if (pFetchErr || !payment) {
+        return { success: false, error: "Payment record not found." };
+      }
+
+      const previousStatus = payment.status;
+
+      // 3. Revert payment status to unpaid
+      const { error: pUpdErr } = await client
+        .from("payments")
+        .update({ status: "unpaid" })
+        .eq("id", data.paymentId);
+
+      if (pUpdErr) {
+        return { success: false, error: pUpdErr.message };
+      }
+
+      // 4. Log in payment_audit_logs table if available
+      try {
+        let adminName = "Admin";
+        if (data.adminId) {
+          const { data: profile } = await client
+            .from("profiles")
+            .select("fullname")
+            .eq("id", data.adminId)
+            .maybeSingle();
+          if (profile?.fullname) adminName = profile.fullname;
+        }
+
+        await client.from("payment_audit_logs").insert({
+          payment_id: data.paymentId,
+          booking_id: data.bookingId,
+          admin_id: data.adminId || null,
+          admin_name: adminName,
+          previous_status: previousStatus,
+          new_status: "unpaid",
+        });
+      } catch (auditErr) {
+        console.warn("Payment audit log insert error (non-fatal):", auditErr);
+      }
+
+      return {
+        success: true,
+        message: "Payment status has been reverted to Unpaid.",
+      };
+    } catch (err: any) {
+      console.error("undoPaymentServerFn error:", err);
+      return { success: false, error: err?.message || "Failed to process payment reversal on server." };
+    }
+  });
+
+

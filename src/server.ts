@@ -1,8 +1,12 @@
 import "./lib/error-capture";
+import { initServerScheduler } from "./lib/server-scheduler";
 
 import { isRedirect, isNotFound } from "@tanstack/react-router";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+
+// Start background recurring job for automatic booking completion
+initServerScheduler();
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;

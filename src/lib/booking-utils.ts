@@ -111,32 +111,24 @@ export async function processAutoBookingStatuses(bookings?: any[]): Promise<bool
     // ========================================================
     // RULE 1: AUTOMATIC "completed"
     // ========================================================
-    // Case 1A: Check-out date is already past
-    if ((b.status === "approved" || isPaid) && checkOutDate < today) {
+    // Check-out date has passed in Philippine time (Asia/Manila, UTC+08:00).
+    // The booking becomes Completed strictly after the checkout date has ended (checkOutDate < today).
+    // Guests whose checkout date is TODAY remain active until the checkout date has ended.
+    // Stays are updated to Completed regardless of whether paid or unpaid, while payment status is fully preserved.
+    if (checkOutDate < today) {
       newStatus = "completed";
     }
-    // Case 1B: Check-out date is TODAY and check-out policy hour has passed
-    else if ((b.status === "approved" || isPaid) && checkOutDate === today) {
-      if (isDayUse && currentHour >= 18) {
-        // Day Use cottage ends at 6:00 PM (18:00)
-        newStatus = "completed";
-      } else if (!isDayUse && currentHour >= 12) {
-        // Standard check-out policy hour is 12:00 PM (12:00)
-        newStatus = "completed";
-      }
-    }
 
     // ========================================================
-    // RULE 2: AUTOMATIC "no-show" (Exceeded 5-hour check-in window)
+    // RULE 2: AUTOMATIC "no-show" (Exceeded check-in window for ongoing stays)
     // ========================================================
-    // When a customer exceeds the scheduled check-in window by 5 hours:
-    // - Day-use cottage (check-in at 8:00 AM): 5 hours past is 1:00 PM (13:00)
-    // - Overnight stay/room (check-in at 2:00 PM): 5 hours past is 7:00 PM (19:00)
-    // - Once marked as "no-show", the booking is released and the room automatically becomes available
-    if (!newStatus) {
+    // Only applies if the reservation checkout has not passed (checkOutDate >= today):
+    // - Check-in date passed without guest arriving/paying
+    // - Check-in date is today and exceeded 5-hour check-in window
+    if (!newStatus && checkOutDate >= today) {
       const fiveHourThreshold = isDayUse ? 13 : 19;
 
-      // Case 2A: Check-in date has passed (yesterday or earlier) and booking was unpaid or guest never arrived
+      // Case 2A: Check-in date has passed (yesterday or earlier) and booking was unpaid
       if ((b.status === "pending" || b.status === "approved") && checkInDate < today && isUnpaid) {
         newStatus = "no-show";
       }
@@ -145,10 +137,6 @@ export async function processAutoBookingStatuses(bookings?: any[]): Promise<bool
         if (isUnpaid || isDayUse) {
           newStatus = "no-show";
         }
-      }
-      // Case 2C: Entire reservation passed (check_out < today) and still pending
-      else if (b.status === "pending" && checkOutDate < today) {
-        newStatus = "no-show";
       }
     }
 

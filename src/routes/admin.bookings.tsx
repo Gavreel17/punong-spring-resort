@@ -28,10 +28,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { Eye, CheckCircle2, XCircle, Banknote, CreditCard, Search, CalendarClock, Trash2, Printer, RotateCcw, Loader2 } from "lucide-react";
+import { Eye, CheckCircle2, XCircle, Banknote, CreditCard, Search, CalendarClock, Trash2, Printer, RotateCcw, Loader2, Lock, Check, Clock, UserX } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
-import { processAutoBookingStatuses } from "@/lib/booking-utils";
+import { processAutoBookingStatuses, getPhilippineTime } from "@/lib/booking-utils";
+import { autoCompleteBookingsServerFn, undoPaymentServerFn } from "@/lib/api/booking.functions";
 import { trashService } from "@/lib/recently-deleted";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,14 @@ function BookingsTab() {
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ["admin-bookings-unified"],
     queryFn: async () => {
+      // 1. Trigger server-side automatic booking completion based on Philippine Time
+      try {
+        await autoCompleteBookingsServerFn();
+      } catch (e) {
+        console.warn("Server auto-completion trigger error:", e);
+      }
+
+      // 2. Query bookings from database
       const { data, error } = await supabase
         .from("bookings")
         .select("*, room:rooms(name, type, price), profile:profiles!bookings_user_id_fkey(fullname,email), payments(id, amount, status, notes, receipt_url)")
@@ -116,6 +125,17 @@ function BookingsTab() {
     id: string,
     status: "pending" | "approved" | "rejected" | "cancelled" | "completed" | "no-show",
   ) {
+    const targetBooking = bookings.find((b: any) => b.id === id);
+    if (targetBooking?.status === "completed" && status !== "completed") {
+      toast.error("A completed booking cannot be reverted to a previous status.");
+      return MySwal.fire({
+        title: "Action Blocked",
+        text: "A completed booking cannot be reverted to a previous status.",
+        icon: "error",
+        confirmButtonColor: "#d33",
+      });
+    }
+
     const result = await MySwal.fire({
       title: "Are you sure?",
       text: `Do you want to mark this booking as ${status}?`,
@@ -181,11 +201,16 @@ function BookingsTab() {
       if (error) return toast.error(error.message);
     }
 
+    // Preserve completed booking status: never overwrite or revert a completed booking
     const { data: b } = await supabase.from("bookings").select("status, check_out").eq("id", bookingId).single();
-    if (b && b.status === "no-show" && status === "verified") {
-      const today = new Date().toISOString().split("T")[0];
-      const newStatus = b.check_out <= today ? "completed" : "approved";
-      await supabase.from("bookings").update({ status: newStatus }).eq("id", bookingId);
+    if (b) {
+      if (b.status === "completed") {
+        // Do NOT modify status for completed bookings
+      } else if (b.status === "no-show" && status === "verified") {
+        const { dateStr: today } = getPhilippineTime();
+        const newStatus = b.check_out < today ? "completed" : "approved";
+        await supabase.from("bookings").update({ status: newStatus }).eq("id", bookingId);
+      }
     }
 
     toast.success(`Payment marked as ${status}`);
@@ -197,6 +222,19 @@ function BookingsTab() {
 
   async function undoPaymentStatus(bookingId: string, paymentId: string, currentStatus: string) {
     if (!user) return;
+
+    // Strict frontend barrier: completed bookings cannot undo payment
+    const targetBooking = bookings.find((b: any) => b.id === bookingId);
+    if (targetBooking?.status === "completed") {
+      toast.error("Payment cannot be undone because this booking is already completed.");
+      return MySwal.fire({
+        title: "Action Blocked",
+        text: "Payment cannot be undone because this booking is already completed.",
+        icon: "error",
+        confirmButtonColor: "#d33",
+      });
+    }
+
     const result = await MySwal.fire({
       title: "Undo Payment?",
       text: "Are you sure you want to revert this payment to Unpaid?",
@@ -209,27 +247,24 @@ function BookingsTab() {
 
     if (!result.isConfirmed) return;
 
-    let adminName = "Admin";
-    try {
-      const { data: profile } = await supabase.from("profiles").select("fullname").eq("id", user.id).single();
-      if (profile && profile.fullname) adminName = profile.fullname;
-    } catch(e){}
-
-    const { error: pErr } = await supabase.from("payments").update({ status: "unpaid" }).eq("id", paymentId);
-    if (pErr) return toast.error(pErr.message);
-
-    const { error: aErr } = await supabase.from("payment_audit_logs").insert({
-      payment_id: paymentId,
-      booking_id: bookingId,
-      admin_id: user.id,
-      admin_name: adminName,
-      previous_status: currentStatus,
-      new_status: "unpaid"
+    // Strict backend enforcement via server function
+    const res = await undoPaymentServerFn({
+      data: {
+        bookingId,
+        paymentId,
+        adminId: user.id,
+      },
     });
-    if (aErr) console.warn("Audit log failed (table might not exist):", aErr.message);
 
-    const { error: bErr } = await supabase.from("bookings").update({ status: "approved" }).eq("id", bookingId);
-    if (bErr) return toast.error(bErr.message);
+    if (!res.success) {
+      toast.error(res.error || "Payment cannot be undone.");
+      return MySwal.fire({
+        title: "Action Blocked",
+        text: res.error || "Payment cannot be undone because this booking is already completed.",
+        icon: "error",
+        confirmButtonColor: "#d33",
+      });
+    }
 
     MySwal.fire("Reverted!", "Payment status has been reverted to Unpaid.", "success");
     qc.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
@@ -523,9 +558,27 @@ function BookingsTab() {
                     </div>
                     <div className="flex flex-col gap-1 items-start">
                       <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Booking Status</span>
-                      <Badge variant={b.status === "approved" || b.status === "completed" ? "default" : "secondary"} className="capitalize px-2.5 py-0.5 font-semibold text-[11px] dark:bg-slate-700 dark:text-slate-200">
-                        {b.status === "approved" ? "Confirmed" : b.status === "pending" ? "Reserved" : b.status === "rejected" ? "Cancelled" : b.status}
-                      </Badge>
+                      {b.status === "completed" ? (
+                        <Badge className="px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Completed
+                        </Badge>
+                      ) : b.status === "approved" ? (
+                        <Badge className="px-2.5 py-0.5 rounded-full font-bold text-[11px] bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Confirmed
+                        </Badge>
+                      ) : b.status === "pending" ? (
+                        <Badge className="px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Reserved
+                        </Badge>
+                      ) : b.status === "no-show" ? (
+                        <Badge className="px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700/60 flex items-center gap-1">
+                          <UserX className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> No-Show
+                        </Badge>
+                      ) : (
+                        <Badge className="px-2.5 py-0.5 rounded-full font-semibold text-[11px] bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60 flex items-center gap-1">
+                          <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" /> Cancelled
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
 
@@ -557,7 +610,33 @@ function BookingsTab() {
                         </div>
                       )}
 
-                      {(b.status === "approved" || b.status === "completed" || b.status === "no-show") && (
+                      {b.status === "completed" && (
+                        <div className="w-full space-y-1">
+                          <div className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold shadow-xs">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Completed Stay
+                          </div>
+
+                          {/* If completed booking is unpaid, allow admin to record payment without affecting completed booking status */}
+                          {(!p || p.status !== "verified") && (
+                            <Button
+                              size="sm"
+                              onClick={() => updatePaymentStatus(b.id, b.user_id, p?.id, "verified", b.total_amount)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white h-7 text-xs font-semibold shadow-sm w-full"
+                            >
+                              <Banknote className="w-3.5 h-3.5 mr-1" /> Mark Paid
+                            </Button>
+                          )}
+
+                          {/* Completed bookings: Payment cannot be undone. Active Undo button is permanently removed and locked. */}
+                          {(p && p.status === "verified") && (
+                            <div className="w-full flex items-center justify-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 text-[11px] font-medium select-none" title="Payment settled for completed booking">
+                              <Lock className="w-3 h-3 text-slate-400" /> Settled / Locked
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {(b.status === "approved" || b.status === "no-show") && (
                         <>
                           {(!p || p.status !== "verified") && (
                             <Button
@@ -580,7 +659,7 @@ function BookingsTab() {
                             </Button>
                           )}
 
-                          {b.status !== "completed" && b.status !== "no-show" && (
+                          {b.status === "approved" && (
                             <div className="flex gap-1.5 w-full mt-1">
                               <Button
                                 size="sm"

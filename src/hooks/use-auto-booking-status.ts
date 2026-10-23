@@ -19,6 +19,8 @@ export function useAutoBookingStatus() {
         if (changed && !isCancelled) {
           queryClient.invalidateQueries({ queryKey: ["dashboard-bookings"] });
           queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+          queryClient.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
+          queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
           queryClient.invalidateQueries({ queryKey: ["calendar-bookings"] });
           queryClient.invalidateQueries({ queryKey: ["customer-bookings"] });
           queryClient.invalidateQueries({ queryKey: ["bookings"] });
