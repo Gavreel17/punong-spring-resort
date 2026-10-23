@@ -806,20 +806,71 @@ export function AvailabilityCalendarTab() {
   };
 
   // Submit Resort Block
+  const [blockSubmitting, setBlockSubmitting] = useState(false);
   const handleBlockSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { error } = await supabase.from("resort_blocks" as any).insert({
-      start_date: blockForm.start_date,
-      end_date: blockForm.end_date,
-      reason: blockForm.reason || "Administrative Closure",
-    });
-    if (error) return toast.error("Failed to block dates");
-    toast.success("Resort blocked for selected dates");
-    setBlockModalOpen(false);
-    setBlockForm({ start_date: "", end_date: "", reason: "" });
-    refetch();
-    qc.invalidateQueries({ queryKey: ["global-availability"] });
+
+    // ── Validation ──────────────────────────────────────────────────
+    if (!blockForm.start_date) return toast.error("Please select a Start Date.");
+    if (!blockForm.end_date) return toast.error("Please select an End Date.");
+    if (blockForm.end_date < blockForm.start_date)
+      return toast.error("End Date must be on or after Start Date.");
+
+    // Check for conflicts with existing blocks
+    const conflict = blocks.find(
+      (b: any) =>
+        blockForm.start_date <= b.end_date && blockForm.end_date >= b.start_date
+    );
+    if (conflict) {
+      return toast.warning(
+        `A resort block already exists from ${conflict.start_date} to ${conflict.end_date}. Please remove it first or choose different dates.`,
+        { duration: 6000 }
+      );
+    }
+
+    setBlockSubmitting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const adminId = sessionData?.session?.user?.id || null;
+
+      const { error } = await supabase.from("resort_blocks" as any).insert({
+        start_date: blockForm.start_date,
+        end_date: blockForm.end_date,
+        reason: blockForm.reason?.trim() || "Administrative Closure",
+        created_by: adminId,
+      });
+
+      if (error) {
+        console.error("[Resort Block] DB error:", error);
+        if (error.code === "42501" || error.message?.includes("policy")) {
+          toast.error("You do not have permission to block resort dates. Admin access required.");
+        } else if (error.code === "23514") {
+          toast.error("Invalid dates: End Date must be on or after Start Date.");
+        } else if (error.code === "42P01") {
+          toast.error(
+            "The resort_blocks table does not exist yet. Please run the latest database migration (20261024000000_create_resort_blocks_table.sql) in your Supabase dashboard.",
+            { duration: 10000 }
+          );
+        } else {
+          toast.error(`Unable to save the resort block: ${error.message}`);
+        }
+        return;
+      }
+
+      toast.success("Resort dates blocked successfully.");
+      setBlockModalOpen(false);
+      setBlockForm({ start_date: "", end_date: "", reason: "" });
+      refetch();
+      qc.invalidateQueries({ queryKey: ["global-availability"] });
+      qc.invalidateQueries({ queryKey: ["admin-availability-calendar"] });
+    } catch (err: any) {
+      console.error("[Resort Block] Unexpected error:", err);
+      toast.error(err?.message || "Unable to save the resort block. Please try again.");
+    } finally {
+      setBlockSubmitting(false);
+    }
   };
+
 
   // Update Booking Status from Quick View
   const handleUpdateBookingStatus = async (
@@ -2395,8 +2446,17 @@ export function AvailabilityCalendarTab() {
                 onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
               />
             </div>
-            <Button type="submit" variant="destructive" className="rounded-xl font-bold mt-2">
-              Apply Resort Block
+            <Button
+              type="submit"
+              variant="destructive"
+              disabled={blockSubmitting}
+              className="rounded-xl font-bold mt-2 flex items-center gap-2"
+            >
+              {blockSubmitting ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Applying Block...</>
+              ) : (
+                <><ShieldAlert className="w-4 h-4" /> Apply Resort Block</>
+              )}
             </Button>
           </form>
 
