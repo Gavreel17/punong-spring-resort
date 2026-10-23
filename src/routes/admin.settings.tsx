@@ -198,22 +198,25 @@ function AdminSettingsPage() {
     }
   }, [dbSettings]);
 
-  // Apply theme to document element
+  // Apply theme to document element (scoped to admin portal)
   function applyTheme(theme: "light" | "dark" | "system") {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else if (theme === "light") {
-      root.classList.remove("dark");
-    } else {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      if (prefersDark) {
+    localStorage.setItem("punong-admin-theme", theme);
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+      const root = document.documentElement;
+      if (theme === "dark") {
         root.classList.add("dark");
-      } else {
+      } else if (theme === "light") {
         root.classList.remove("dark");
+      } else {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (prefersDark) {
+          root.classList.add("dark");
+        } else {
+          root.classList.remove("dark");
+        }
       }
     }
-    localStorage.setItem("punong-theme", theme);
+    window.dispatchEvent(new Event("admin-theme-changed"));
   }
 
   // 1. Save Account Profile
@@ -1343,19 +1346,31 @@ function AdminSettingsPage() {
         <div className="space-y-6 animate-in fade-in duration-200">
           <Card className="p-6 bg-white dark:bg-[#151F2E] border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm space-y-6">
             <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-lg font-bold font-display text-slate-900 dark:text-white">
-                Appearance & Branding
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Manage theme color modes, logo branding, and visual presentation.
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-lg font-bold font-display text-slate-900 dark:text-white">
+                    Appearance & Branding
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Manage theme color modes, logo branding, and visual presentation.
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                  Admin Scoped
+                </span>
+              </div>
             </div>
 
             {/* Theme Mode Selector */}
             <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Color Theme Mode
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Admin Color Theme Mode
+                </Label>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                  Applies exclusively to Admin Portal (customers have their own toggle)
+                </span>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Light Mode */}
                 <div

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useSystemSettings } from "@/hooks/use-system-settings";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -42,7 +43,9 @@ export function Navbar() {
           ))}
         </nav>
 
+        {/* Desktop Actions */}
         <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
           {user ? (
             <>
               <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
@@ -68,13 +71,17 @@ export function Navbar() {
           )}
         </div>
 
-        <button 
-          className="flex items-center justify-center h-10 w-10 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none md:hidden" 
-          onClick={() => setOpen(!open)} 
-          aria-label="Toggle navigation menu"
-        >
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        {/* Mobile Header Controls */}
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <button 
+            className="flex items-center justify-center h-10 w-10 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none" 
+            onClick={() => setOpen(!open)} 
+            aria-label="Toggle navigation menu"
+          >
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {open && (
@@ -90,6 +97,14 @@ export function Navbar() {
                 {l.label}
               </Link>
             ))}
+
+            <div className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 my-1">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Display Theme
+              </span>
+              <ThemeToggle showLabel />
+            </div>
+
             <div className="flex flex-col gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
               {user ? (
                 <>

@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -112,15 +113,29 @@ function RootShell({ children }: { children: ReactNode }) {
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('punong-theme');
-                  if (!theme) {
-                    var cached = localStorage.getItem('punong-system-settings');
-                    if (cached) {
-                      var parsed = JSON.parse(cached);
-                      if (parsed && parsed.theme) theme = parsed.theme;
+                  var isAdmin = window.location.pathname.indexOf('/admin') === 0;
+                  var isDark = false;
+                  if (isAdmin) {
+                    var adminTheme = localStorage.getItem('punong-admin-theme');
+                    if (!adminTheme) {
+                      var cached = localStorage.getItem('punong-system-settings');
+                      if (cached) {
+                        var parsed = JSON.parse(cached);
+                        if (parsed && parsed.theme) adminTheme = parsed.theme;
+                      }
                     }
+                    if (adminTheme === 'dark') {
+                      isDark = true;
+                    } else if (adminTheme === 'light') {
+                      isDark = false;
+                    } else {
+                      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    }
+                  } else {
+                    var customerTheme = localStorage.getItem('punong-customer-theme');
+                    isDark = customerTheme === 'dark';
                   }
-                  var isDark = theme === 'dark' || ((!theme || theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
                   if (isDark) {
                     document.documentElement.classList.add('dark');
                   } else {
@@ -142,9 +157,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function GlobalThemeSync() {
   const { settings } = useSystemSettings();
+  const location = useLocation();
 
   useEffect(() => {
-    function applyTheme(themeValue: string) {
+    function applyAdminTheme(themeValue: string) {
       const root = document.documentElement;
       let shouldBeDark = false;
       if (themeValue === "dark") {
@@ -162,19 +178,69 @@ function GlobalThemeSync() {
       }
     }
 
-    applyTheme(settings.theme || "system");
+    function applyCustomerTheme(themeValue: string) {
+      const root = document.documentElement;
+      if (themeValue === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+    }
 
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleMediaChange = () => {
-      const currentTheme = localStorage.getItem("punong-theme") || settings.theme || "system";
-      if (currentTheme === "system") {
-        applyTheme("system");
+    function syncTheme() {
+      if (location.pathname.startsWith("/admin")) {
+        const adminTheme =
+          localStorage.getItem("punong-admin-theme") || settings.theme || "system";
+        applyAdminTheme(adminTheme);
+      } else {
+        const customerTheme =
+          localStorage.getItem("punong-customer-theme") || "light";
+        applyCustomerTheme(customerTheme);
+      }
+    }
+
+    // Run theme sync on current route
+    syncTheme();
+
+    const handleCustomerChange = () => {
+      if (!location.pathname.startsWith("/admin")) {
+        const customerTheme =
+          localStorage.getItem("punong-customer-theme") || "light";
+        applyCustomerTheme(customerTheme);
       }
     };
 
+    const handleAdminChange = () => {
+      if (location.pathname.startsWith("/admin")) {
+        const adminTheme =
+          localStorage.getItem("punong-admin-theme") || settings.theme || "system";
+        applyAdminTheme(adminTheme);
+      }
+    };
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleMediaChange = () => {
+      if (location.pathname.startsWith("/admin")) {
+        const adminTheme =
+          localStorage.getItem("punong-admin-theme") || settings.theme || "system";
+        if (adminTheme === "system") {
+          applyAdminTheme("system");
+        }
+      }
+    };
+
+    window.addEventListener("customer-theme-changed", handleCustomerChange);
+    window.addEventListener("admin-theme-changed", handleAdminChange);
+    window.addEventListener("storage", syncTheme);
     mediaQuery.addEventListener("change", handleMediaChange);
-    return () => mediaQuery.removeEventListener("change", handleMediaChange);
-  }, [settings.theme]);
+
+    return () => {
+      window.removeEventListener("customer-theme-changed", handleCustomerChange);
+      window.removeEventListener("admin-theme-changed", handleAdminChange);
+      window.removeEventListener("storage", syncTheme);
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
+  }, [location.pathname, settings.theme]);
 
   return null;
 }
