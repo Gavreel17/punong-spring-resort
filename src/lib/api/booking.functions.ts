@@ -524,10 +524,76 @@ export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
         return { available: false, error: "Check-out date must be after check-in date." };
       }
 
-      // Statuses that block inventory
-      const BLOCKING_STATUSES = ["pending", "approved", "verified", "confirmed", "checked-in"];
+      // Statuses that block inventory in PostgreSQL enum 'booking_status':
+      // The enum values in the database are: 'pending', 'approved', 'rejected', 'cancelled', 'completed', 'no-show'
+      // Active reservations that hold inventory are strictly 'pending' and 'approved'.
+      const BLOCKING_STATUSES = ["pending", "approved"];
 
-      // Query conflicting bookings using date-overlap formula
+      // 1. Check resort-wide blocks
+      try {
+        const { data: blocks } = await client
+          .from("resort_blocks" as any)
+          .select("id, start_date, end_date, reason")
+          .lte("start_date", data.checkOut)
+          .gte("end_date", data.checkIn);
+
+        if (blocks && blocks.length > 0) {
+          const blk = blocks[0];
+          return {
+            available: false,
+            conflicts: [
+              {
+                id: blk.id,
+                guestName: blk.reason || "Resort Blocked",
+                checkIn: blk.start_date,
+                checkOut: blk.end_date,
+                status: "Resort Closed",
+              },
+            ],
+          };
+        }
+      } catch (e) {
+        // resort_blocks table check non-fatal
+      }
+
+      // 2. Check room-specific maintenance
+      try {
+        const { data: roomInfo } = await client
+          .from("rooms")
+          .select("id, name, status, maintenance_start, maintenance_end")
+          .eq("id", data.roomId)
+          .maybeSingle();
+
+        if (roomInfo) {
+          const isUnderMaint =
+            roomInfo.status === "maintenance" &&
+            (!roomInfo.maintenance_start || !roomInfo.maintenance_end);
+          const overlapsMaint =
+            roomInfo.maintenance_start &&
+            roomInfo.maintenance_end &&
+            data.checkIn < roomInfo.maintenance_end &&
+            data.checkOut > roomInfo.maintenance_start;
+
+          if (isUnderMaint || overlapsMaint) {
+            return {
+              available: false,
+              conflicts: [
+                {
+                  id: "maintenance-" + roomInfo.id,
+                  guestName: "Facility Maintenance",
+                  checkIn: roomInfo.maintenance_start || data.checkIn,
+                  checkOut: roomInfo.maintenance_end || data.checkOut,
+                  status: "Under Maintenance",
+                },
+              ],
+            };
+          }
+        }
+      } catch (e) {
+        // rooms maintenance check non-fatal
+      }
+
+      // 3. Query conflicting active bookings using date-overlap formula:
       // new_check_in < existing_check_out AND new_check_out > existing_check_in
       let query = client
         .from("bookings")
@@ -578,3 +644,4 @@ export const checkRoomAvailabilityServerFn = createServerFn({ method: "POST" })
       };
     }
   });
+
