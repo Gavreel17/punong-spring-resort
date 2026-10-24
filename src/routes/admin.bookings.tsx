@@ -100,8 +100,12 @@ function BookingsTab() {
       try { if (p?.notes) notes = JSON.parse(p.notes); } catch(e){}
 
       // 1. Status Filter
-      if (statusFilter !== "all") {
+      // Always hide cancelled/rejected from "All Bookings" — they live in the Cancellations tab
+      if (statusFilter !== "cancelled") {
+        if (b.status === "cancelled" || b.status === "rejected") return false;
+      }
 
+      if (statusFilter !== "all") {
         if (statusFilter === "pending-booking" && b.status !== "pending") return false;
         if (statusFilter === "approved" && b.status !== "approved") return false;
         if (statusFilter === "completed" && b.status !== "completed") return false;
