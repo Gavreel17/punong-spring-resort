@@ -222,26 +222,45 @@ export const cancelBookingCustomerServerFn = createServerFn({ method: "POST" })
         };
       }
 
-      // 5. Update booking status to cancelled
+      // 5. Update booking status, cancellation reason, date, and actor
+      const nowIso = new Date().toISOString();
+      const customerActorName = booking.guest_name || "Customer";
+
+      const bookingUpdatePayload: any = {
+        status: "cancelled",
+        cancellation_reason: reason,
+        cancelled_at: nowIso,
+        cancelled_by: "Customer",
+        cancelled_by_name: customerActorName,
+      };
+
       const { error: updErr } = await client
         .from("bookings")
-        .update({ status: "cancelled" })
+        .update(bookingUpdatePayload)
         .eq("id", booking.id);
 
       if (updErr) {
-        return { success: false, error: updErr.message };
+        console.warn("[cancelBookingCustomerServerFn] Extended fields update note, trying fallback status update:", updErr.message);
+        // Fallback in case migration columns are not yet applied
+        const { error: fallbackErr } = await client
+          .from("bookings")
+          .update({ status: "cancelled" })
+          .eq("id", booking.id);
+
+        if (fallbackErr) {
+          return { success: false, error: fallbackErr.message };
+        }
       }
 
-      // 7. Record cancellation reason and date
+      // 6. Record cancellation reason and date in payment notes for backwards-compatibility
       const payment = booking.payments?.[0];
-      const nowIso = new Date().toISOString();
       if (payment?.id) {
         let parsedNotes: any = {};
         try { parsedNotes = JSON.parse(payment.notes || "{}"); } catch(e){}
         parsedNotes.cancellation_reason = reason;
         parsedNotes.cancellation_date = nowIso;
         parsedNotes.cancelled_by = "Customer";
-        parsedNotes.cancelled_by_name = booking.guest_name || "Customer";
+        parsedNotes.cancelled_by_name = customerActorName;
 
         let newPaymentStatus = payment.status;
         if (parsedNotes.method === "resort") {
@@ -261,7 +280,7 @@ export const cancelBookingCustomerServerFn = createServerFn({ method: "POST" })
           cancellation_reason: reason,
           cancellation_date: nowIso,
           cancelled_by: "Customer",
-          cancelled_by_name: booking.guest_name || "Customer",
+          cancelled_by_name: customerActorName,
         });
         await client.from("payments").insert({
           booking_id: booking.id,

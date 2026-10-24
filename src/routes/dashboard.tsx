@@ -388,8 +388,8 @@ function Dashboard() {
     }
 
     const finalReason = cancelReason === "Other" && otherReasonText.trim() 
-      ? `Other: ${otherReasonText.trim()}` 
-      : cancelReason;
+      ? otherReasonText.trim() 
+      : cancelReason.trim();
     if (!finalReason) {
       return toast.error("Please select or enter a cancellation reason.");
     }
@@ -437,14 +437,32 @@ function Dashboard() {
       }
 
       // 2. Direct client session update (guarantees cancellation using authenticated user session)
+      const nowIso = new Date().toISOString();
+      const customerActorName = cancelData.booking?.guest_name || guestFullName || user?.user_metadata?.fullname || user?.email || "Customer";
+
       const { error: bErr } = await supabase
         .from("bookings")
-        .update({ status: "cancelled" })
+        .update({
+          status: "cancelled",
+          cancellation_reason: finalReason,
+          cancelled_at: nowIso,
+          cancelled_by: "Customer",
+          cancelled_by_name: customerActorName,
+        })
         .eq("id", cancelData.id)
         .eq("user_id", user.id);
 
-      if (bErr && !serverSucceeded) {
-        throw new Error(bErr.message || "Failed to cancel booking.");
+      if (bErr) {
+        console.warn("Booking update with cancellation fields had notice, trying fallback status update:", bErr.message);
+        const { error: fallbackErr } = await supabase
+          .from("bookings")
+          .update({ status: "cancelled" })
+          .eq("id", cancelData.id)
+          .eq("user_id", user.id);
+
+        if (fallbackErr && !serverSucceeded) {
+          throw new Error(fallbackErr.message || "Failed to cancel booking.");
+        }
       }
 
       try {
@@ -454,9 +472,9 @@ function Dashboard() {
           try { parsedNotes = JSON.parse(payment.notes); } catch(e){}
 
           parsedNotes.cancellation_reason = finalReason;
-          parsedNotes.cancellation_date = new Date().toISOString();
+          parsedNotes.cancellation_date = nowIso;
           parsedNotes.cancelled_by = "Customer";
-          parsedNotes.cancelled_by_name = cancelData.booking?.guest_name || guestFullName || "Customer";
+          parsedNotes.cancelled_by_name = customerActorName;
 
           let newPaymentStatus = payment.status;
           if (parsedNotes.method === "resort") {
@@ -471,9 +489,9 @@ function Dashboard() {
           const notesPayload = JSON.stringify({
             method: "resort",
             cancellation_reason: finalReason,
-            cancellation_date: new Date().toISOString(),
+            cancellation_date: nowIso,
             cancelled_by: "Customer",
-            cancelled_by_name: cancelData.booking?.guest_name || user?.user_metadata?.fullname || user?.email || "Customer"
+            cancelled_by_name: customerActorName,
           });
           await supabase.from("payments").insert({
             booking_id: cancelData.id,
@@ -962,13 +980,15 @@ function Dashboard() {
                   <SelectValue placeholder="Select a reason for cancellation" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Change of Plans">Change of Plans</SelectItem>
+                  <SelectItem value="Change of plans">Change of plans</SelectItem>
+                  <SelectItem value="Incorrect booking details">Incorrect booking details</SelectItem>
+                  <SelectItem value="Unable to attend">Unable to attend</SelectItem>
+                  <SelectItem value="Personal reasons">Personal reasons</SelectItem>
                   <SelectItem value="Emergency / Illness">Emergency / Illness</SelectItem>
                   <SelectItem value="Schedule Conflict">Schedule Conflict</SelectItem>
-                  <SelectItem value="Booked Wrong Date or Details">Booked Wrong Date or Details</SelectItem>
                   <SelectItem value="Financial Reasons">Financial Reasons</SelectItem>
                   <SelectItem value="Found Alternative Accommodation">Found Alternative Accommodation</SelectItem>
-                  <SelectItem value="Other">Other Reason</SelectItem>
+                  <SelectItem value="Other">Other (Custom Explanation)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

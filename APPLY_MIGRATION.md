@@ -120,6 +120,20 @@ CREATE TRIGGER trg_prevent_double_booking
   FOR EACH ROW
   EXECUTE FUNCTION public.prevent_double_booking();
 
+-- ============================================================
+-- 3. Cancellation Fields on Bookings Table
+-- ============================================================
+
+ALTER TABLE public.bookings 
+  ADD COLUMN IF NOT EXISTS cancellation_reason TEXT,
+  ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS cancelled_by TEXT,
+  ADD COLUMN IF NOT EXISTS cancelled_by_name TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_bookings_cancellation 
+  ON public.bookings (status, cancelled_at) 
+  WHERE status IN ('cancelled', 'rejected');
+
 -- Force PostgREST to reload its schema cache immediately
 NOTIFY pgrst, 'reload schema';
 ```
@@ -129,4 +143,5 @@ NOTIFY pgrst, 'reload schema';
 ### What this achieves:
 1. Creates the `resort_blocks` table with Row-Level Security so that customers can read unavailable dates, and only admins can block/unblock dates.
 2. Updates `prevent_double_booking()` database trigger to strictly reject any booking for dates overlapping a resort block at the database level.
-3. Automatically reloads the PostgREST schema cache so no errors occur.
+3. Adds `cancellation_reason`, `cancelled_at`, `cancelled_by`, and `cancelled_by_name` directly to `public.bookings` so cancellation reasons and initiator (Customer, Admin, System) are accurately recorded and displayed in the Admin Dashboard without RLS issues.
+4. Automatically reloads the PostgREST schema cache so no errors occur.

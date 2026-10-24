@@ -238,6 +238,12 @@ export async function processAutoBookingStatuses(bookings?: any[]): Promise<bool
         if ("booking_status" in b) {
           updatePayload.booking_status = newStatus;
         }
+        if (newStatus === "no-show") {
+          updatePayload.cancelled_by = "System";
+          updatePayload.cancelled_by_name = "Automated System";
+          updatePayload.cancellation_reason = "Automatically marked as No-Show due to exceeded check-in policy hour";
+          updatePayload.cancelled_at = new Date().toISOString();
+        }
 
         const { error } = await supabase
           .from("bookings")

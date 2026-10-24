@@ -829,6 +829,20 @@ CREATE TRIGGER trg_prevent_double_booking
   FOR EACH ROW
   EXECUTE FUNCTION public.prevent_double_booking();
 
+-- ============================================================
+-- Cancellation Fields on Bookings Table
+-- ============================================================
+
+ALTER TABLE public.bookings 
+  ADD COLUMN IF NOT EXISTS cancellation_reason TEXT,
+  ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS cancelled_by TEXT,
+  ADD COLUMN IF NOT EXISTS cancelled_by_name TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_bookings_cancellation 
+  ON public.bookings (status, cancelled_at) 
+  WHERE status IN ('cancelled', 'rejected');
+
 NOTIFY pgrst, 'reload schema';
 
 

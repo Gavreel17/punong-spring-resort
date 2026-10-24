@@ -42,6 +42,59 @@ export const Route = createFileRoute("/admin/cancellations")({
   component: CancellationsTab,
 });
 
+/**
+ * Format timestamp nicely (e.g. "October 23, 2026, 7:20 PM")
+ */
+function formatCancellationTimestamp(dateVal?: string | null): string {
+  if (!dateVal) return "Unknown";
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "Unknown";
+    return new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Manila",
+    }).format(d);
+  } catch (e) {
+    return String(dateVal);
+  }
+}
+
+/**
+ * Retrieves the cancellation reason from database record with fallbacks
+ */
+function getCancellationReason(b: any, notes: any): string {
+  const raw = (b?.cancellation_reason || notes?.cancellation_reason || "").trim();
+  if (raw) return raw;
+  if (b?.status === "rejected") return "Booking rejected by resort admin";
+  return "No specific reason was provided";
+}
+
+/**
+ * Accurately determines who initiated the cancellation:
+ * - Customer cancels their own booking -> Customer
+ * - Admin manually cancels a booking -> Admin
+ * - Automated system process cancels a booking -> System
+ */
+function getCancellationActor(b: any, notes: any): "Customer" | "Admin" | "System" | "System/Admin" {
+  const rawActor = (b?.cancelled_by || notes?.cancelled_by || "").trim().toLowerCase();
+  if (rawActor === "customer") return "Customer";
+  if (rawActor === "admin") return "Admin";
+  if (rawActor === "system") return "System";
+
+  const rawActorName = (b?.cancelled_by_name || notes?.cancelled_by_name || "").trim().toLowerCase();
+  if (rawActorName === "customer" || rawActorName.includes("customer")) return "Customer";
+  if (rawActorName === "admin" || rawActorName.includes("admin")) return "Admin";
+  if (rawActorName === "system" || rawActorName.includes("system")) return "System";
+
+  // Unverified historical legacy records
+  return "System/Admin";
+}
+
 function CancellationsTab() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -109,7 +162,12 @@ function CancellationsTab() {
         const guestPhone = (b.guest_phone || b.profile?.phone || "").toLowerCase();
         const idMatch = b.id?.toLowerCase().includes(term);
         const roomMatch = b.room?.name?.toLowerCase().includes(term);
-        const reasonMatch = notes.cancellation_reason?.toLowerCase().includes(term);
+        const reasonMatch = (b.cancellation_reason || notes.cancellation_reason || "")
+          .toLowerCase()
+          .includes(term);
+        const actorMatch = (b.cancelled_by || notes.cancelled_by || "")
+          .toLowerCase()
+          .includes(term);
 
         if (
           !guestName.includes(term) &&
@@ -117,7 +175,8 @@ function CancellationsTab() {
           !guestPhone.includes(term) &&
           !idMatch &&
           !roomMatch &&
-          !reasonMatch
+          !reasonMatch &&
+          !actorMatch
         ) {
           return false;
         }
@@ -138,7 +197,8 @@ function CancellationsTab() {
         if (p?.notes) notes = JSON.parse(p.notes);
       } catch (e) {}
 
-      if (notes.cancellation_reason) customerWithReason++;
+      const reason = (b.cancellation_reason || notes.cancellation_reason || "").trim();
+      if (reason) customerWithReason++;
     });
 
     return {
@@ -265,8 +325,9 @@ function CancellationsTab() {
                 const customerPhone = b.guest_phone || b.profile?.phone || "No contact number";
                 const initial = customerName.charAt(0).toUpperCase();
 
-                const isCustomerSelfCancel = !!notes.cancellation_reason || notes.cancelled_by === "Customer";
-                const cancelDate = notes.cancellation_date || b.updated_at || b.created_at;
+                const cancellationReason = getCancellationReason(b, notes);
+                const cancellationActor = getCancellationActor(b, notes);
+                const cancelDate = b.cancelled_at || notes.cancellation_date || b.updated_at || b.created_at;
 
                 return (
                   <TableRow
@@ -285,9 +346,17 @@ function CancellationsTab() {
                             <span className="font-bold text-slate-900 dark:text-slate-100 text-sm hover:text-[#D4AF37] dark:hover:text-[#FACC15] transition-colors">
                               {customerName}
                             </span>
-                            {isCustomerSelfCancel ? (
-                              <Badge className="bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/60 hover:bg-amber-100 text-[10px] px-1.5 py-0">
+                            {cancellationActor === "Customer" ? (
+                              <Badge className="bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/60 hover:bg-amber-100 text-[10px] px-1.5 py-0 font-bold">
                                 Customer Cancelled
+                              </Badge>
+                            ) : cancellationActor === "Admin" ? (
+                              <Badge className="bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/60 hover:bg-rose-100 text-[10px] px-1.5 py-0 font-bold">
+                                Admin Cancelled
+                              </Badge>
+                            ) : cancellationActor === "System" ? (
+                              <Badge className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-700/60 hover:bg-sky-100 text-[10px] px-1.5 py-0 font-bold">
+                                System Cancelled
                               </Badge>
                             ) : (
                               <Badge variant="outline" className="text-slate-500 dark:text-slate-400 dark:border-slate-700 text-[10px] px-1.5 py-0">
@@ -378,22 +447,20 @@ function CancellationsTab() {
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/60 text-rose-800 dark:text-rose-300 text-xs font-medium max-w-md">
                           <Info className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                           <span className="font-semibold text-rose-900 dark:text-rose-200">Reason:</span>
-                          <span className="truncate">{notes.cancellation_reason || (b.status === "rejected" ? "Booking rejected by admin" : "No reason specified")}</span>
+                          <span className="truncate">{cancellationReason}</span>
                         </div>
 
                         <div className="text-[11px] text-slate-400 flex items-center gap-1.5 pl-1">
                           <Clock className="w-3 h-3 text-slate-400" />
                           <span>Cancelled:</span>
                           <span className="font-medium text-slate-600 dark:text-slate-300">
-                            {cancelDate ? new Date(cancelDate).toLocaleString() : "Date unavailable"}
+                            {formatCancellationTimestamp(cancelDate)}
                           </span>
                         </div>
 
-                        {notes.cancelled_by_name && (
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 pl-1">
-                            Initiated by: <span className="font-medium text-slate-700 dark:text-slate-300">{notes.cancelled_by_name}</span>
-                          </div>
-                        )}
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 pl-1">
+                          Cancellation Action By: <span className="font-semibold text-slate-700 dark:text-slate-200">{cancellationActor}</span>
+                        </div>
                       </div>
                     </TableCell>
 
@@ -433,7 +500,9 @@ function CancellationsTab() {
             const customerName = b.guest_name || b.profile?.fullname || notes.cancelled_by_name || "Guest Customer";
             const customerEmail = b.guest_email || b.profile?.email || "No email provided";
             const customerPhone = b.guest_phone || b.profile?.phone || "No phone provided";
-            const cancelDate = notes.cancellation_date || b.updated_at || b.created_at;
+            const cancelDate = b.cancelled_at || notes.cancellation_date || b.updated_at || b.created_at;
+            const cancellationReason = getCancellationReason(b, notes);
+            const cancellationActor = getCancellationActor(b, notes);
 
             return (
               <>
@@ -496,29 +565,39 @@ function CancellationsTab() {
                   <div className="bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200/70 dark:border-rose-800/60 rounded-xl p-4 space-y-3">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-800 dark:text-rose-300">
                       <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                      Cancellation Stated Reason & Date
+                      CANCELLATION STATED REASON & DATE
                     </div>
-                    <div className="space-y-2">
-                      <div className="bg-white dark:bg-slate-800/70 p-3 rounded-lg border border-rose-200 dark:border-rose-800/60 text-xs">
-                        <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-1">
-                          Guest Reason
+                    <div className="space-y-3">
+                      <div className="bg-white dark:bg-slate-800/70 p-3.5 rounded-lg border border-rose-200 dark:border-rose-800/60 text-xs">
+                        <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-1.5">
+                          GUEST REASON
                         </span>
-                        <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
-                          {notes.cancellation_reason || (b.status === "rejected" ? "Booking rejected by resort admin" : "No specific reason was provided")}
+                        <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm break-words whitespace-pre-wrap leading-relaxed">
+                          {cancellationReason}
                         </p>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-                        <div>
-                          <span className="text-slate-400 block">Cancelled Timestamp</span>
-                          <span className="font-medium text-slate-700 dark:text-slate-300">
-                            {cancelDate ? new Date(cancelDate).toLocaleString() : "Unknown"}
+                        <div className="bg-white dark:bg-slate-800/70 p-3 rounded-lg border border-rose-200 dark:border-rose-800/60">
+                          <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-1">
+                            Cancelled Timestamp
+                          </span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs sm:text-sm">
+                            {formatCancellationTimestamp(cancelDate)}
                           </span>
                         </div>
-                        <div>
-                          <span className="text-slate-400 block">Cancellation Action By</span>
-                          <span className="font-medium text-slate-700 dark:text-slate-300">
-                            {notes.cancelled_by_name || (notes.cancellation_reason ? customerName : "System/Admin")}
+                        <div className="bg-white dark:bg-slate-800/70 p-3 rounded-lg border border-rose-200 dark:border-rose-800/60">
+                          <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-1">
+                            Cancellation Action By
+                          </span>
+                          <span className={cn(
+                            "font-bold text-xs sm:text-sm",
+                            cancellationActor === "Customer" ? "text-amber-700 dark:text-amber-400" :
+                            cancellationActor === "Admin" ? "text-rose-700 dark:text-rose-400" :
+                            cancellationActor === "System" ? "text-sky-700 dark:text-sky-400" :
+                            "text-slate-800 dark:text-slate-200"
+                          )}>
+                            {cancellationActor}
                           </span>
                         </div>
                       </div>

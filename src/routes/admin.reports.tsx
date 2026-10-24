@@ -289,20 +289,26 @@ function ReportsDashboard() {
         cancelled++;
 
         let foundReason = "";
-        const paymentsList = Array.isArray(b.payments) ? b.payments : (b.payments ? [b.payments] : []);
-        for (const payment of paymentsList) {
-          if (payment?.notes) {
-            try {
-              const parsed = typeof payment.notes === "string" ? JSON.parse(payment.notes) : payment.notes;
-              if (parsed?.cancellation_reason && typeof parsed.cancellation_reason === "string" && parsed.cancellation_reason.trim()) {
-                foundReason = parsed.cancellation_reason.trim();
-                break;
-              }
-              if (parsed?.reason && typeof parsed.reason === "string" && parsed.reason.trim()) {
-                foundReason = parsed.reason.trim();
-                break;
-              }
-            } catch (e) {}
+        if (b.cancellation_reason && typeof b.cancellation_reason === "string" && b.cancellation_reason.trim()) {
+          foundReason = b.cancellation_reason.trim();
+        }
+
+        if (!foundReason) {
+          const paymentsList = Array.isArray(b.payments) ? b.payments : (b.payments ? [b.payments] : []);
+          for (const payment of paymentsList) {
+            if (payment?.notes) {
+              try {
+                const parsed = typeof payment.notes === "string" ? JSON.parse(payment.notes) : payment.notes;
+                if (parsed?.cancellation_reason && typeof parsed.cancellation_reason === "string" && parsed.cancellation_reason.trim()) {
+                  foundReason = parsed.cancellation_reason.trim();
+                  break;
+                }
+                if (parsed?.reason && typeof parsed.reason === "string" && parsed.reason.trim()) {
+                  foundReason = parsed.reason.trim();
+                  break;
+                }
+              } catch (e) {}
+            }
           }
         }
 

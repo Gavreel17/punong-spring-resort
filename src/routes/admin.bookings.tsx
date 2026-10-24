@@ -136,25 +136,86 @@ function BookingsTab() {
       });
     }
 
-    const result = await MySwal.fire({
-      title: "Are you sure?",
-      text: `Do you want to mark this booking as ${status}?`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, proceed!",
-    });
+    let adminReason = "";
+    if (status === "rejected" || status === "cancelled") {
+      const result = await MySwal.fire({
+        title: status === "rejected" ? "Reject Reservation" : "Cancel Reservation",
+        text: `Are you sure you want to ${status === "rejected" ? "reject" : "cancel"} this reservation? You may provide a reason:`,
+        input: "text",
+        inputPlaceholder: status === "rejected" ? "Reason for rejection (e.g. Duplicate booking, policy violation)..." : "Reason for cancellation...",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#64748b",
+        confirmButtonText: `Yes, ${status === "rejected" ? "reject" : "cancel"}!`,
+      });
+      if (!result.isConfirmed) return;
+      adminReason = (result.value || "").trim();
+    } else {
+      const result = await MySwal.fire({
+        title: "Are you sure?",
+        text: `Do you want to mark this booking as ${status}?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, proceed!",
+      });
+      if (!result.isConfirmed) return;
+    }
 
-    if (!result.isConfirmed) return;
+    const nowIso = new Date().toISOString();
+    const adminActorName = user?.user_metadata?.fullname || user?.email || "Resort Admin";
 
-    const { data: updatedBooking, error } = await supabase
+    const updatePayload: any = { status };
+    if (status === "cancelled" || status === "rejected") {
+      updatePayload.cancelled_at = nowIso;
+      updatePayload.cancelled_by = "Admin";
+      updatePayload.cancelled_by_name = adminActorName;
+      updatePayload.cancellation_reason = adminReason || (status === "rejected" ? "Booking rejected by resort admin" : "Cancelled by resort admin");
+    }
+
+    let updatedBooking: any = null;
+    const { data: updData, error } = await supabase
       .from("bookings")
-      .update({ status })
+      .update(updatePayload)
       .eq("id", id)
       .select("*, room:rooms(name, type)")
       .single();
-    if (error) return MySwal.fire("Error!", error.message, "error");
+
+    if (error) {
+      console.warn("Update with cancellation fields had notice, trying fallback status update:", error.message);
+      const { data: fallbackData, error: fbErr } = await supabase
+        .from("bookings")
+        .update({ status })
+        .eq("id", id)
+        .select("*, room:rooms(name, type)")
+        .single();
+      if (fbErr) return MySwal.fire("Error!", fbErr.message, "error");
+      updatedBooking = fallbackData;
+    } else {
+      updatedBooking = updData;
+    }
+
+    // Also update associated payment notes for backwards-compatibility
+    if (status === "cancelled" || status === "rejected") {
+      try {
+        const payment = targetBooking?.payments?.[0];
+        if (payment?.id) {
+          let parsedNotes: any = {};
+          try { parsedNotes = JSON.parse(payment.notes || "{}"); } catch(e){}
+          parsedNotes.cancellation_reason = updatePayload.cancellation_reason;
+          parsedNotes.cancellation_date = nowIso;
+          parsedNotes.cancelled_by = "Admin";
+          parsedNotes.cancelled_by_name = adminActorName;
+          await supabase.from("payments").update({
+            notes: JSON.stringify(parsedNotes)
+          }).eq("id", payment.id);
+        }
+      } catch (payErr) {
+        console.warn("Payment notes update on admin cancellation:", payErr);
+      }
+    }
 
     // Trigger status update email notification asynchronously without blocking booking update
     if (updatedBooking) {
@@ -178,6 +239,7 @@ function BookingsTab() {
 
     MySwal.fire("Updated!", `Booking has been ${status}.`, "success");
     qc.invalidateQueries({ queryKey: ["admin-bookings-unified"] });
+    qc.invalidateQueries({ queryKey: ["admin-cancellations"] });
     qc.invalidateQueries({ queryKey: ["admin-stats"] });
     qc.invalidateQueries({ queryKey: ["admin-availability-calendar"] });
     qc.invalidateQueries({ queryKey: ["pending-payments-count"] });
