@@ -489,7 +489,7 @@ function CancellationsTab() {
 
       {/* Booking Details Modal Dialog */}
       <Dialog open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
-        <DialogContent className="max-w-2xl bg-white dark:bg-[#151F2E] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl p-6 shadow-2xl">
+        <DialogContent className="max-w-3xl w-[95vw] bg-white dark:bg-[#151F2E] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl p-0 shadow-2xl flex flex-col max-h-[90vh]">
           {selectedBooking && (() => {
             const b = selectedBooking;
             const p = b.payments?.[0];
@@ -507,7 +507,7 @@ function CancellationsTab() {
 
             return (
               <>
-                <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                <DialogHeader className="border-b border-slate-100 dark:border-slate-800 pb-4 px-6 pt-6 shrink-0">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-bold text-[10px] uppercase tracking-wider border border-rose-200 dark:border-rose-800/60">
@@ -521,11 +521,11 @@ function CancellationsTab() {
                       {b.status}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400 font-mono mt-2">
-                    <span>Reference ID: {b.id}</span>
+                  <div className="flex items-center gap-2 text-xs text-slate-400 font-mono mt-2 flex-wrap">
+                    <span className="break-all">Reference ID: {b.id}</span>
                     <button
                       onClick={() => handleCopyId(b.id)}
-                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400"
+                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-500 dark:text-slate-400 shrink-0"
                       title="Copy ID"
                     >
                       <Copy className="w-3 h-3" />
@@ -533,7 +533,7 @@ function CancellationsTab() {
                   </div>
                 </DialogHeader>
 
-                <div className="space-y-5 py-3 text-sm">
+                <div className="space-y-5 py-4 px-6 text-sm overflow-y-auto flex-1">
                   {/* Customer Information Card */}
                   <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 rounded-xl p-4 space-y-3">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
@@ -639,7 +639,7 @@ function CancellationsTab() {
                   </div>
                 </div>
 
-                <DialogFooter className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                <DialogFooter className="border-t border-slate-100 dark:border-slate-800 pt-4 px-6 pb-5 shrink-0">
                   <Button
                     variant="outline"
                     className="rounded-xl text-xs font-bold dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
