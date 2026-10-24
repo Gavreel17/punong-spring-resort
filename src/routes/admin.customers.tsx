@@ -541,7 +541,7 @@ export function CustomersTab() {
                       Typical Number of Guests
                     </span>
                     <Badge className="bg-emerald-600 text-white font-bold">
-                      {selectedCustomer.guests} Person{selectedCustomer.guests === 1 ? "" : "s"}
+                      {selectedCustomer.guests} Guest{selectedCustomer.guests === 1 ? "" : "s"}
                     </Badge>
                   </div>
                 </div>
