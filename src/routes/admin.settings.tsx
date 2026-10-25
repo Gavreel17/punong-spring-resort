@@ -177,11 +177,8 @@ function AdminSettingsPage() {
     queryKey: ["admin-sessions", user?.id],
     enabled: !!user && activeTab === "security",
     queryFn: async () => {
-      const { listAdminSessionsServerFn } = await import("@/lib/api/admin-session.functions");
-      const res = await listAdminSessionsServerFn({
-        data: { userId: user?.id },
-      });
-      return res.sessions || [];
+      const { listAdminSessions } = await import("@/lib/admin-sessions");
+      return await listAdminSessions(user?.id);
     },
     refetchInterval: 10000,
   });
@@ -443,20 +440,8 @@ function AdminSettingsPage() {
         "";
 
       // 1. Invalidate sessions in backend session manager
-      const { revokeOtherAdminSessionsServerFn } = await import("@/lib/api/admin-session.functions");
-      await revokeOtherAdminSessionsServerFn({
-        data: {
-          currentSessionToken: token,
-          userId: user?.id || "",
-        },
-      });
-
-      // 2. Terminate GoTrue refresh tokens for other devices
-      try {
-        await supabase.auth.signOut({ scope: "others" });
-      } catch (gotrueErr) {
-        console.warn("[Admin Sessions] GoTrue signOut others notice:", gotrueErr);
-      }
+      const { revokeOtherAdminSessions } = await import("@/lib/admin-sessions");
+      await revokeOtherAdminSessions(token, user?.id || "");
 
       toast.success("Successfully logged out from all other devices and browsers.");
       refetchSessions();
@@ -485,13 +470,8 @@ function AdminSettingsPage() {
 
     setTerminatingSessionId(session.id);
     try {
-      const { revokeSingleAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
-      await revokeSingleAdminSessionServerFn({
-        data: {
-          sessionToken: session.session_token,
-          userId: user?.id || "",
-        },
-      });
+      const { revokeSingleAdminSession } = await import("@/lib/admin-sessions");
+      await revokeSingleAdminSession(session.session_token, user?.id || "");
       toast.success(`Session on ${session.device_name} terminated successfully.`);
       refetchSessions();
     } catch (err: any) {

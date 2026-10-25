@@ -84,17 +84,10 @@ function AdminLoginPage() {
           if (serverRes?.user) {
             let sessionToken = "";
             try {
-              const { registerAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
-              const reg = await registerAdminSessionServerFn({
-                data: {
-                  userId: serverRes.user.id,
-                  userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-                },
-              });
-              if (reg?.session?.session_token) {
-                sessionToken = reg.session.session_token;
-                localStorage.setItem("punong_admin_session_token", sessionToken);
-                localStorage.setItem("punong_admin_session_id", reg.session.id);
+              const { registerAdminSession } = await import("@/lib/admin-sessions");
+              const reg = await registerAdminSession(serverRes.user.id);
+              if (reg?.session_token) {
+                sessionToken = reg.session_token;
               }
             } catch (sessErr) {
               console.warn("[Admin Login] Session registration fallback notice:", sessErr);
@@ -107,7 +100,8 @@ function AdminLoginPage() {
 
             setLoading(false);
             toast.success("Welcome to the Admin Dashboard!");
-            return navigate({ to: "/admin/calendar" });
+            window.location.href = "/admin/calendar";
+            return;
           }
         }
         setLoading(false);
@@ -157,17 +151,10 @@ function AdminLoginPage() {
       // 4. Register new active device session in the Active Sessions system
       let sessionToken = "";
       try {
-        const { registerAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
-        const reg = await registerAdminSessionServerFn({
-          data: {
-            userId: activeUserId,
-            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-          },
-        });
-        if (reg?.session?.session_token) {
-          sessionToken = reg.session.session_token;
-          localStorage.setItem("punong_admin_session_token", sessionToken);
-          localStorage.setItem("punong_admin_session_id", reg.session.id);
+        const { registerAdminSession } = await import("@/lib/admin-sessions");
+        const reg = await registerAdminSession(activeUserId);
+        if (reg?.session_token) {
+          sessionToken = reg.session_token;
         }
       } catch (sessErr) {
         console.warn("[Admin Login] Session registration notice:", sessErr);
@@ -180,9 +167,7 @@ function AdminLoginPage() {
 
       setLoading(false);
       toast.success("Welcome to the Admin Dashboard!");
-      setTimeout(() => {
-        window.location.href = "/admin/calendar";
-      }, 100);
+      window.location.href = "/admin/calendar";
       return;
     } catch (err: any) {
       setLoading(false);

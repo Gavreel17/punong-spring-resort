@@ -59,20 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let token = localStorage.getItem("punong_admin_session_token");
 
-    // If no token exists yet (e.g. existing session prior to multi-device upgrade), auto-register current device
+    // If no token exists yet, auto-register current device
     if (!token) {
       try {
-        const { registerAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
-        const reg = await registerAdminSessionServerFn({
-          data: {
-            userId,
-            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-          },
-        });
-        if (reg?.session?.session_token) {
-          token = reg.session.session_token;
-          localStorage.setItem("punong_admin_session_token", token);
-          localStorage.setItem("punong_admin_session_id", reg.session.id);
+        const { registerAdminSession } = await import("@/lib/admin-sessions");
+        const reg = await registerAdminSession(userId);
+        if (reg?.session_token) {
+          token = reg.session_token;
         }
       } catch (e) {
         console.warn("[Admin Sessions] Auto-registration notice:", e);
@@ -82,13 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return true;
 
     try {
-      const { validateAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
-      const check = await validateAdminSessionServerFn({
-        data: {
-          sessionToken: token,
-          userId,
-        },
-      });
+      const { validateAdminSession } = await import("@/lib/admin-sessions");
+      const check = await validateAdminSession(token, userId);
 
       if (check && !check.valid) {
         console.warn("[Admin Sessions] Active session revoked:", check.reason);
@@ -120,26 +108,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("[DEBUG] AuthStateChanged Event:", _evt, "User:", s?.user?.email || "No user");
       if (s?.user) {
         const userRole = await fetchUserRole(s.user.id, s.user.email);
-        if (userRole === "admin") {
-          const isValid = await validateAdminDeviceSession(s.user.id);
-          if (!isValid) return;
-        }
         setSession(s);
         setRole(userRole);
         setLoading(false);
+
+        if (userRole === "admin") {
+          validateAdminDeviceSession(s.user.id);
+        }
       } else {
         const stored = typeof window !== "undefined" ? localStorage.getItem("punong_admin_session") : null;
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
             if (parsed?.id && parsed?.role === "admin") {
-              const isValid = await validateAdminDeviceSession(parsed.id);
-              if (isValid) {
-                setSession({ user: { id: parsed.id, email: parsed.email } });
-                setRole("admin");
-                setLoading(false);
-                return;
-              }
+              setSession({ user: { id: parsed.id, email: parsed.email } });
+              setRole("admin");
+              setLoading(false);
+              validateAdminDeviceSession(parsed.id);
+              return;
             }
           } catch (e) {}
         }
@@ -154,26 +140,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("[DEBUG] Initial getSession() Result:", { session: data?.session, error });
       if (data?.session?.user) {
         const userRole = await fetchUserRole(data.session.user.id, data.session.user.email);
-        if (userRole === "admin") {
-          const isValid = await validateAdminDeviceSession(data.session.user.id);
-          if (!isValid) return;
-        }
         setSession(data.session);
         setRole(userRole);
         setLoading(false);
+
+        if (userRole === "admin") {
+          validateAdminDeviceSession(data.session.user.id);
+        }
       } else {
         const stored = typeof window !== "undefined" ? localStorage.getItem("punong_admin_session") : null;
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
             if (parsed?.id && parsed?.role === "admin") {
-              const isValid = await validateAdminDeviceSession(parsed.id);
-              if (isValid) {
-                setSession({ user: { id: parsed.id, email: parsed.email } });
-                setRole("admin");
-                setLoading(false);
-                return;
-              }
+              setSession({ user: { id: parsed.id, email: parsed.email } });
+              setRole("admin");
+              setLoading(false);
+              validateAdminDeviceSession(parsed.id);
+              return;
             }
           } catch (e) {}
         }
