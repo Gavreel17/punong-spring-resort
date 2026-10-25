@@ -52,7 +52,14 @@ import {
   MapPin,
   Clock,
   ExternalLink,
+  Laptop,
+  Smartphone,
+  Tablet,
+  Check,
+  Info,
+  Calendar as CalendarIcon,
 } from "lucide-react";
+import type { AdminSessionRecord } from "@/lib/api/admin-session.functions";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
@@ -96,6 +103,35 @@ const DEFAULT_SETTINGS: SystemSettingsState = {
   notify_cancellation: true,
 };
 
+function formatRelativeSessionTime(dateString?: string) {
+  if (!dateString) return "Active now";
+  const diffMs = Date.now() - new Date(dateString).getTime();
+  if (isNaN(diffMs) || diffMs < 0) return "Active now";
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "Active now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function formatFullSessionDateTime(dateString?: string) {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 function AdminSettingsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -121,6 +157,34 @@ function AdminSettingsPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [loggingOutOthers, setLoggingOutOthers] = useState(false);
+  const [currentSessionToken, setCurrentSessionToken] = useState<string>("");
+  const [terminatingSessionId, setTerminatingSessionId] = useState<string | null>(null);
+
+  // Read current active session token from local storage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const tok = localStorage.getItem("punong_admin_session_token") || "";
+      setCurrentSessionToken(tok);
+    }
+  }, []);
+
+  // Fetch live active sessions for current administrator
+  const {
+    data: activeSessions = [],
+    isLoading: loadingSessions,
+    refetch: refetchSessions,
+  } = useQuery<AdminSessionRecord[]>({
+    queryKey: ["admin-sessions", user?.id],
+    enabled: !!user && activeTab === "security",
+    queryFn: async () => {
+      const { listAdminSessionsServerFn } = await import("@/lib/api/admin-session.functions");
+      const res = await listAdminSessionsServerFn({
+        data: { userId: user?.id },
+      });
+      return res.sessions || [];
+    },
+    refetchInterval: 10000,
+  });
 
   // Data management states
   const [syncingData, setSyncingData] = useState(false);
@@ -359,13 +423,13 @@ function AdminSettingsPage() {
   // 4. Logout from other sessions
   async function handleLogoutOtherSessions() {
     const result = await MySwal.fire({
-      title: "Logout other sessions?",
-      text: "This will terminate all other active browser logins except for this current window.",
+      title: "Logout From All Other Sessions?",
+      text: "This will log out your account from all other devices and browsers. Your current session will remain active.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#0D1C24",
       cancelButtonColor: "#94a3b8",
-      confirmButtonText: "Yes, logout others",
+      confirmButtonText: "Confirm Logout",
       cancelButtonText: "Cancel",
     });
 
@@ -373,14 +437,67 @@ function AdminSettingsPage() {
 
     setLoggingOutOthers(true);
     try {
-      const { error } = await supabase.auth.signOut({ scope: "others" });
-      if (error) throw error;
-      toast.success("Successfully logged out from all other active sessions.");
+      const token =
+        currentSessionToken ||
+        (typeof window !== "undefined" ? localStorage.getItem("punong_admin_session_token") : "") ||
+        "";
+
+      // 1. Invalidate sessions in backend session manager
+      const { revokeOtherAdminSessionsServerFn } = await import("@/lib/api/admin-session.functions");
+      await revokeOtherAdminSessionsServerFn({
+        data: {
+          currentSessionToken: token,
+          userId: user?.id || "",
+        },
+      });
+
+      // 2. Terminate GoTrue refresh tokens for other devices
+      try {
+        await supabase.auth.signOut({ scope: "others" });
+      } catch (gotrueErr) {
+        console.warn("[Admin Sessions] GoTrue signOut others notice:", gotrueErr);
+      }
+
+      toast.success("Successfully logged out from all other devices and browsers.");
+      refetchSessions();
     } catch (err: any) {
       console.error("Session termination error:", err);
-      toast.error(err.message || "Failed to logout other sessions.");
+      toast.error(err.message || "Failed to logout from other sessions.");
     } finally {
       setLoggingOutOthers(false);
+    }
+  }
+
+  // 4b. Terminate a single specific session
+  async function handleRevokeSingleSession(session: AdminSessionRecord) {
+    const result = await MySwal.fire({
+      title: `Terminate session on ${session.device_name}?`,
+      text: `This will log out this ${session.browser_name} session immediately. You can safely log in again on that device anytime with your administrator credentials.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#e11d48",
+      cancelButtonColor: "#94a3b8",
+      confirmButtonText: "Confirm Terminate",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setTerminatingSessionId(session.id);
+    try {
+      const { revokeSingleAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
+      await revokeSingleAdminSessionServerFn({
+        data: {
+          sessionToken: session.session_token,
+          userId: user?.id || "",
+        },
+      });
+      toast.success(`Session on ${session.device_name} terminated successfully.`);
+      refetchSessions();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to terminate session.");
+    } finally {
+      setTerminatingSessionId(null);
     }
   }
 
@@ -1615,31 +1732,230 @@ function AdminSettingsPage() {
               </div>
             </form>
 
-            {/* Session Management */}
-            <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Active Sessions & Browser Authentication
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Terminate concurrent logins on other devices or browsers to safeguard administrator privileges.
-                </p>
+            {/* Active Sessions & Browser Authentication */}
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-[#D4AF37]" />
+                      Active Sessions & Browser Authentication
+                    </h4>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      {activeSessions.filter((s) => s.status === "active").length || 1} Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Manage concurrent logins across multiple devices and browsers to safeguard administrator privileges.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetchSessions()}
+                    disabled={loadingSessions}
+                    className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 h-9 px-3 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                    title="Refresh Active Sessions"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingSessions ? "animate-spin" : ""}`} />
+                    Refresh
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleLogoutOtherSessions}
+                    disabled={loggingOutOthers}
+                    className="border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100/60 dark:hover:bg-rose-950/50 h-9 px-4 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-2 shadow-xs transition-all"
+                  >
+                    {loggingOutOthers ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <LogOut className="w-3.5 h-3.5" />
+                    )}
+                    Logout From All Other Sessions
+                  </Button>
+                </div>
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleLogoutOtherSessions}
-                disabled={loggingOutOthers}
-                className="border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-2"
-              >
-                {loggingOutOthers ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              {/* Informational banner about multi-device support */}
+              <div className="p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 flex items-start gap-3">
+                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="text-xs text-blue-900 dark:text-blue-200 space-y-0.5 leading-relaxed">
+                  <p className="font-semibold">Multi-Device Login Supported</p>
+                  <p className="text-[11px] text-blue-700 dark:text-blue-300">
+                    Terminating sessions immediately logs out other browsers. Devices are never permanently blacklisted — you can switch between laptops or mobile devices and log in again anytime using your administrator credentials.
+                  </p>
+                </div>
+              </div>
+
+              {/* Sessions List */}
+              <div className="space-y-3">
+                {loadingSessions ? (
+                  <div className="p-8 text-center border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/40 dark:bg-slate-800/20">
+                    <Loader2 className="w-6 h-6 animate-spin text-[#D4AF37] mx-auto mb-2" />
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Loading active authenticated sessions...</p>
+                  </div>
+                ) : activeSessions.length === 0 ? (
+                  /* Fallback display for current browser session */
+                  <div className="p-4 rounded-2xl border-2 border-amber-400/80 dark:border-[#D4AF37]/70 bg-amber-50/30 dark:bg-amber-950/20 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-[#D4AF37] border border-amber-200 dark:border-amber-800 flex items-center justify-center shrink-0">
+                        <Monitor className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white">
+                            Current Device / Browser
+                          </span>
+                          <Badge className="bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/60 font-bold text-[11px] flex items-center gap-1.5 px-2.5 py-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Current Session
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            Active now
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 font-mono text-[11px]">
+                            Session ID: {currentSessionToken ? currentSessionToken.substring(0, 16) + "..." : "Primary Session"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="w-4 h-4" /> This Device
+                    </div>
+                  </div>
                 ) : (
-                  <LogOut className="w-3.5 h-3.5" />
+                  activeSessions.map((sess) => {
+                    const isCurrent =
+                      sess.session_token === currentSessionToken ||
+                      (activeSessions.length === 1 && sess.status === "active");
+                    const isActive = sess.status === "active";
+
+                    // Device icon determination
+                    const lower = (sess.device_name + " " + sess.os_name).toLowerCase();
+                    const isMobile = lower.includes("iphone") || lower.includes("android") || lower.includes("mobile") || lower.includes("phone");
+                    const isTablet = lower.includes("ipad") || lower.includes("tablet");
+                    const isMac = lower.includes("mac") || lower.includes("laptop");
+
+                    return (
+                      <div
+                        key={sess.id}
+                        className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                          isCurrent
+                            ? "border-amber-400/90 dark:border-[#D4AF37]/80 bg-amber-50/30 dark:bg-amber-950/20 shadow-xs"
+                            : isActive
+                            ? "border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-800/40 hover:bg-slate-50/70 dark:hover:bg-slate-800/70"
+                            : "border-slate-200/60 dark:border-slate-800/60 bg-slate-50/40 dark:bg-slate-900/40 opacity-75"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                              isCurrent
+                                ? "bg-amber-100 dark:bg-amber-950/60 text-[#D4AF37] border-amber-300 dark:border-amber-800"
+                                : isActive
+                                ? "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            {isMobile ? (
+                              <Smartphone className="w-5 h-5" />
+                            ) : isTablet ? (
+                              <Tablet className="w-5 h-5" />
+                            ) : isMac ? (
+                              <Laptop className="w-5 h-5" />
+                            ) : (
+                              <Monitor className="w-5 h-5" />
+                            )}
+                          </div>
+
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                {sess.device_name || "Workstation"}
+                              </span>
+
+                              {isCurrent ? (
+                                <Badge className="bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/60 font-bold text-[11px] flex items-center gap-1.5 px-2.5 py-0.5 shadow-xs">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                  Current Session
+                                </Badge>
+                              ) : isActive ? (
+                                <Badge className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 text-[11px] font-semibold flex items-center gap-1.5 px-2 py-0.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                  Active
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 text-[11px] font-medium">
+                                  Terminated
+                                </Badge>
+                              )}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                                {sess.browser_name || "Browser"} • {sess.os_name || "OS"}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                {formatRelativeSessionTime(sess.last_active_at)}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <CalendarIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                {formatFullSessionDateTime(sess.created_at)}
+                              </span>
+                            </div>
+
+                            <p className="font-mono text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-xs sm:max-w-md">
+                              Identifier: {sess.session_token ? sess.session_token.substring(0, 24) + "..." : sess.id}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-2">
+                          {isCurrent ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-bold">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                              This Device
+                            </span>
+                          ) : isActive ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRevokeSingleSession(sess)}
+                              disabled={terminatingSessionId === sess.id}
+                              className="border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 h-8 px-3 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all"
+                            >
+                              {terminatingSessionId === sess.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <LogOut className="w-3.5 h-3.5" />
+                              )}
+                              Terminate
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-slate-400 dark:text-slate-500 italic px-2">
+                              Access Terminated
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
-                Logout From All Other Sessions
-              </Button>
+              </div>
             </div>
           </Card>
         </div>

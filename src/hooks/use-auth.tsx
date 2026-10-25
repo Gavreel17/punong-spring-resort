@@ -54,6 +54,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return "customer";
   };
 
+  const validateAdminDeviceSession = async (userId: string): Promise<boolean> => {
+    if (typeof window === "undefined") return true;
+
+    let token = localStorage.getItem("punong_admin_session_token");
+
+    // If no token exists yet (e.g. existing session prior to multi-device upgrade), auto-register current device
+    if (!token) {
+      try {
+        const { registerAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
+        const reg = await registerAdminSessionServerFn({
+          data: {
+            userId,
+            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+          },
+        });
+        if (reg?.session?.session_token) {
+          token = reg.session.session_token;
+          localStorage.setItem("punong_admin_session_token", token);
+          localStorage.setItem("punong_admin_session_id", reg.session.id);
+        }
+      } catch (e) {
+        console.warn("[Admin Sessions] Auto-registration notice:", e);
+      }
+    }
+
+    if (!token) return true;
+
+    try {
+      const { validateAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
+      const check = await validateAdminSessionServerFn({
+        data: {
+          sessionToken: token,
+          userId,
+        },
+      });
+
+      if (check && !check.valid) {
+        console.warn("[Admin Sessions] Active session revoked:", check.reason);
+        localStorage.removeItem("punong_admin_session");
+        localStorage.removeItem("punong_admin_session_token");
+        localStorage.removeItem("punong_admin_session_id");
+        setSession(null);
+        setRole(null);
+        try {
+          await supabase.auth.signOut();
+        } catch (e) {}
+
+        if (window.location.pathname.startsWith("/admin") && window.location.pathname !== "/admin/login") {
+          window.location.href = "/admin/login";
+        }
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return true;
+    }
+  };
+
   useEffect(() => {
     // Listen to Supabase Auth state changes directly
     const {
@@ -61,8 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (_evt: string, s: any) => {
       console.log("[DEBUG] AuthStateChanged Event:", _evt, "User:", s?.user?.email || "No user");
       if (s?.user) {
-        setSession(s);
         const userRole = await fetchUserRole(s.user.id, s.user.email);
+        if (userRole === "admin") {
+          const isValid = await validateAdminDeviceSession(s.user.id);
+          if (!isValid) return;
+        }
+        setSession(s);
         setRole(userRole);
         setLoading(false);
       } else {
@@ -71,10 +133,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const parsed = JSON.parse(stored);
             if (parsed?.id && parsed?.role === "admin") {
-              setSession({ user: { id: parsed.id, email: parsed.email } });
-              setRole("admin");
-              setLoading(false);
-              return;
+              const isValid = await validateAdminDeviceSession(parsed.id);
+              if (isValid) {
+                setSession({ user: { id: parsed.id, email: parsed.email } });
+                setRole("admin");
+                setLoading(false);
+                return;
+              }
             }
           } catch (e) {}
         }
@@ -88,8 +153,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data, error }: any) => {
       console.log("[DEBUG] Initial getSession() Result:", { session: data?.session, error });
       if (data?.session?.user) {
-        setSession(data.session);
         const userRole = await fetchUserRole(data.session.user.id, data.session.user.email);
+        if (userRole === "admin") {
+          const isValid = await validateAdminDeviceSession(data.session.user.id);
+          if (!isValid) return;
+        }
+        setSession(data.session);
         setRole(userRole);
         setLoading(false);
       } else {
@@ -98,10 +167,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const parsed = JSON.parse(stored);
             if (parsed?.id && parsed?.role === "admin") {
-              setSession({ user: { id: parsed.id, email: parsed.email } });
-              setRole("admin");
-              setLoading(false);
-              return;
+              const isValid = await validateAdminDeviceSession(parsed.id);
+              if (isValid) {
+                setSession({ user: { id: parsed.id, email: parsed.email } });
+                setRole("admin");
+                setLoading(false);
+                return;
+              }
             }
           } catch (e) {}
         }
@@ -113,6 +185,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Periodic heartbeat and window focus check for immediate multi-device revocation
+  useEffect(() => {
+    if (role !== "admin" || !session?.user?.id) return;
+
+    const interval = setInterval(() => {
+      validateAdminDeviceSession(session.user.id);
+    }, 15000);
+
+    const onFocus = () => {
+      validateAdminDeviceSession(session.user.id);
+    };
+
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [role, session?.user?.id]);
 
   return (
     <Ctx.Provider
@@ -130,6 +221,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const wasAdmin = role === "admin" || (typeof window !== "undefined" && !!localStorage.getItem("punong_admin_session"));
           if (typeof window !== "undefined") {
             localStorage.removeItem("punong_admin_session");
+            localStorage.removeItem("punong_admin_session_token");
+            localStorage.removeItem("punong_admin_session_id");
           }
           setSession(null);
           setRole(null);

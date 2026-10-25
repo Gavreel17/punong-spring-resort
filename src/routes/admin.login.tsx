@@ -82,6 +82,29 @@ function AdminLoginPage() {
             data: { email: cleanEmail, password: signIn.password },
           });
           if (serverRes?.user) {
+            let sessionToken = "";
+            try {
+              const { registerAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
+              const reg = await registerAdminSessionServerFn({
+                data: {
+                  userId: serverRes.user.id,
+                  userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+                },
+              });
+              if (reg?.session?.session_token) {
+                sessionToken = reg.session.session_token;
+                localStorage.setItem("punong_admin_session_token", sessionToken);
+                localStorage.setItem("punong_admin_session_id", reg.session.id);
+              }
+            } catch (sessErr) {
+              console.warn("[Admin Login] Session registration fallback notice:", sessErr);
+            }
+
+            localStorage.setItem(
+              "punong_admin_session",
+              JSON.stringify({ id: serverRes.user.id, email: cleanEmail, role: "admin", session_token: sessionToken })
+            );
+
             setLoading(false);
             toast.success("Welcome to the Admin Dashboard!");
             return navigate({ to: "/admin/calendar" });
@@ -124,14 +147,35 @@ function AdminLoginPage() {
         await supabase.auth.signOut();
         if (typeof window !== "undefined") {
           localStorage.removeItem("punong_admin_session");
+          localStorage.removeItem("punong_admin_session_token");
+          localStorage.removeItem("punong_admin_session_id");
         }
         setLoading(false);
         return toast.error("Access denied. Customer accounts cannot log in to the admin portal.");
       }
 
+      // 4. Register new active device session in the Active Sessions system
+      let sessionToken = "";
+      try {
+        const { registerAdminSessionServerFn } = await import("@/lib/api/admin-session.functions");
+        const reg = await registerAdminSessionServerFn({
+          data: {
+            userId: activeUserId,
+            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+          },
+        });
+        if (reg?.session?.session_token) {
+          sessionToken = reg.session.session_token;
+          localStorage.setItem("punong_admin_session_token", sessionToken);
+          localStorage.setItem("punong_admin_session_id", reg.session.id);
+        }
+      } catch (sessErr) {
+        console.warn("[Admin Login] Session registration notice:", sessErr);
+      }
+
       localStorage.setItem(
         "punong_admin_session",
-        JSON.stringify({ id: activeUserId, email: cleanEmail, role: "admin" })
+        JSON.stringify({ id: activeUserId, email: cleanEmail, role: "admin", session_token: sessionToken })
       );
 
       setLoading(false);
