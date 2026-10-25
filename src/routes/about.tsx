@@ -176,6 +176,12 @@ function About() {
                 Reservations may be cancelled directly through your customer dashboard up to 5 hours before scheduled check-in. Failure to arrive within 5 hours of your scheduled check-in time without prior cancellation will automatically result in the reservation being marked as a No-Show, and the accommodation will automatically be made available for other guests.
               </AccordionContent>
             </AccordionItem>
+            <AccordionItem value="3">
+              <AccordionTrigger>How much is the entrance fee?</AccordionTrigger>
+              <AccordionContent>
+                The entrance fee is ₱50 per person. Please prepare your entrance fee upon arrival at the resort.
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
       </section>
