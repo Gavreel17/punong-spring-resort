@@ -172,6 +172,7 @@ function AdminSettingsPage() {
   const {
     data: activeSessions = [],
     isLoading: loadingSessions,
+    isFetching: fetchingSessions,
     refetch: refetchSessions,
   } = useQuery<AdminSessionRecord[]>({
     queryKey: ["admin-sessions", user?.id],
@@ -180,8 +181,14 @@ function AdminSettingsPage() {
       const { listAdminSessions } = await import("@/lib/admin-sessions");
       return await listAdminSessions(user?.id);
     },
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
+
+  // Refresh sessions with toast notification
+  async function handleRefreshSessions() {
+    await refetchSessions();
+    toast.success("Active sessions refreshed.");
+  }
 
   // Data management states
   const [syncingData, setSyncingData] = useState(false);
@@ -1736,13 +1743,13 @@ function AdminSettingsPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => refetchSessions()}
-                    disabled={loadingSessions}
-                    className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 h-9 px-3 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                    onClick={handleRefreshSessions}
+                    disabled={fetchingSessions}
+                    className="border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 h-9 px-3 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-all"
                     title="Refresh Active Sessions"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${loadingSessions ? "animate-spin" : ""}`} />
-                    Refresh
+                    <RefreshCw className={`w-3.5 h-3.5 transition-transform ${fetchingSessions ? "animate-spin" : ""}`} />
+                    {fetchingSessions ? "Refreshing..." : "Refresh"}
                   </Button>
 
                   <Button

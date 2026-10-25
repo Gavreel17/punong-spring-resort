@@ -204,9 +204,25 @@ export async function validateAdminSession(
 }
 
 /**
- * List all sessions for the administrator
+ * List all sessions for the administrator.
+ * Also updates the current session's heartbeat so timestamps are fresh on refresh.
  */
 export async function listAdminSessions(userId?: string): Promise<AdminSessionRecord[]> {
+  const now = new Date().toISOString();
+
+  // Update heartbeat for current session in background (browser-safe)
+  if (typeof window !== "undefined") {
+    const currentToken = localStorage.getItem("punong_admin_session_token");
+    if (currentToken && userId) {
+      supabase
+        .from("admin_sessions")
+        .update({ last_active_at: now })
+        .eq("session_token", currentToken)
+        .eq("user_id", userId)
+        .then(() => {});
+    }
+  }
+
   // 1. Try PostgreSQL table admin_sessions
   try {
     let query = supabase.from("admin_sessions").select("*").order("last_active_at", { ascending: false });
