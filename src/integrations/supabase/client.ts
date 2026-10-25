@@ -20,6 +20,12 @@ const isServer = typeof window === "undefined";
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: !isServer,
+    // Auto-refresh JWT before it expires so sessions stay alive across page reloads
+    autoRefreshToken: !isServer,
+    // Detect session in URL (handles OAuth & magic link flows)
+    detectSessionInUrl: !isServer,
+    // Unique storage key scoped to this app
+    storageKey: "punong-resort-auth",
   },
   ...(isServer
     ? {

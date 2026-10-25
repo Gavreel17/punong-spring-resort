@@ -116,18 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           validateAdminDeviceSession(s.user.id);
         }
       } else {
-        const stored = typeof window !== "undefined" ? localStorage.getItem("punong_admin_session") : null;
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed?.id && parsed?.role === "admin") {
-              setSession({ user: { id: parsed.id, email: parsed.email } });
-              setRole("admin");
-              setLoading(false);
-              validateAdminDeviceSession(parsed.id);
-              return;
-            }
-          } catch (e) {}
+        // No real Supabase session — clear stale localStorage and redirect to login
+        // DO NOT use a fake session: it has no JWT, so RLS will block all data queries
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("punong_admin_session");
+          localStorage.removeItem("punong_admin_session_token");
+          localStorage.removeItem("punong_admin_session_id");
         }
         setSession(null);
         setRole(null);
@@ -148,18 +142,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           validateAdminDeviceSession(data.session.user.id);
         }
       } else {
-        const stored = typeof window !== "undefined" ? localStorage.getItem("punong_admin_session") : null;
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed?.id && parsed?.role === "admin") {
-              setSession({ user: { id: parsed.id, email: parsed.email } });
-              setRole("admin");
-              setLoading(false);
-              validateAdminDeviceSession(parsed.id);
-              return;
-            }
-          } catch (e) {}
+        // No real Supabase session — clear stale localStorage cache
+        // A fake session has no JWT so RLS blocks all data; force re-login instead
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("punong_admin_session");
+          if (stored) {
+            console.warn("[Auth] Stale admin localStorage session found but no Supabase JWT. Clearing and requiring re-login.");
+            localStorage.removeItem("punong_admin_session");
+            localStorage.removeItem("punong_admin_session_token");
+            localStorage.removeItem("punong_admin_session_id");
+          }
         }
         setSession(null);
         setRole(null);
