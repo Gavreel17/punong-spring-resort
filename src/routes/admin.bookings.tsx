@@ -940,7 +940,7 @@ function BookingsTab() {
                 <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Room & Dates</TableHead>
                 <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Total Amount</TableHead>
                 <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Payment Method</TableHead>
-                <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Statuses</TableHead>
+                <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4">Status</TableHead>
                 <TableHead className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] py-4 text-right pr-6">Quick Actions</TableHead>
               </TableRow>
             </TableHeader>
