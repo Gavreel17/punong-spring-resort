@@ -657,7 +657,7 @@ function BookingsTab() {
 
       {/* KPI Cards — ONLY shown when Cancelled Bookings is selected */}
       {isCancelledView && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="p-4 bg-white dark:bg-[#151F2E] border-slate-200/80 dark:border-slate-800 shadow-xs rounded-xl flex items-center justify-between">
             <div>
               <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -670,21 +670,6 @@ function BookingsTab() {
             </div>
             <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-800/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
               <XCircle className="w-5 h-5" />
-            </div>
-          </Card>
-
-          <Card className="p-4 bg-white dark:bg-[#151F2E] border-slate-200/80 dark:border-slate-800 shadow-xs rounded-xl flex items-center justify-between">
-            <div>
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Customer Self-Cancelled
-              </div>
-              <div className="text-2xl font-bold text-amber-700 dark:text-amber-400 mt-1">
-                {cancellationStats.customerWithReason}
-              </div>
-              <div className="text-xs text-slate-400 mt-0.5">With customer stated reason</div>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400">
-              <User className="w-5 h-5" />
             </div>
           </Card>
         </div>
