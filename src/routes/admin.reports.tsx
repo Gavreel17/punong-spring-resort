@@ -718,8 +718,13 @@ function ReportsDashboard() {
               </p>
             </div>
             <Link
-              to="/admin/cancellations"
+              to="/admin/bookings"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#B38728] dark:text-[#FACC15] hover:text-[#8c671b] hover:underline transition-colors shrink-0"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.location.href = "/admin/bookings?status=cancelled";
+                }
+              }}
             >
               Cancellations Log <ExternalLink className="w-3.5 h-3.5" />
             </Link>
@@ -810,10 +815,15 @@ function ReportsDashboard() {
                         Show All Dates
                       </Button>
                       <Link
-                        to="/admin/cancellations"
+                        to="/admin/bookings"
                         className="inline-flex items-center gap-1 text-xs font-bold text-[#B38728] hover:underline"
+                        onClick={() => {
+                          if (typeof window !== "undefined") {
+                            window.location.href = "/admin/bookings?status=cancelled";
+                          }
+                        }}
                       >
-                        View Cancellations Tab
+                        View Cancelled Bookings
                       </Link>
                     </div>
                   </>

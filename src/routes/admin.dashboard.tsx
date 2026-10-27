@@ -18,6 +18,7 @@ import {
   CalendarDays,
   Star,
   Activity,
+  Mail,
 } from "lucide-react";
 import { useAdminStats } from "@/hooks/use-admin-stats";
 import { AdminStatsRow } from "@/components/AdminStatsRow";
@@ -102,7 +103,7 @@ function AdminDashboard() {
     { label: "Rooms & Cottages", to: "/admin/rooms", icon: BedDouble, desc: "Manage availability" },
     { label: "Customers", to: "/admin/customers", icon: Users, desc: "Guest profiles" },
     { label: "Reports", to: "/admin/reports", icon: BarChart3, desc: "Analytics & exports" },
-    { label: "Cancelled", to: "/admin/cancellations", icon: XCircle, desc: "Process refunds" },
+    { label: "Messages & Inquiries", to: "/admin/messages", icon: Mail, desc: "Guest messages & chat" },
   ];
 
   return (
