@@ -21,9 +21,11 @@ import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
+import { Route as AdminForgotPasswordRouteImport } from './routes/admin.forgot-password'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminMessagesRouteImport } from './routes/admin.messages'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminResetPasswordRouteImport } from './routes/admin.reset-password'
 import { Route as AdminRoomsRouteImport } from './routes/admin.rooms'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as BookRoomIdRouteImport } from './routes/book.$roomId'
@@ -89,6 +91,11 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminForgotPasswordRoute = AdminForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -102,6 +109,11 @@ const AdminMessagesRoute = AdminMessagesRouteImport.update({
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminResetPasswordRoute = AdminResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRoomsRoute = AdminRoomsRouteImport.update({
@@ -137,9 +149,11 @@ export interface FileRoutesByFullPath {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/book/$roomId': typeof BookRoomIdRoute
@@ -157,9 +171,11 @@ export interface FileRoutesByTo {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/book/$roomId': typeof BookRoomIdRoute
@@ -179,9 +195,11 @@ export interface FileRoutesById {
   '/admin/calendar': typeof AdminCalendarRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/rooms': typeof AdminRoomsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/book/$roomId': typeof BookRoomIdRoute
@@ -202,9 +220,11 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/customers'
     | '/admin/dashboard'
+    | '/admin/forgot-password'
     | '/admin/login'
     | '/admin/messages'
     | '/admin/reports'
+    | '/admin/reset-password'
     | '/admin/rooms'
     | '/admin/settings'
     | '/book/$roomId'
@@ -222,9 +242,11 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/customers'
     | '/admin/dashboard'
+    | '/admin/forgot-password'
     | '/admin/login'
     | '/admin/messages'
     | '/admin/reports'
+    | '/admin/reset-password'
     | '/admin/rooms'
     | '/admin/settings'
     | '/book/$roomId'
@@ -243,9 +265,11 @@ export interface FileRouteTypes {
     | '/admin/calendar'
     | '/admin/customers'
     | '/admin/dashboard'
+    | '/admin/forgot-password'
     | '/admin/login'
     | '/admin/messages'
     | '/admin/reports'
+    | '/admin/reset-password'
     | '/admin/rooms'
     | '/admin/settings'
     | '/book/$roomId'
@@ -351,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/forgot-password': {
+      id: '/admin/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/admin/forgot-password'
+      preLoaderRoute: typeof AdminForgotPasswordRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/login'
@@ -370,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/admin/reports'
       preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reset-password': {
+      id: '/admin/reset-password'
+      path: '/reset-password'
+      fullPath: '/admin/reset-password'
+      preLoaderRoute: typeof AdminResetPasswordRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/rooms': {
@@ -408,9 +446,11 @@ interface AdminRouteChildren {
   AdminCalendarRoute: typeof AdminCalendarRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminForgotPasswordRoute: typeof AdminForgotPasswordRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMessagesRoute: typeof AdminMessagesRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminResetPasswordRoute: typeof AdminResetPasswordRoute
   AdminRoomsRoute: typeof AdminRoomsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -421,9 +461,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCalendarRoute: AdminCalendarRoute,
   AdminCustomersRoute: AdminCustomersRoute,
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminForgotPasswordRoute: AdminForgotPasswordRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMessagesRoute: AdminMessagesRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminResetPasswordRoute: AdminResetPasswordRoute,
   AdminRoomsRoute: AdminRoomsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,

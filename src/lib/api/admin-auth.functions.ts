@@ -251,3 +251,141 @@ export const adminSignInServerFn = createServerFn({ method: "POST" })
       throw new Error(msg || "An unexpected error occurred during login.");
     }
   });
+
+// Rate-limiting tracker for password recovery requests
+const resetRateLimitMap = new Map<string, number>();
+
+export const adminRequestPasswordResetServerFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      email: z.string().email("Please enter a valid email address."),
+      origin: z.string().url("Valid origin URL is required."),
+    })
+  )
+  .handler(async ({ data }) => {
+    const cleanEmail = data.email.trim().toLowerCase();
+
+    // 1. Rate-limiting check: 60-second cooldown per email
+    const now = Date.now();
+    const lastRequest = resetRateLimitMap.get(cleanEmail) || 0;
+    const cooldownMs = 60 * 1000;
+    if (now - lastRequest < cooldownMs) {
+      const remainingSeconds = Math.ceil((cooldownMs - (now - lastRequest)) / 1000);
+      throw new Error(`Rate limit exceeded. Please wait ${remainingSeconds} seconds before requesting another password reset.`);
+    }
+
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabaseUrl =
+        process.env.VITE_SUPABASE_URL || "https://dqpbbzsxfwbozqcguwux.supabase.co";
+      const supabaseAnonKey =
+        process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+        "sb_publishable_oSM68VF1C-NOQjAtAlg44g_F39kZFkn";
+
+      const client = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false },
+        realtime: { transport: ws as any },
+      });
+
+      // 2. Query to verify if this email belongs to an existing authorized administrator
+      const { data: adminRoles } = await (client as any)
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      const adminUserIds = ((adminRoles as any[]) || []).map((r: any) => r.user_id).filter(Boolean);
+
+      let isAuthorizedAdmin = false;
+
+      if (adminUserIds.length > 0) {
+        const { data: adminProfile } = await (client as any)
+          .from("profiles")
+          .select("id, email")
+          .in("id", adminUserIds)
+          .ilike("email", cleanEmail)
+          .maybeSingle();
+
+        if (adminProfile) {
+          isAuthorizedAdmin = true;
+        }
+      }
+
+      // Record rate-limit timestamp to prevent abuse
+      resetRateLimitMap.set(cleanEmail, now);
+
+      // 3. Security Rule: If NOT an authorized administrator, do NOT initiate reset or reveal existence
+      if (!isAuthorizedAdmin) {
+        console.warn(`[Password Reset] Non-admin or unregistered email attempted reset: ${cleanEmail}`);
+        // Return generic success to avoid user/admin enumeration
+        return {
+          success: true,
+          message: "If an authorized administrator account is associated with this email, a password reset link has been dispatched.",
+        };
+      }
+
+      // 4. Send secure recovery link using Supabase Auth
+      const redirectTo = `${data.origin}/admin/reset-password`;
+      const { error: resetError } = await client.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo,
+      });
+
+      if (resetError) {
+        console.error("[Password Reset Auth Error]:", resetError);
+        const errMsg = resetError.message.toLowerCase();
+
+        if (errMsg.includes("smtp") || errMsg.includes("email provider") || errMsg.includes("confirmation email") || errMsg.includes("sending")) {
+          throw new Error("Email delivery could not be completed. Supabase Auth SMTP or custom email provider is not configured in your Supabase project settings.");
+        }
+
+        if (errMsg.includes("rate limit") || errMsg.includes("over_email_send_rate_limit")) {
+          throw new Error("Password reset request rate limit exceeded by authentication service. Please try again in a few minutes.");
+        }
+
+        throw new Error(resetError.message || "Failed to process password reset request.");
+      }
+
+      return {
+        success: true,
+        message: "If an authorized administrator account is associated with this email, a password reset link has been dispatched.",
+      };
+    } catch (err: any) {
+      console.error("[Admin Password Reset Error]:", err);
+      throw new Error(err.message || "An unexpected error occurred during password recovery.");
+    }
+  });
+
+export const adminVerifyAdminRoleServerFn = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      userId: z.string().min(1, "User ID is required."),
+    })
+  )
+  .handler(async ({ data }) => {
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabaseUrl =
+        process.env.VITE_SUPABASE_URL || "https://dqpbbzsxfwbozqcguwux.supabase.co";
+      const supabaseAnonKey =
+        process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+        "sb_publishable_oSM68VF1C-NOQjAtAlg44g_F39kZFkn";
+
+      const client = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false },
+        realtime: { transport: ws as any },
+      });
+
+      const { data: roleData } = await (client as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.userId)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      return {
+        isAdmin: !!roleData,
+      };
+    } catch (e) {
+      return { isAdmin: false };
+    }
+  });
+

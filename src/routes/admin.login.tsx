@@ -365,6 +365,14 @@ function AdminLoginPage() {
                         {showSignInPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                    <div className="flex justify-end pt-1">
+                      <Link
+                        to="/admin/forgot-password"
+                        className="text-xs text-[#D4AF37] hover:text-[#f3cc51] hover:underline transition-colors font-medium inline-flex items-center gap-1"
+                      >
+                        Forgot Password?
+                      </Link>
+                    </div>
                   </div>
 
                   <Button

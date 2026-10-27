@@ -56,12 +56,15 @@ function AdminLayout() {
     return () => clearInterval(interval);
   }, []);
 
-  const isLoginPage = location.pathname === "/admin/login";
+  const isAuthPage =
+    location.pathname === "/admin/login" ||
+    location.pathname === "/admin/forgot-password" ||
+    location.pathname === "/admin/reset-password";
 
   // Pending payments count hook - called unconditionally at top of component
   const { data: pendingPaymentsCount } = useQuery({
     queryKey: ["pending-payments-count"],
-    enabled: !isLoginPage && !!user && role === "admin",
+    enabled: !isAuthPage && !!user && role === "admin",
     queryFn: async () => {
       const { count } = await supabase
         .from("payments")
@@ -75,7 +78,7 @@ function AdminLayout() {
   // Unread customer inquiries count hook
   const { data: unreadInquiriesCount } = useQuery({
     queryKey: ["admin-unread-inquiries"],
-    enabled: !isLoginPage && !!user && role === "admin",
+    enabled: !isAuthPage && !!user && role === "admin",
     queryFn: async () => {
       const { count } = await supabase
         .from("inquiries")
@@ -88,7 +91,7 @@ function AdminLayout() {
 
   // Route protection hook
   useEffect(() => {
-    if (isLoginPage || loading) return;
+    if (isAuthPage || loading) return;
 
     if (!user) {
       navigate({ to: "/admin/login", replace: true });
@@ -96,10 +99,10 @@ function AdminLayout() {
       toast.error("Access denied. Admin privileges required.");
       navigate({ to: "/dashboard", replace: true });
     }
-  }, [user, role, loading, navigate, isLoginPage]);
+  }, [user, role, loading, navigate, isAuthPage]);
 
   // Early returns AFTER ALL HOOKS HAVE BEEN EXECUTED
-  if (isLoginPage) {
+  if (isAuthPage) {
     return <Outlet />;
   }
 
