@@ -19,7 +19,6 @@ import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 import { Route as AdminCalendarRouteImport } from './routes/admin.calendar'
-import { Route as AdminCancellationsRouteImport } from './routes/admin.cancellations'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -80,11 +79,6 @@ const AdminCalendarRoute = AdminCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCancellationsRoute = AdminCancellationsRouteImport.update({
-  id: '/cancellations',
-  path: '/cancellations',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminCustomersRoute = AdminCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
@@ -141,7 +135,6 @@ export interface FileRoutesByFullPath {
   '/rooms': typeof RoomsRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/calendar': typeof AdminCalendarRoute
-  '/admin/cancellations': typeof AdminCancellationsRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
@@ -162,7 +155,6 @@ export interface FileRoutesByTo {
   '/rooms': typeof RoomsRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/calendar': typeof AdminCalendarRoute
-  '/admin/cancellations': typeof AdminCancellationsRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
@@ -185,7 +177,6 @@ export interface FileRoutesById {
   '/rooms': typeof RoomsRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/calendar': typeof AdminCalendarRoute
-  '/admin/cancellations': typeof AdminCancellationsRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/login': typeof AdminLoginRoute
@@ -209,7 +200,6 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/admin/bookings'
     | '/admin/calendar'
-    | '/admin/cancellations'
     | '/admin/customers'
     | '/admin/dashboard'
     | '/admin/login'
@@ -230,7 +220,6 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/admin/bookings'
     | '/admin/calendar'
-    | '/admin/cancellations'
     | '/admin/customers'
     | '/admin/dashboard'
     | '/admin/login'
@@ -252,7 +241,6 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/admin/bookings'
     | '/admin/calendar'
-    | '/admin/cancellations'
     | '/admin/customers'
     | '/admin/dashboard'
     | '/admin/login'
@@ -349,13 +337,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCalendarRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/cancellations': {
-      id: '/admin/cancellations'
-      path: '/cancellations'
-      fullPath: '/admin/cancellations'
-      preLoaderRoute: typeof AdminCancellationsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/customers': {
       id: '/admin/customers'
       path: '/customers'
@@ -425,7 +406,6 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminCalendarRoute: typeof AdminCalendarRoute
-  AdminCancellationsRoute: typeof AdminCancellationsRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminLoginRoute: typeof AdminLoginRoute
@@ -439,7 +419,6 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminBookingsRoute: AdminBookingsRoute,
   AdminCalendarRoute: AdminCalendarRoute,
-  AdminCancellationsRoute: AdminCancellationsRoute,
   AdminCustomersRoute: AdminCustomersRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminLoginRoute: AdminLoginRoute,
